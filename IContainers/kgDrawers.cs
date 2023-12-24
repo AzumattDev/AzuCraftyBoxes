@@ -20,7 +20,7 @@ public class kgDrawer(ItemDrawers_API.Drawer _drawer) : IContainer
         result = 0;
         if (_drawer.Prefab != prefab) return false;
         result = _drawer.Amount;
-        return true;
+        return result >= amount;
     }
 
     public void RemoveItem(string prefab, int amount)
