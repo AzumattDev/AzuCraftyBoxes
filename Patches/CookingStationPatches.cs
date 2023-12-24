@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using AzuCraftyBoxes.IContainers;
 using AzuCraftyBoxes.Util.Functions;
 using HarmonyLib;
 using UnityEngine;
@@ -11,8 +12,7 @@ namespace AzuCraftyBoxes.Patches;
 [HarmonyPatch(typeof(CookingStation), nameof(CookingStation.OnAddFuelSwitch))]
 static class CookingStationOnAddFuelSwitchPatch
 {
-    static bool Prefix(CookingStation __instance, ref bool __result, Humanoid user, ItemDrop.ItemData item,
-        ZNetView ___m_nview)
+    static bool Prefix(CookingStation __instance, ref bool __result, Humanoid user, ItemDrop.ItemData item, ZNetView ___m_nview)
     {
         AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"(CookingStationOnAddFuelSwitchPatch) Looking for fuel");
 
@@ -21,34 +21,25 @@ static class CookingStationOnAddFuelSwitchPatch
             user.GetInventory().HaveItem(__instance.m_fuelItem.m_itemData.m_shared.m_name))
             return true;
 
-        AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug(
-            $"(CookingStationOnAddFuelSwitchPatch) Missing fuel in player inventory");
+        AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"(CookingStationOnAddFuelSwitchPatch) Missing fuel in player inventory");
 
 
-        List<Container> nearbyContainers = Boxes.GetNearbyContainers(__instance, AzuCraftyBoxesPlugin.mRange.Value);
+        List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(__instance, AzuCraftyBoxesPlugin.mRange.Value);
 
-        foreach (Container c in nearbyContainers)
+        string fuelPrefabName = __instance.m_fuelItem.name;
+        foreach (IContainer c in nearbyContainers)
         {
-            ItemDrop.ItemData fuelItem = c.GetInventory().GetItem(__instance.m_fuelItem.m_itemData.m_shared.m_name);
-            if (fuelItem == null) continue;
-            GameObject itemPrefab = ObjectDB.instance.GetItemPrefab(__instance.m_fuelItem.GetPrefabName(__instance.m_fuelItem.gameObject.name));
-            fuelItem.m_dropPrefab = itemPrefab;
-            string itemPrefabName = Utils.GetPrefabName(fuelItem.m_dropPrefab);
-            if (!Boxes.CanItemBePulled(Utils.GetPrefabName(__instance.gameObject),
-                    itemPrefabName))
+            if (!c.ContainsItem(fuelPrefabName, 1, out int result)) continue;
+            if (!Boxes.CanItemBePulled(Utils.GetPrefabName(__instance.gameObject), fuelPrefabName))
             {
-                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug(
-                    $"(CookingStationOnAddFuelSwitchPatch) Container at {c.transform.position} has {fuelItem.m_stack} {fuelItem.m_dropPrefab.name} but it's forbidden by config");
+                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"(CookingStationOnAddFuelSwitchPatch) Container at {c.GetPosition()} has {result} {fuelPrefabName} but it's forbidden by config");
                 continue;
             }
 
-            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug(
-                $"(CookingStationOnAddFuelSwitchPatch) Container at {c.transform.position} has {fuelItem.m_stack} {fuelItem.m_dropPrefab.name}, taking one");
-            c.GetInventory().RemoveItem(__instance.m_fuelItem.m_itemData.m_shared.m_name, 1);
+            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"(CookingStationOnAddFuelSwitchPatch) Container at {c.GetPosition()} has {result} {fuelPrefabName}, taking one");
+            c.RemoveItem(fuelPrefabName, 1);
             c.Save();
-            //typeof(Inventory).GetMethod("Changed", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(c.GetInventory(), new object[] { });
-            user.Message(MessageHud.MessageType.Center,
-                "$msg_added " + __instance.m_fuelItem.m_itemData.m_shared.m_name);
+            user.Message(MessageHud.MessageType.Center, "$msg_added " + __instance.m_fuelItem.m_itemData.m_shared.m_name);
             ___m_nview.InvokeRPC("AddFuel", Array.Empty<object>());
             __result = true;
             return false;
@@ -69,35 +60,29 @@ static class CookingStationFindCookableItemPatch
             (__instance.m_requireFire && !__instance.IsFireLit() || __instance.GetFreeSlot() == -1))
             return;
 
-        AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug(
-            $"(CookingStationFindCookableItemPatch) Missing cookable in player inventory");
+        AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"(CookingStationFindCookableItemPatch) Missing cookable in player inventory");
 
 
-        List<Container> nearbyContainers = Boxes.GetNearbyContainers(__instance, AzuCraftyBoxesPlugin.mRange.Value);
+        List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(__instance, AzuCraftyBoxesPlugin.mRange.Value);
 
         foreach (CookingStation.ItemConversion itemConversion in __instance.m_conversion)
         {
-            foreach (Container c in nearbyContainers)
+            string fromPrefabName = itemConversion.m_from.name;
+            foreach (IContainer c in nearbyContainers)
             {
-                ItemDrop.ItemData item = c.GetInventory().GetItem(itemConversion.m_from.m_itemData.m_shared.m_name);
-                if (item == null) continue;
-                GameObject itemPrefab = ObjectDB.instance.GetItemPrefab(itemConversion.m_from.GetPrefabName(itemConversion.m_from.gameObject.name));
-                item.m_dropPrefab = itemPrefab;
-                string itemPrefabName = Utils.GetPrefabName(item.m_dropPrefab);
-                if (!Boxes.CanItemBePulled(Utils.GetPrefabName(__instance.gameObject),
-                        itemPrefabName))
+                if (!c.ContainsItem(fromPrefabName, 1, out int result)) continue;
+                if (!Boxes.CanItemBePulled(Utils.GetPrefabName(__instance.gameObject), fromPrefabName))
                 {
-                    AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug(
-                        $"(CookingStationFindCookableItemPatch) Container at {c.transform.position} has {item.m_stack} {item.m_dropPrefab.name} but it's forbidden by config");
+                    AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"(CookingStationFindCookableItemPatch) Container at {c.GetPosition()} has {result} {fromPrefabName} but it's forbidden by config");
                     continue;
                 }
-
-                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug(
-                    $"(CookingStationFindCookableItemPatch) Container at {c.transform.position} has {item.m_stack} {item.m_dropPrefab.name}, taking one");
-                __result = item;
-                c.GetInventory().RemoveItem(itemConversion.m_from.m_itemData.m_shared.m_name, 1);
+                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"(CookingStationFindCookableItemPatch) Container at {c.GetPosition()} has {result} {fromPrefabName}, taking one");
+                GameObject drop = ObjectDB.instance.m_itemByHash[fromPrefabName.GetStableHashCode()];
+                ItemDrop.ItemData itemData = drop.GetComponent<ItemDrop>().m_itemData.Clone();
+                itemData.m_dropPrefab = drop;
+                __result = itemData;
+                c.RemoveItem(fromPrefabName, 1);
                 c.Save();
-                //typeof(Inventory).GetMethod("Changed", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(c.GetInventory(), new object[] { });
                 return;
             }
         }

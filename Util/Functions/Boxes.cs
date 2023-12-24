@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using AzuCraftyBoxes.IContainers;
 using UnityEngine;
 
 namespace AzuCraftyBoxes.Util.Functions;
@@ -49,12 +50,13 @@ public class Boxes
         ContainersToRemove.Clear();
     }
 
-    internal static List<Container> GetNearbyContainers<T>(T gameObject, float rangeToUse) where T : Component
+    internal static List<IContainer> GetNearbyContainers<T>(T gameObject, float rangeToUse) where T : Component
     {
-        List<Container> nearbyContainers = new();
+        List<IContainer> nearbyContainers = [];
         if (Player.m_localPlayer == null) return nearbyContainers;
         if (Vector3.Distance(gameObject.transform.position, AzuCraftyBoxesPlugin.lastPosition) < 0.5f)
             return AzuCraftyBoxesPlugin.cachedContainerList;
+        
         foreach (Container container in Containers)
         {
             if (gameObject == null || container == null) continue;
@@ -67,11 +69,13 @@ public class Boxes
                 #endif
                 if (!container.IsInUse())
                 {
-                    nearbyContainers.Add(container);
+                    nearbyContainers.Add(VanillaContainer.Create(container));
                 }
             }
         }
-
+        
+        nearbyContainers.AddRange(APIs.ItemDrawers_API.AllDrawers.Select(kgDrawer.Create));
+        
         AzuCraftyBoxesPlugin.lastPosition = gameObject.transform.position;
         AzuCraftyBoxesPlugin.cachedContainerList = nearbyContainers;
         return nearbyContainers;
@@ -239,106 +243,8 @@ public class Boxes
 
         return new List<string>();
     }
-
-    internal static void PullResources(Player player, Piece.Requirement[] resources, int qualityLevel)
-    {
-        Inventory pInventory = Player.m_localPlayer.GetInventory();
-        List<Container> nearbyContainers = GetNearbyContainers(Player.m_localPlayer, AzuCraftyBoxesPlugin.mRange.Value);
-
-        foreach (Piece.Requirement requirement in resources)
-        {
-            if (requirement.m_resItem)
-            {
-                ProcessResourceRequirement(player, requirement, qualityLevel, pInventory, nearbyContainers);
-            }
-        }
-    }
-
-    private static void ProcessResourceRequirement(Player player, Piece.Requirement requirement, int qualityLevel,
-        Inventory pInventory, List<Container> nearbyContainers)
-    {
-        int totalRequirement = requirement.GetAmount(qualityLevel);
-        if (totalRequirement <= 0) return;
-
-        string reqName = requirement.m_resItem.m_itemData.m_shared.m_name;
-        int totalAmount = 0;
-
-        for (int index = 0; index < nearbyContainers.Count; ++index)
-        {
-            Container c = nearbyContainers[index];
-            totalAmount = ProcessContainer(reqName, totalRequirement, totalAmount, c, pInventory);
-
-            if (totalAmount >= totalRequirement) break;
-        }
-
-        if (AzuCraftyBoxesPlugin.pulledMessage.Value?.Length > 0)
-            player.Message(MessageHud.MessageType.Center, AzuCraftyBoxesPlugin.pulledMessage.Value);
-    }
-
-    private static int ProcessContainer(string reqName, int totalRequirement, int totalAmount,
-        Container c, Inventory pInventory)
-    {
-        Inventory cInventory = c.GetInventory();
-
-        for (int i = 0; i < cInventory.GetAllItems().Count; ++i)
-        {
-            ItemDrop.ItemData item = cInventory.GetItem(i);
-            if (item.m_shared.m_name != reqName) continue;
-
-            // Check if the item can be pulled from the container
-            string containerPrefabName = Utils.GetPrefabName(c.gameObject);
-            string itemPrefabName = Utils.GetPrefabName(item.m_dropPrefab);
-            if (CanItemBePulled(containerPrefabName, itemPrefabName))
-            {
-                int stackAmount = Mathf.Min(item.m_stack, totalRequirement - totalAmount);
-                if (!pInventory.HaveEmptySlot())
-                    stackAmount = Math.Min(pInventory.FindFreeStackSpace(item.m_shared.m_name, item.m_worldLevel), stackAmount);
-
-                AddItemToPlayerInventory(item, stackAmount, pInventory, cInventory);
-
-                //AddItemToPlayerInventory(item, stackAmount, pInventory);
-
-                totalAmount += stackAmount;
-                if (totalAmount >= totalRequirement) break;
-            }
-        }
-
-        c.Save();
-        cInventory.Changed();
-
-        return totalAmount;
-    }
     
-    private static void AddItemToPlayerInventory(ItemDrop.ItemData item, int stackAmount, Inventory pInventory, Inventory cInventory)
-    {
-        ItemDrop.ItemData sendItem = item.Clone();
-        sendItem.m_stack = stackAmount;
-        pInventory.AddItem(sendItem);
-
-        if (stackAmount == item.m_stack)
-        {
-            cInventory.RemoveItem(item);
-        }
-        else
-        {
-            item.m_stack -= stackAmount;
-        }
-    }
-
-
-    /*private static void AddItemToPlayerInventory(ItemDrop.ItemData item, int stackAmount, Inventory pInventory)
-    {
-        ItemDrop.ItemData sendItem = item.Clone();
-        sendItem.m_stack = stackAmount;
-        pInventory.AddItem(sendItem);
-
-        if (stackAmount == item.m_stack)
-        {
-            pInventory.RemoveItem(item);
-        }
-        else
-        {
-            item.m_stack -= stackAmount;
-        }
-    }*/
+    
+    
+    
 }

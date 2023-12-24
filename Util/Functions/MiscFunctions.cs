@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using AzuCraftyBoxes.IContainers;
 using HarmonyLib;
 using UnityEngine;
 
@@ -19,7 +20,7 @@ public class MiscFunctions
 
     /* Consume Resources */
     internal static void ProcessRequirements(Piece.Requirement[] requirements, int qualityLevel, Inventory pInventory,
-        List<Container> nearbyContainers, int itemQuality)
+        List<IContainer> nearbyContainers, int itemQuality)
     {
         foreach (Piece.Requirement requirement in requirements)
         {
@@ -27,6 +28,7 @@ public class MiscFunctions
             int totalRequirement = requirement.GetAmount(qualityLevel);
             if (totalRequirement <= 0) continue;
 
+            string reqPrefab = requirement.m_resItem.name;
             string reqName = requirement.m_resItem.m_itemData.m_shared.m_name;
             int totalAmount = pInventory.CountItems(reqName);
             LogResourceInfo(totalAmount, totalRequirement, reqName);
@@ -34,7 +36,7 @@ public class MiscFunctions
 
             if (totalAmount < totalRequirement)
             {
-                int newTotalAmount = ConsumeResourcesFromContainers(reqName, totalAmount, totalRequirement, nearbyContainers);
+                int newTotalAmount = ConsumeResourcesFromContainers(reqPrefab, reqName, totalAmount, totalRequirement, nearbyContainers);
                 if (newTotalAmount >= totalRequirement)
                 {
                     AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"(ConsumeResourcesPatch) Consumed enough {reqName}");
@@ -56,81 +58,21 @@ public class MiscFunctions
         AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"(ConsumeResourcesPatch) Have {totalAmount}/{totalRequirement} {reqName} in player inventory");
     }
 
-    private static int ConsumeResourcesFromContainers(string reqName, int totalAmount, int totalRequirement,
-        List<Container> nearbyContainers)
+    private static int ConsumeResourcesFromContainers(string reqPrefab, string reqName, int totalAmount, int totalRequirement,
+        List<IContainer> nearbyContainers)
     {
         int newTotalAmount = totalAmount;
-        foreach (Container c in nearbyContainers)
+        foreach (IContainer c in nearbyContainers)
         {
-            //if(c.IsInUse()) {continue;}
-            Inventory cInventory = c?.GetInventory();
-            if (cInventory == null) continue;
-
-            newTotalAmount = ProcessContainerInventory(reqName, newTotalAmount, totalRequirement, c, cInventory);
+            newTotalAmount = c.ProcessContainerInventory(reqPrefab, reqName, newTotalAmount, totalRequirement);
             if (newTotalAmount >= totalRequirement)
             {
                 break;
             }
         }
-
         return newTotalAmount;
     }
-
-    private static int ProcessContainerInventory(string reqName, int totalAmount, int totalRequirement,
-        Container c, Inventory cInventory)
-    {
-        int thisAmount = Mathf.Min(cInventory.CountItems(reqName), totalRequirement - totalAmount);
-
-        AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"(ConsumeResourcesPatch) Container at {c.transform.position} has {cInventory.CountItems(reqName)}");
-
-        if (thisAmount == 0) return totalAmount;
-
-        for (int i = 0; i < cInventory.GetAllItems().Count; ++i)
-        {
-            ItemDrop.ItemData item = cInventory.GetItem(i);
-            if (item?.m_shared?.m_name != reqName) continue;
-            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Container Total Items Count is {cInventory.GetAllItems().Count}");
-            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"(ConsumeResourcesPatch) Got stack of {item.m_stack} {reqName}");
-
-            int stackAmount = Mathf.Min(item.m_stack, totalRequirement - totalAmount);
-            if (stackAmount == item.m_stack)
-            {
-                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"(ConsumeResourcesPatch) Removing item {reqName} from container");
-                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Container inventory before removal: {cInventory.GetAllItems().Count}, Item at index {i}: {cInventory.GetItem(i)?.m_shared?.m_name}");
-                
-                var removed = cInventory.RemoveItem(i);
-                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug("Removed was " + removed);
-                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Container inventory after attempted removal: {cInventory.GetAllItems().Count}");
-
-                --i;
-            }
-            else
-            {
-                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"(ConsumeResourcesPatch) Removing {stackAmount} {reqName} from container");
-                item.m_stack -= stackAmount;
-            }
-
-            totalAmount += stackAmount;
-
-            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"(ConsumeResourcesPatch) Total amount is now {totalAmount}/{totalRequirement} {reqName}");
-
-            if (totalAmount >= totalRequirement)
-            {
-                break;
-            }
-        }
-
-        c.Save();
-        cInventory.Changed();
-        AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug("Saved container");
-
-        if (totalAmount >= totalRequirement)
-        {
-            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"(ConsumeResourcesPatch) Consumed enough {reqName}");
-        }
-
-        return totalAmount;
-    }
+    
 
     public static string GetPrefabName(string name)
     {

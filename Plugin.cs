@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
+using AzuCraftyBoxes.IContainers;
 using AzuCraftyBoxes.Util.Functions;
 using BepInEx;
 using BepInEx.Configuration;
@@ -17,10 +18,11 @@ using UnityEngine;
 namespace AzuCraftyBoxes
 {
     [BepInPlugin(ModGUID, ModName, ModVersion)]
+    [BepInDependency("kg.ItemDrawers", BepInDependency.DependencyFlags.SoftDependency)]
     public class AzuCraftyBoxesPlugin : BaseUnityPlugin
     {
         internal const string ModName = "AzuCraftyBoxes";
-        internal const string ModVersion = "1.2.4";
+        internal const string ModVersion = "1.2.5";
         internal const string Author = "Azumatt";
         private const string ModGUID = $"{Author}.{ModName}";
         private static string ConfigFileName = $"{ModGUID}.cfg";
@@ -32,7 +34,7 @@ namespace AzuCraftyBoxes
 
         internal static bool skip;
         public static Vector3 lastPosition = Vector3.positiveInfinity;
-        public static List<Container> cachedContainerList = new List<Container>();
+        public static List<IContainer> cachedContainerList = new List<IContainer>();
 
         internal static readonly string yamlFileName = $"{Author}.{ModName}.yml";
         internal static readonly string yamlPath = Paths.ConfigPath + Path.DirectorySeparatorChar + yamlFileName;

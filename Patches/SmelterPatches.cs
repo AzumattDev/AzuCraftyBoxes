@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using AzuCraftyBoxes.IContainers;
 using AzuCraftyBoxes.Util.Functions;
 using HarmonyLib;
 using UnityEngine;
@@ -82,7 +83,7 @@ public static class OverrideHoverText
 
     internal static void UpdateAddWoodSwitchHoverText(Smelter __instance, ref string result)
     {
-        int inInv = GetItemCountInInventoryAndContainers(__instance.m_fuelItem.m_itemData.m_shared.m_name, __instance);
+        int inInv = GetItemCountInInventoryAndContainers(__instance.m_fuelItem.name, __instance.m_fuelItem.m_itemData.m_shared.m_name, __instance);
         int amount = Math.Min(__instance.m_maxFuel - Mathf.CeilToInt(__instance.GetFuel()), inInv);
         __instance.m_fuelItem.m_itemData.m_dropPrefab = __instance.m_fuelItem.gameObject;
         if (amount > 0)
@@ -107,7 +108,7 @@ public static class OverrideHoverText
                 break;
             }
 
-            int inInv = GetItemCountInInventoryAndContainers(conversion.m_from.m_itemData.m_shared.m_name, __instance);
+            int inInv = GetItemCountInInventoryAndContainers(conversion.m_from.name, conversion.m_from.m_itemData.m_shared.m_name, __instance);
             int count = Math.Min(free, inInv);
             free -= count;
             if (!MiscFunctions.CheckItemDropIntegrity(conversion.m_from)) continue;
@@ -129,16 +130,15 @@ public static class OverrideHoverText
         }
     }
 
-    private static int GetItemCountInInventoryAndContainers(string itemName, Smelter smelterInstance)
+    private static int GetItemCountInInventoryAndContainers(string itemPrefab, string itemName, Smelter smelterInstance)
     {
         int inInv = Player.m_localPlayer?.m_inventory.CountItems(itemName) ?? 0;
-        List<Container> nearbyContainers =
-            Boxes.GetNearbyContainers(smelterInstance, AzuCraftyBoxesPlugin.mRange.Value);
+        List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(smelterInstance, AzuCraftyBoxesPlugin.mRange.Value);
 
-        foreach (Container c in nearbyContainers)
+        foreach (IContainer c in nearbyContainers)
         {
-            int newItem = c?.GetInventory().CountItems(itemName) ?? 0;
-            inInv += newItem;
+            c.ContainsItem(itemPrefab, 1, out int result);
+            inInv += result;
         }
 
         return inInv;
@@ -178,7 +178,7 @@ static class SmelterOnAddOrePatch
 
         Dictionary<string, int> added = new();
 
-        List<Container> nearbyContainers = Boxes.GetNearbyContainers(user, AzuCraftyBoxesPlugin.mRange.Value);
+        List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(user, AzuCraftyBoxesPlugin.mRange.Value);
         foreach (Smelter.ItemConversion itemConversion in __instance.m_conversion)
         {
             if (__instance.GetQueueSize() >= __instance.m_maxOre ||
@@ -186,6 +186,7 @@ static class SmelterOnAddOrePatch
                 break;
 
             string name = itemConversion.m_from.m_itemData.m_shared.m_name;
+            string prefabName = itemConversion.m_from.name;
             if (pullAll && inventory.HaveItem(name))
             {
                 ItemDrop.ItemData newItem = inventory.GetItem(name);
@@ -233,42 +234,29 @@ static class SmelterOnAddOrePatch
                     break;
             }
 
-            foreach (Container c in nearbyContainers)
+            foreach (IContainer c in nearbyContainers)
             {
-                ItemDrop.ItemData newItem = c.GetInventory().GetItem(name);
-                if (newItem == null) continue;
-                GameObject itemPrefab =
-                    ObjectDB.instance.GetItemPrefab(
-                        itemConversion.m_from.GetPrefabName(itemConversion.m_from.gameObject.name));
-                newItem.m_dropPrefab = itemPrefab;
-                string itemPrefabName = Utils.GetPrefabName(newItem.m_dropPrefab);
-                if (!Boxes.CanItemBePulled(Utils.GetPrefabName(__instance.gameObject),
-                        itemPrefabName))
+                if (!c.ContainsItem(prefabName, 1, out int result)) continue;
+                if (!Boxes.CanItemBePulled(Utils.GetPrefabName(__instance.gameObject), prefabName))
                 {
-                    AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug(
-                        $"(SmelterOnAddOrePatch) Container at {c.transform.position} has {newItem.m_stack} {newItem.m_dropPrefab.name} but it's forbidden by config");
+                    AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"(SmelterOnAddOrePatch) Container at {c.GetPosition()} has {result} {prefabName} but it's forbidden by config");
                     continue;
                 }
 
-                int amount = pullAll
-                    ? Mathf.Min(
-                        __instance.m_maxOre - __instance.GetQueueSize(),
-                        c.GetInventory().CountItems(name))
-                    : 1;
+                int amount = pullAll ? Mathf.Min(__instance.m_maxOre - __instance.GetQueueSize(), result) : 1;
 
                 if (!added.ContainsKey(name))
                     added[name] = 0;
                 added[name] += amount;
                 AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Pull ALL is {pullAll}");
                 AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug(
-                    $"(SmelterOnAddOrePatch) Container at {c.transform.position} has {newItem.m_stack} {newItem.m_dropPrefab.name}, taking {amount}");
+                    $"(SmelterOnAddOrePatch) Container at {c.GetPosition()} has {result} {prefabName}, taking {amount}");
 
-                c.GetInventory().RemoveItem(name, amount);
+                c.RemoveItem(prefabName, amount);
                 c.Save();
-                //typeof(Inventory).GetMethod("Changed", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(c.GetInventory(), new object[] { });
 
                 for (int i = 0; i < amount; ++i)
-                    ___m_nview.InvokeRPC("AddOre", newItem.m_dropPrefab.name);
+                    ___m_nview.InvokeRPC("AddOre", prefabName);
 
                 user.Message(MessageHud.MessageType.TopLeft, $"$msg_added {amount} {name}");
 
@@ -369,37 +357,28 @@ static class SmelterOnAddFuelPatch
             __result = false;
         }
 
-        List<Container> nearbyContainers = Boxes.GetNearbyContainers(__instance, AzuCraftyBoxesPlugin.mRange.Value);
-
-        foreach (Container c in nearbyContainers)
+        List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(__instance, AzuCraftyBoxesPlugin.mRange.Value);
+        string fuelPrefabName = __instance.m_fuelItem.name;
+        foreach (IContainer c in nearbyContainers)
         {
-            ItemDrop.ItemData newItem = c.GetInventory().GetItem(__instance.m_fuelItem.m_itemData.m_shared.m_name);
-            if (newItem == null) continue;
-            GameObject itemPrefab =
-                ObjectDB.instance.GetItemPrefab(
-                    __instance.m_fuelItem.GetPrefabName(__instance.m_fuelItem.gameObject.name));
-            newItem.m_dropPrefab = itemPrefab;
-            string itemPrefabName = Utils.GetPrefabName(newItem.m_dropPrefab);
-            if (!Boxes.CanItemBePulled(Utils.GetPrefabName(__instance.gameObject),
-                    itemPrefabName))
+            if (!c.ContainsItem(fuelPrefabName, 1, out int result)) continue;
+            if (!Boxes.CanItemBePulled(Utils.GetPrefabName(__instance.gameObject), fuelPrefabName))
             {
                 AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug(
-                    $"(SmelterOnAddFuelPatch) Container at {c.transform.position} has {newItem.m_stack} {newItem.m_dropPrefab.name} but it's forbidden by config");
+                    $"(SmelterOnAddFuelPatch) Container at {c.GetPosition()} has {result} {fuelPrefabName} but it's forbidden by config");
                 continue;
             }
 
             AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Pull ALL is {pullAll}");
             int amount = pullAll
-                ? (int)Mathf.Min(
-                    __instance.m_maxFuel - __instance.GetFuel(), newItem.m_stack)
+                ? (int)Mathf.Min(__instance.m_maxFuel - __instance.GetFuel(), result)
                 : 1;
 
             AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug(
-                $"(SmelterOnAddFuelPatch) Container at {c.transform.position} has {newItem.m_stack} {newItem.m_dropPrefab.name}, taking {amount}");
+                $"(SmelterOnAddFuelPatch) Container at {c.GetPosition()} has {result} {fuelPrefabName}, taking {amount}");
 
-            c.GetInventory().RemoveItem(__instance.m_fuelItem.m_itemData.m_shared.m_name, amount);
+            c.RemoveItem(fuelPrefabName, amount);
             c.Save();
-            //typeof(Inventory).GetMethod("Changed", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(c.GetInventory(), new object[] { });
 
             for (int i = 0; i < amount; ++i)
                 ___m_nview.InvokeRPC("AddFuel");
