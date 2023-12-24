@@ -54,8 +54,9 @@ public class Boxes
     {
         List<IContainer> nearbyContainers = [];
         if (Player.m_localPlayer == null) return nearbyContainers;
+        IEnumerable<IContainer> kgDrawers = APIs.ItemDrawers_API.AllDrawers.Select(kgDrawer.Create);
         if (Vector3.Distance(gameObject.transform.position, AzuCraftyBoxesPlugin.lastPosition) < 0.5f)
-            return AzuCraftyBoxesPlugin.cachedContainerList;
+            return AzuCraftyBoxesPlugin.cachedContainerList.Concat(kgDrawers).ToList();
         
         foreach (Container container in Containers)
         {
@@ -73,12 +74,9 @@ public class Boxes
                 }
             }
         }
-        
-        nearbyContainers.AddRange(APIs.ItemDrawers_API.AllDrawers.Select(kgDrawer.Create));
-        
         AzuCraftyBoxesPlugin.lastPosition = gameObject.transform.position;
         AzuCraftyBoxesPlugin.cachedContainerList = nearbyContainers;
-        return nearbyContainers;
+        return nearbyContainers.Concat(kgDrawers).ToList();
     }
 
     public static void AddContainerIfNotExists(string containerName)
