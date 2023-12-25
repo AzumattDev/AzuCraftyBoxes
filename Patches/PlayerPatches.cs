@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using AzuCraftyBoxes.IContainers;
 using AzuCraftyBoxes.Util;
 using AzuCraftyBoxes.Util.Functions;
 using HarmonyLib;
@@ -62,7 +63,7 @@ static class PlayerHaveRequirementsPatch
             if (AzuCraftyBoxesPlugin.ModEnabled.Value == AzuCraftyBoxesPlugin.Toggle.Off || __result || discover ||
                 !MiscFunctions.AllowByKey())
                 return;
-            List<Container> nearbyContainers = Boxes.GetNearbyContainers(__instance, AzuCraftyBoxesPlugin.mRange.Value);
+            List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(__instance, AzuCraftyBoxesPlugin.mRange.Value);
             if (nearbyContainers.Count == 0)
                 return;
             foreach (Piece.Requirement requirement in piece.m_resources)
@@ -90,14 +91,15 @@ static class PlayerHaveRequirementsPatch
                     continue;
                 }
 
-                string itemPrefabName = Utils.GetPrefabName(requirement.m_resItem.m_itemData.m_dropPrefab);
-                foreach (Container c in nearbyContainers)
+                string itemPrefabName = Utils.GetPrefabName(requirement.m_resItem.name);
+                foreach (IContainer c in nearbyContainers)
                 {
                     if (requirement.m_resItem?.m_itemData?.m_dropPrefab == null)
                         continue;
-                    if (Boxes.CanItemBePulled(Utils.GetPrefabName(c.gameObject), itemPrefabName))
+                    if (Boxes.CanItemBePulled(c.GetPrefabName(), itemPrefabName))
                     {
-                        invAmount += c.GetInventory().CountItems(requirement.m_resItem?.m_itemData?.m_shared?.m_name);
+                        c.ContainsItem(itemPrefabName, 1, out int result);
+                        invAmount += result;
                     }
                 }
 
@@ -147,7 +149,7 @@ static class HaveRequirementsPatch2
                 return;
             }
 
-            List<Container> nearbyContainers = Boxes.GetNearbyContainers(__instance, AzuCraftyBoxesPlugin.mRange.Value);
+            List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(__instance, AzuCraftyBoxesPlugin.mRange.Value);
 
             foreach (Piece.Requirement requirement in piece.m_resources)
             {
@@ -171,17 +173,16 @@ static class HaveRequirementsPatch2
                         case Player.RequirementMode.CanAlmostBuild:
                         {
                             bool hasItem = false;
-                            foreach (Container c in nearbyContainers)
+                            string resPrefabName = requirement.m_resItem.name;
+                            foreach (IContainer c in nearbyContainers)
                             {
-                                string containerPrefabName = Utils.GetPrefabName(c.gameObject);
                                 requirement.m_resItem.m_itemData.m_dropPrefab = requirement.m_resItem.gameObject;
                                 if (requirement.m_resItem.m_itemData.m_dropPrefab == null)
                                     continue;
                                 string itemPrefabName = Utils.GetPrefabName(requirement.m_resItem.m_itemData.m_dropPrefab);
-                                bool canItemBePulled = Boxes.CanItemBePulled(containerPrefabName, itemPrefabName);
+                                bool canItemBePulled = Boxes.CanItemBePulled(c.GetPrefabName(), itemPrefabName);
 
-                                if (canItemBePulled &&
-                                    c.GetInventory().HaveItem(requirement.m_resItem.m_itemData.m_shared.m_name))
+                                if (canItemBePulled && c.ContainsItem(resPrefabName,1,out _))
                                 {
                                     hasItem = true;
                                     break;
@@ -199,21 +200,20 @@ static class HaveRequirementsPatch2
                         {
                             int hasItems = __instance.GetInventory()
                                 .CountItems(requirement.m_resItem.m_itemData.m_shared.m_name);
-                            foreach (Container c in nearbyContainers)
+                            foreach (IContainer c in nearbyContainers)
                             {
-                                string containerPrefabName = Utils.GetPrefabName(c.gameObject);
                                 requirement.m_resItem.m_itemData.m_dropPrefab = requirement.m_resItem.gameObject;
                                 if (requirement.m_resItem.m_itemData.m_dropPrefab == null)
                                     continue;
-                                string itemPrefabName = Utils.GetPrefabName(requirement.m_resItem.m_itemData.m_dropPrefab);
-                                bool canItemBePulled = Boxes.CanItemBePulled(containerPrefabName, itemPrefabName);
+                                string itemPrefabName = requirement.m_resItem.name;
+                                bool canItemBePulled = Boxes.CanItemBePulled(c.GetPrefabName(), itemPrefabName);
 
                                 if (canItemBePulled)
                                 {
                                     try
                                     {
-                                        hasItems += c.GetInventory()
-                                            .CountItems(requirement.m_resItem.m_itemData.m_shared.m_name);
+                                        c.ContainsItem(itemPrefabName, 1, out int result);
+                                        hasItems += result;
                                         if (hasItems >= requirement.m_amount)
                                         {
                                             break;
@@ -250,7 +250,7 @@ static class ConsumeResourcesPatch
                 return true;
 
             Inventory pInventory = __instance.GetInventory();
-            List<Container> nearbyContainers = Boxes.GetNearbyContainers(__instance, AzuCraftyBoxesPlugin.mRange.Value);
+            List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(__instance, AzuCraftyBoxesPlugin.mRange.Value);
             MiscFunctions.ProcessRequirements(requirements, qualityLevel, pInventory, nearbyContainers, itemQuality);
         }
         catch (Exception ex)

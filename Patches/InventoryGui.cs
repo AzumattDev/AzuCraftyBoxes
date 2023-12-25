@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using AzuCraftyBoxes.IContainers;
 using AzuCraftyBoxes.Util;
 using AzuCraftyBoxes.Util.Functions;
 using HarmonyLib;
@@ -79,7 +80,7 @@ static class InventoryGuiSetupRequirementPatch
         if(text == null) return;
         if (invAmount < amount)
         {
-            List<Container> nearbyContainers = Boxes.GetNearbyContainers(Player.m_localPlayer, AzuCraftyBoxesPlugin.mRange.Value);
+            List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(Player.m_localPlayer, AzuCraftyBoxesPlugin.mRange.Value);
             GameObject itemPrefab = ObjectDB.instance.GetItemPrefab(req.m_resItem.GetPrefabName(req.m_resItem.gameObject.name));
             if (itemPrefab == null) {return;}
             req.m_resItem.m_itemData.m_dropPrefab = itemPrefab;
@@ -87,14 +88,15 @@ static class InventoryGuiSetupRequirementPatch
             {
                 try
                 {
-                    string containerPrefabName = Utils.GetPrefabName(container.gameObject);
+                    string containerPrefabName = container.GetPrefabName();
                     if (req.m_resItem.m_itemData.m_dropPrefab == null)
                         continue;
-                    string itemPrefabName = Utils.GetPrefabName(req.m_resItem.m_itemData.m_dropPrefab);
+                    string itemPrefabName = req.m_resItem.name;
 
                     if (Boxes.CanItemBePulled(containerPrefabName, itemPrefabName))
                     {
-                        invAmount += container.GetInventory().CountItems(req.m_resItem.m_itemData.m_shared.m_name);
+                        container.ContainsItem(itemPrefabName, 1, out int result);
+                        invAmount += result;
                     }
                 }
                 catch (System.Exception e)

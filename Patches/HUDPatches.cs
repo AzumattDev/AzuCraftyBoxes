@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using AzuCraftyBoxes.IContainers;
 using AzuCraftyBoxes.Util.Functions;
 using HarmonyLib;
 using TMPro;
@@ -26,15 +27,16 @@ public class HUDPatches
 
         _lastUpdate = currentTime;
 
-        List<Container> containers = Boxes.GetNearbyContainers(Player.m_localPlayer, AzuCraftyBoxesPlugin.mRange.Value);
+        List<IContainer> containers = Boxes.GetNearbyContainers(Player.m_localPlayer, AzuCraftyBoxesPlugin.mRange.Value);
 
         int num = piece.m_resources.Select<Piece.Requirement, int>(
             resource =>
             {
                 string itemName = resource.m_resItem.m_itemData.m_shared.m_name;
-
+                string itemPrefabName = resource.m_resItem.name;
+                
                 int playerItemCount = Player.m_localPlayer.GetInventory().CountItems(itemName);
-                int containerItemCount = containers.Sum(container => container.GetInventory().CountItems(itemName));
+                int containerItemCount = containers.Sum(c => c.ContainsItem(itemPrefabName, 1, out int result) ? result : 0);
 
                 return (playerItemCount + containerItemCount) / resource.m_amount;
             }).Concat(new[] { int.MaxValue }).Min();
