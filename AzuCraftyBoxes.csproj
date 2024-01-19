@@ -160,6 +160,8 @@
         <Content Include="Thunderstore\AzuCraftyBoxes_v1.2.2.zip" />
         <Content Include="Thunderstore\AzuCraftyBoxes_v1.2.3.zip" />
         <Content Include="Thunderstore\AzuCraftyBoxes_v1.2.4.zip" />
+        <Content Include="Thunderstore\AzuCraftyBoxes_v1.2.5.zip" />
+        <Content Include="Thunderstore\AzuCraftyBoxes_v1.2.6.zip" />
         <Content Include="Thunderstore\CHANGELOG.md" />
         <Content Include="Thunderstore\icon.png" />
         <Content Include="Thunderstore\manifest.json" />
