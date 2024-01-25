@@ -26,6 +26,10 @@ public static class ItemDrawers_API
         ((List<ZNetView>)MI_GetAllDrawers.Invoke(null, null)).Select(znv => new Drawer(znv)).ToList() 
         : new();
     
+    public static List<Drawer> AllDrawersInRange(Vector3 pos, float range) => _IsInstalled ? 
+        ((List<ZNetView>)MI_GetAllDrawers.Invoke(null, null)).Where(znv => Vector3.Distance(znv.transform.position, pos) <= range).Select(znv => new Drawer(znv)).ToList() 
+        : new();
+    
     static ItemDrawers_API()
     {
         if (Type.GetType("API.ClientSide, kg_ItemDrawers") is not { } drawersAPI)

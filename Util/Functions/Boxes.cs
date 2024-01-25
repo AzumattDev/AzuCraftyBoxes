@@ -54,10 +54,10 @@ public class Boxes
     {
         List<IContainer> nearbyContainers = [];
         if (Player.m_localPlayer == null) return nearbyContainers;
-        IEnumerable<IContainer> kgDrawers = APIs.ItemDrawers_API.AllDrawers.Select(kgDrawer.Create);
+        IEnumerable<IContainer> kgDrawers = APIs.ItemDrawers_API.AllDrawersInRange(gameObject.transform.position, rangeToUse).Select(kgDrawer.Create);
         if (Vector3.Distance(gameObject.transform.position, AzuCraftyBoxesPlugin.lastPosition) < 0.5f)
             return AzuCraftyBoxesPlugin.cachedContainerList.Concat(kgDrawers).ToList();
-        
+
         foreach (Container container in Containers)
         {
             if (gameObject == null || container == null) continue;
@@ -65,15 +65,16 @@ public class Boxes
             if (distance <= rangeToUse)
             {
                 // log the distance and the range to use
-                #if DEBUG
+#if DEBUG
                 AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Distance to container {container.name} is {distance}m, within the range of {rangeToUse}m set to store items for this chest");
-                #endif
+#endif
                 if (!container.IsInUse())
                 {
                     nearbyContainers.Add(VanillaContainer.Create(container));
                 }
             }
         }
+
         AzuCraftyBoxesPlugin.lastPosition = gameObject.transform.position;
         AzuCraftyBoxesPlugin.cachedContainerList = nearbyContainers;
         return nearbyContainers.Concat(kgDrawers).ToList();
@@ -241,8 +242,4 @@ public class Boxes
 
         return new List<string>();
     }
-    
-    
-    
-    
 }
