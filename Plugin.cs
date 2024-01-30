@@ -24,7 +24,7 @@ namespace AzuCraftyBoxes
     public class AzuCraftyBoxesPlugin : BaseUnityPlugin
     {
         internal const string ModName = "AzuCraftyBoxes";
-        internal const string ModVersion = "1.2.7";
+        internal const string ModVersion = "1.2.8";
         internal const string Author = "Azumatt";
         private const string ModGUID = $"{Author}.{ModName}";
         private static string ConfigFileName = $"{ModGUID}.cfg";
@@ -65,6 +65,8 @@ namespace AzuCraftyBoxes
             resourceString = TextEntryConfig("2 - CraftyBoxes", "ResourceCostString", "{0}/{1}", "String used to show required and available resources. {0} is replaced by how much is available, and {1} is replaced by how much is required. Set to nothing to leave it as default.", false);
             flashColor = config("2 - CraftyBoxes", "FlashColor", Color.yellow, "Resource amounts will flash to this colour when coming from containers", false);
             unFlashColor = config("2 - CraftyBoxes", "UnFlashColor", Color.white, "Resource amounts will flash from this colour when coming from containers (set both colors to the same color for no flashing)", false);
+            canbuildDisplayColor = config("2 - CraftyBoxes", "Can Build Color", Color.green, "Resource amounts will flash to this colour when coming from containers", false);
+            cannotbuildDisplayColor = config("2 - CraftyBoxes", "Cannot Build Color", Color.red, "Resource amounts will flash from this colour when coming from containers (set both colors to the same color for no flashing)", false);
             pulledMessage = TextEntryConfig("2 - CraftyBoxes", "PulledMessage", "Pulled items to inventory", "Message to show after pulling items to player inventory", false);
             //pullItemsKey = config("3 - Keys", "PullItemsKey", new KeyboardShortcut(KeyCode.LeftControl), new ConfigDescription("Holding down this key while crafting or building will pull resources into your inventory instead of building. Use https://docs.unity3d.com/Manual/ConventionalGameInput.html", new AcceptableShortcuts()), false);
             fillAllModKey = config("3 - Keys", "FillAllModKey", new KeyboardShortcut(KeyCode.LeftShift), new ConfigDescription("Modifier key to pull all available fuel or ore when down. Use https://docs.unity3d.com/Manual/ConventionalGameInput.html", new AcceptableShortcuts()), false);
@@ -214,6 +216,8 @@ namespace AzuCraftyBoxes
         internal static ConfigEntry<Toggle> ModEnabled = null!;
         public static ConfigEntry<Color> flashColor = null!;
         public static ConfigEntry<Color> unFlashColor = null!;
+        public static ConfigEntry<Color> canbuildDisplayColor = null!;
+        public static ConfigEntry<Color> cannotbuildDisplayColor = null!;
         public static ConfigEntry<string> resourceString = null!;
         public static ConfigEntry<string> pulledMessage = null!;
         public static ConfigEntry<KeyboardShortcut> pullItemsKey = null!;
