@@ -1,0 +1,45 @@
+﻿{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AzuCraftyBoxes Configuration",
+  "description": "Schema for configuring groups and container behaviors in AzuCraftyBoxes.",
+  "type": "object",
+  "properties": {
+    "groups": {
+      "type": "object",
+      "description": "Defines groups of items for easy management and reference.",
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "description": "The name of the item prefab."
+        }
+      }
+    },
+    "containers": {
+      "type": "object",
+      "description": "Defines behavior for specific containers.",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "exclude": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Items or groups to be excluded from the container."
+          },
+          "includeOverride": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Specific items to include, overriding the exclude list."
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["groups", "containers"],
+  "additionalProperties": false
+}

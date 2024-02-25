@@ -134,6 +134,7 @@
     </ItemGroup>
     <ItemGroup>
         <Content Include=".gitignore"/>
+        <Content Include="Documentation\schema.json" />
         <Content Include="environment.props"/>
         <EmbeddedResource Include="Example.yml" />
         <Content Include="ILRepack.targets"/>
