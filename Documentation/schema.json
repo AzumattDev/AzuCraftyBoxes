@@ -6,40 +6,38 @@
   "properties": {
     "groups": {
       "type": "object",
-      "description": "Defines groups of items for easy management and reference.",
-      "additionalProperties": {
-        "type": "array",
-        "items": {
-          "type": "string",
-          "description": "The name of the item prefab."
+      "patternProperties": {
+        "^[a-zA-Z0-9_]+$": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     },
     "containers": {
       "type": "object",
-      "description": "Defines behavior for specific containers.",
-      "additionalProperties": {
-        "type": "object",
-        "properties": {
-          "exclude": {
-            "type": "array",
-            "items": {
-              "type": "string"
+      "patternProperties": {
+        "^[a-zA-Z0-9_]+$": {
+          "type": "object",
+          "properties": {
+            "exclude": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
             },
-            "description": "Items or groups to be excluded from the container."
+            "includeOverride": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
           },
-          "includeOverride": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "description": "Specific items to include, overriding the exclude list."
-          }
-        },
-        "additionalProperties": false
+          "additionalProperties": false
+        }
       }
     }
   },
-  "required": ["groups", "containers"],
   "additionalProperties": false
 }
