@@ -108,7 +108,9 @@
         </Reference>
     </ItemGroup>
     <ItemGroup>
+        <Compile Include="APIs\API.cs" />
         <Compile Include="APIs\kg_ItemDrawersAPI.cs" />
+        <Compile Include="Compatibility\EpicLoot\EpicLootReflectionHelper.cs" />
         <Compile Include="Compatibility\ModCompat.cs" />
         <Compile Include="Compatibility\WardIsLove\WardIsLovePlugin.cs" />
         <Compile Include="Compatibility\WardIsLove\WardMonoscript.cs" />
@@ -123,25 +125,25 @@
         <Compile Include="Patches\PlayerPatches.cs" />
         <Compile Include="Patches\PredefinedGroups.cs" />
         <Compile Include="Patches\SmelterPatches.cs" />
-        <Compile Include="Plugin.cs"/>
-        <Compile Include="Properties\AssemblyInfo.cs"/>
+        <Compile Include="Plugin.cs" />
+        <Compile Include="Properties\AssemblyInfo.cs" />
         <Compile Include="Util\DataClasses.cs" />
         <Compile Include="Util\Functions\Boxes.cs" />
         <Compile Include="Util\Functions\ForTheYams.cs" />
         <Compile Include="Util\Functions\GroupUtils.cs" />
         <Compile Include="Util\Functions\MiscFunctions.cs" />
-        <Compile Include="VersionHandshake.cs"/>
+        <Compile Include="VersionHandshake.cs" />
     </ItemGroup>
     <ItemGroup>
-        <Content Include=".gitignore"/>
-        <Content Include="environment.props"/>
+        <Content Include=".gitignore" />
+        <Content Include="environment.props" />
         <EmbeddedResource Include="Example.yml" />
-        <Content Include="ILRepack.targets"/>
+        <Content Include="ILRepack.targets" />
         <Content Include="Libs\ServerSync.dll">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </Content>
-        <Content Include="LICENSE.txt"/>
-        <EmbeddedResource Include="translations\English.yml"/>
+        <Content Include="LICENSE.txt" />
+        <EmbeddedResource Include="translations\English.yml" />
         <Content Include="README.md" />
         <Content Include="Thunderstore\AzuCraftyBoxes_v1.0.0.zip" />
         <Content Include="Thunderstore\AzuCraftyBoxes_v1.0.1.zip" />
@@ -166,14 +168,14 @@
         <Content Include="Thunderstore\icon.png" />
         <Content Include="Thunderstore\manifest.json" />
         <Content Include="Thunderstore\README.md" />
-        <Content Include="UpdateManifest.ps1"/>
+        <Content Include="UpdateManifest.ps1" />
     </ItemGroup>
     <ItemGroup>
-        <None Include="App.config"/>
+        <None Include="App.config" />
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="ILRepack.Lib.MSBuild.Task" Version="2.0.18.2"/>
-        <PackageReference Include="YamlDotNet" Version="13.1.0"/>
+        <PackageReference Include="ILRepack.Lib.MSBuild.Task" Version="2.0.18.2" />
+        <PackageReference Include="YamlDotNet" Version="13.1.0" />
     </ItemGroup>
     <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets"/>
     <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

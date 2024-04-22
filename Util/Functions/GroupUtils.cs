@@ -10,10 +10,10 @@ public class GroupUtils
     {
         if (AzuCraftyBoxesPlugin.yamlData.TryGetValue(container, out object containerData))
         {
-            var containerInfo = containerData as Dictionary<object, object>;
+            Dictionary<object, object>? containerInfo = containerData as Dictionary<object, object>;
             if (containerInfo != null && containerInfo.TryGetValue("exclude", out object excludeData))
             {
-                var excludeList = excludeData as List<object>;
+                List<object>? excludeList = excludeData as List<object>;
                 if (excludeList != null)
                 {
                     return excludeList.Where(excludeItem =>
@@ -38,7 +38,7 @@ public class GroupUtils
 
         if (AzuCraftyBoxesPlugin.yamlData.ContainsKey("groups"))
         {
-            var groupsData = AzuCraftyBoxesPlugin.yamlData["groups"] as Dictionary<object, object>;
+            Dictionary<object, object>? groupsData = AzuCraftyBoxesPlugin.yamlData["groups"] as Dictionary<object, object>;
             if (groupsData != null)
             {
                 groupInYaml = groupsData.ContainsKey(groupName);

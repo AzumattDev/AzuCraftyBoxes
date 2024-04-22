@@ -37,7 +37,7 @@ static class FireplaceInteractPatch
             inventory.RemoveItem(__instance.m_fuelItem.m_itemData.m_shared.m_name, amount);
             inventory.Changed();
             for (int i = 0; i < amount; ++i)
-                ___m_nview.InvokeRPC("AddFuel");
+                ___m_nview.InvokeRPC("RPC_AddFuel");
 
             user.Message(MessageHud.MessageType.Center,
                 Localization.instance.Localize("$msg_fireadding", __instance.m_fuelItem.m_itemData.m_shared.m_name));
@@ -71,7 +71,7 @@ static class FireplaceInteractPatch
                     user.Message(MessageHud.MessageType.Center, Localization.instance.Localize("$msg_fireadding", __instance.m_fuelItem.m_itemData.m_shared.m_name));
 
                 for (int i = 0; i < amount; ++i)
-                    ___m_nview.InvokeRPC("AddFuel");
+                    ___m_nview.InvokeRPC("RPC_AddFuel");
 
                 __result = false;
 

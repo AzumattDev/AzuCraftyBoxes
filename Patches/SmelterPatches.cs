@@ -22,7 +22,7 @@ static class SmelterUpdateHoverTextsPatch
         {
             OverrideHoverText.UpdateAddOreSwitchHoverText(__instance, ref __instance.m_addOreSwitch.m_hoverText);
         }
-        
+
         if(__instance.m_addWoodSwitch)
         {
             OverrideHoverText.UpdateAddWoodSwitchHoverText(__instance, ref __instance.m_addWoodSwitch.m_hoverText);
@@ -30,44 +30,46 @@ static class SmelterUpdateHoverTextsPatch
     }
 }*/
 
-
-[HarmonyPatch(typeof(Smelter),nameof(Smelter.OnHoverAddOre))]
+[HarmonyPatch(typeof(Smelter), nameof(Smelter.OnHoverAddOre))]
 [HarmonyBefore("org.bepinex.plugins.conversionsizespeed")]
 static class SmelterOnHoverAddOrePatch
 {
     static void Postfix(Smelter __instance, ref string __result)
     {
-        if(OverrideHoverText.ShouldReturn(__instance))
+        if (OverrideHoverText.ShouldReturn(__instance))
         {
             return;
         }
+
         OverrideHoverText.UpdateAddOreSwitchHoverText(__instance, ref __result);
     }
 }
 
-[HarmonyPatch(typeof(Smelter),nameof(Smelter.OnHoverAddFuel))]
+[HarmonyPatch(typeof(Smelter), nameof(Smelter.OnHoverAddFuel))]
 [HarmonyBefore("org.bepinex.plugins.conversionsizespeed")]
 static class SmelterOnHoverAddFuelPatch
 {
     static void Postfix(Smelter __instance, ref string __result)
     {
-        if(OverrideHoverText.ShouldReturn(__instance))
+        if (OverrideHoverText.ShouldReturn(__instance))
         {
             return;
         }
+
         OverrideHoverText.UpdateAddWoodSwitchHoverText(__instance, ref __result);
     }
 }
+
 public static class OverrideHoverText
 {
-
     public static bool ShouldReturn(Smelter __instance)
     {
         if (AzuCraftyBoxesPlugin.fillAllModKey.Value.MainKey is KeyCode.None)
         {
             return true;
         }
-        if(Player.m_localPlayer is null)
+
+        if (Player.m_localPlayer is null)
         {
             return true;
         }
@@ -227,7 +229,7 @@ static class SmelterOnAddOrePatch
                 //typeof(Inventory).GetMethod("Changed", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(inventory, new object[] { });
 
                 for (int i = 0; i < amount; ++i)
-                    ___m_nview.InvokeRPC("AddOre", newItem.m_dropPrefab.name);
+                    ___m_nview.InvokeRPC("RPC_AddOre", newItem.m_dropPrefab.name);
 
                 user.Message(MessageHud.MessageType.TopLeft, $"$msg_added {amount} {name}");
                 if (__instance.GetQueueSize() >= __instance.m_maxOre)
@@ -256,7 +258,7 @@ static class SmelterOnAddOrePatch
                 c.Save();
 
                 for (int i = 0; i < amount; ++i)
-                    ___m_nview.InvokeRPC("AddOre", prefabName);
+                    ___m_nview.InvokeRPC("RPC_AddOre", prefabName);
 
                 user.Message(MessageHud.MessageType.TopLeft, $"$msg_added {amount} {name}");
 
@@ -347,7 +349,7 @@ static class SmelterOnAddFuelPatch
             inventory.RemoveItem(__instance.m_fuelItem.m_itemData.m_shared.m_name, amount);
             //typeof(Inventory).GetMethod("Changed", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(inventory, new object[] { });
             for (int i = 0; i < amount; ++i)
-                ___m_nview.InvokeRPC("AddFuel");
+                ___m_nview.InvokeRPC("RPC_AddFuel");
 
             added += amount;
 
@@ -381,7 +383,7 @@ static class SmelterOnAddFuelPatch
             c.Save();
 
             for (int i = 0; i < amount; ++i)
-                ___m_nview.InvokeRPC("AddFuel");
+                ___m_nview.InvokeRPC("RPC_AddFuel");
 
             added += amount;
 

@@ -5,9 +5,11 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
+//using AzuCraftyBoxes.Compatibility.EpicLoot;
 using AzuCraftyBoxes.IContainers;
 using AzuCraftyBoxes.Util.Functions;
 using BepInEx;
+using BepInEx.Bootstrap;
 using BepInEx.Configuration;
 using BepInEx.Logging;
 using HarmonyLib;
@@ -19,12 +21,13 @@ namespace AzuCraftyBoxes
 {
     [BepInPlugin(ModGUID, ModName, ModVersion)]
     [BepInDependency("kg.ItemDrawers", BepInDependency.DependencyFlags.SoftDependency)]
+    //[BepInDependency(EpicLootReflectionHelper.elGuid, BepInDependency.DependencyFlags.SoftDependency)]
     [BepInIncompatibility("aedenthorn.CraftFromContainers")]
     [BepInIncompatibility("CFCMod")]
     public class AzuCraftyBoxesPlugin : BaseUnityPlugin
     {
         internal const string ModName = "AzuCraftyBoxes";
-        internal const string ModVersion = "1.2.9";
+        internal const string ModVersion = "1.3.0";
         internal const string Author = "Azumatt";
         private const string ModGUID = $"{Author}.{ModName}";
         private static string ConfigFileName = $"{ModGUID}.cfg";
@@ -48,6 +51,7 @@ namespace AzuCraftyBoxes
         internal static Dictionary<string, HashSet<string>> groups;
         internal static Dictionary<string, bool> CanItemBePulledCache = null!;
 
+        internal static Assembly? epicLootAssembly;
 
         public enum Toggle
         {
@@ -105,6 +109,8 @@ namespace AzuCraftyBoxes
         private void Start()
         {
             AutoDoc();
+           // if (!Chainloader.PluginInfos.ContainsKey(EpicLootReflectionHelper.elGuid)) return;
+           // epicLootAssembly = Chainloader.PluginInfos[EpicLootReflectionHelper.elGuid].Instance.GetType().Assembly;
         }
 
         private void LateUpdate()

@@ -98,9 +98,9 @@ public class MiscFunctions
     {
         foreach (GameObject gameObject in __instance.m_items.Where(x => x.GetComponentInChildren<ItemDrop>() != null))
         {
-            var itemDrop = gameObject.GetComponentInChildren<ItemDrop>();
+            ItemDrop? itemDrop = gameObject.GetComponentInChildren<ItemDrop>();
             if (!CheckItemDropIntegrity(itemDrop)) continue;
-            var drop = GetItemPrefabFromGameObject(itemDrop, gameObject);
+            GameObject? drop = GetItemPrefabFromGameObject(itemDrop, gameObject);
             itemDrop.m_itemData.m_dropPrefab = itemDrop.gameObject; // Fix all drop prefabs to be the actual item
             if (drop != null)
             {

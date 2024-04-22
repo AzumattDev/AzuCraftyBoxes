@@ -61,7 +61,7 @@ public class Boxes
         foreach (Container container in Containers)
         {
             if (gameObject == null || container == null) continue;
-            var distance = Vector3.Distance(container.transform.position, gameObject.transform.position);
+            float distance = Vector3.Distance(container.transform.position, gameObject.transform.position);
             if (distance <= rangeToUse)
             {
                 // log the distance and the range to use
@@ -100,7 +100,7 @@ public class Boxes
     {
         Dictionary<string, List<string>> excludedPrefabsForAllContainers = new Dictionary<string, List<string>>();
 
-        foreach (var container in GetAllContainers())
+        foreach (string? container in GetAllContainers())
         {
             excludedPrefabsForAllContainers[container] = GetExcludedPrefabs(container);
         }
@@ -131,7 +131,7 @@ public class Boxes
             return true; // Allow pulling by default if the container is not defined in yamlData
         }
 
-        var containerData = AzuCraftyBoxesPlugin.yamlData[container] as Dictionary<object, object>;
+        Dictionary<object, object>? containerData = AzuCraftyBoxesPlugin.yamlData[container] as Dictionary<object, object>;
         if (containerData == null)
         {
             AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogError(
@@ -139,10 +139,10 @@ public class Boxes
             return false;
         }
 
-        var excludeList = containerData.TryGetValue("exclude", out object? value1)
+        List<object>? excludeList = containerData.TryGetValue("exclude", out object? value1)
             ? value1 as List<object>
             : new List<object>();
-        var includeOverrideList = containerData.TryGetValue("includeOverride", out object? value)
+        List<object>? includeOverrideList = containerData.TryGetValue("includeOverride", out object? value)
             ? value as List<object>
             : new List<object>();
 
@@ -165,7 +165,7 @@ public class Boxes
             return true;
         }
 
-        foreach (var excludedItem in excludeList)
+        foreach (object? excludedItem in excludeList)
         {
             if (prefab.Equals(excludedItem))
             {
@@ -174,7 +174,7 @@ public class Boxes
 
             if (GroupUtils.IsGroupDefined((string)excludedItem))
             {
-                var groupItems = GroupUtils.GetItemsInGroup((string)excludedItem);
+                List<string> groupItems = GroupUtils.GetItemsInGroup((string)excludedItem);
                 if (groupItems.Contains(prefab))
                 {
                     return false;
@@ -190,7 +190,7 @@ public class Boxes
     {
         if (exclusionList != null)
         {
-            foreach (var excludeItem in exclusionList)
+            foreach (object? excludeItem in exclusionList)
             {
                 string excludeItemName = excludeItem.ToString();
 
@@ -215,14 +215,14 @@ public class Boxes
     {
         if (AzuCraftyBoxesPlugin.yamlData.TryGetValue(container, out object containerData))
         {
-            var containerInfo = containerData as Dictionary<object, object>;
+            Dictionary<object, object>? containerInfo = containerData as Dictionary<object, object>;
             if (containerInfo != null && containerInfo.TryGetValue("exclude", out object excludeData))
             {
-                var excludeList = excludeData as List<object>;
+                List<object>? excludeList = excludeData as List<object>;
                 if (excludeList != null)
                 {
                     List<string> excludedPrefabs = new List<string>();
-                    foreach (var excludeItem in excludeList)
+                    foreach (object? excludeItem in excludeList)
                     {
                         string excludeItemName = excludeItem.ToString();
                         if (AzuCraftyBoxesPlugin.groups.TryGetValue(excludeItemName, out HashSet<string> groupPrefabs))

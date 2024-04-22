@@ -23,53 +23,23 @@ static class UpdateKnownRecipesListPatch
     }
 }
 
-/*[HarmonyPatch(typeof(Player), nameof(Player.UpdatePlacement))]
-static class UpdatePlacementPatch
-{
-    static bool Prefix(Player __instance, bool takeInput, float dt, PieceTable ___m_buildPieces,
-        GameObject ___m_placementGhost)
-    {
-        if (AzuCraftyBoxesPlugin.ModEnabled.Value == AzuCraftyBoxesPlugin.Toggle.Off || !MiscFunctions.AllowByKey() ||
-            !AzuCraftyBoxesPlugin.pullItemsKey.Value.IsPressed() || !__instance.InPlaceMode() ||
-            !takeInput || Hud.IsPieceSelectionVisible())
-        {
-            return true;
-        }
-
-        if (!ZInput.GetButtonDown("Attack") && !ZInput.GetButtonDown("JoyPlace")) return true;
-        Piece selectedPiece = ___m_buildPieces.GetSelectedPiece();
-        if (selectedPiece == null) return false;
-        if (selectedPiece.m_repairPiece)
-            return true;
-        if (___m_placementGhost == null) return false;
-        Player.PlacementStatus placementStatus = __instance.m_placementStatus;
-        if (placementStatus != 0) return false;
-        AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug(
-            $"(UpdatePlacementPatch) Pulling resources to player inventory for piece {selectedPiece.name}");
-        Boxes.PullResources(__instance, selectedPiece.m_resources, 0);
-
-        return false;
-    }
-}*/
-
 [HarmonyPatch(typeof(Player), nameof(Player.HaveRequirementItems), new[] { typeof(Recipe), typeof(bool), typeof(int) })]
 static class PlayerHaveRequirementsPatch
 {
-    static void Postfix(Player __instance, ref bool __result, Recipe piece, bool discover,
-        int qualityLevel, HashSet<string> ___m_knownMaterial)
+    static void Postfix(Player __instance, ref bool __result, Recipe piece, bool discover, int qualityLevel, HashSet<string> ___m_knownMaterial)
     {
         try
         {
-            if (AzuCraftyBoxesPlugin.ModEnabled.Value == AzuCraftyBoxesPlugin.Toggle.Off || __result || discover ||
-                !MiscFunctions.AllowByKey())
+            if (AzuCraftyBoxesPlugin.ModEnabled.Value == AzuCraftyBoxesPlugin.Toggle.Off || __result || discover || !MiscFunctions.AllowByKey())
                 return;
             List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(__instance, AzuCraftyBoxesPlugin.mRange.Value);
             if (nearbyContainers.Count == 0)
                 return;
+            bool cando = false;
             foreach (Piece.Requirement requirement in piece.m_resources)
             {
                 if (!requirement.m_resItem) continue;
-                var proceed = MiscFunctions.CheckItemDropIntegrity(requirement.m_resItem);
+                bool proceed = MiscFunctions.CheckItemDropIntegrity(requirement.m_resItem);
                 if (!proceed)
                     continue;
                 int amount = requirement.GetAmount(qualityLevel);
@@ -103,12 +73,24 @@ static class PlayerHaveRequirementsPatch
                     }
                 }
 
-                if (invAmount < amount)
+                if (piece.m_requireOnlyOneIngredient)
+                {
+                    if (invAmount < amount) continue;
+                    cando = true;
+                }
+                else if (invAmount < amount)
                     return;
+                else
+                {
+                    cando = true;
+                }
             }
-
-            __result = true;
-        } catch {}
+            if(cando)
+                __result = true;
+        }
+        catch
+        {
+        }
     }
 }
 
@@ -121,9 +103,7 @@ static class HaveRequirementsPatch2
     {
         try
         {
-            if (AzuCraftyBoxesPlugin.ModEnabled.Value == AzuCraftyBoxesPlugin.Toggle.Off || __result ||
-                AzuCraftyBoxesPlugin.skip || __instance?.transform?.position == null ||
-                !MiscFunctions.AllowByKey())
+            if (AzuCraftyBoxesPlugin.ModEnabled.Value == AzuCraftyBoxesPlugin.Toggle.Off || __result || AzuCraftyBoxesPlugin.skip || __instance?.transform?.position == null || !MiscFunctions.AllowByKey())
                 return;
             if (piece == null)
                 return;
@@ -182,7 +162,7 @@ static class HaveRequirementsPatch2
                                 string itemPrefabName = Utils.GetPrefabName(requirement.m_resItem.m_itemData.m_dropPrefab);
                                 bool canItemBePulled = Boxes.CanItemBePulled(c.GetPrefabName(), itemPrefabName);
 
-                                if (canItemBePulled && c.ContainsItem(resPrefabName,1,out _))
+                                if (canItemBePulled && c.ContainsItem(resPrefabName, 1, out _))
                                 {
                                     hasItem = true;
                                     break;
@@ -235,7 +215,10 @@ static class HaveRequirementsPatch2
             }
 
             __result = true;
-        } catch {}
+        }
+        catch
+        {
+        }
     }
 }
 
@@ -262,7 +245,7 @@ static class ConsumeResourcesPatch
     }
 }
 
-[HarmonyPatch(typeof(Game),nameof(Game.Logout))]
+[HarmonyPatch(typeof(Game), nameof(Game.Logout))]
 static class GameLogoutPatch
 {
     static void Prefix(Game __instance)

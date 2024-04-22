@@ -8,7 +8,7 @@ public static class YamlUtils
 {
     internal static void ReadYaml(string yamlInput)
     {
-        var deserializer = new DeserializerBuilder().Build();
+        IDeserializer? deserializer = new DeserializerBuilder().Build();
         AzuCraftyBoxesPlugin.yamlData = deserializer.Deserialize<Dictionary<string, object>>(yamlInput);
         AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"yamlData:\n{yamlInput}");
     }
@@ -21,16 +21,16 @@ public static class YamlUtils
 
         if (AzuCraftyBoxesPlugin.yamlData.TryGetValue("groups", out object groupData))
         {
-            var groupDict = groupData as Dictionary<object, object>;
+            Dictionary<object, object>? groupDict = groupData as Dictionary<object, object>;
             if (groupDict != null)
             {
-                foreach (var group in groupDict)
+                foreach (KeyValuePair<object, object> group in groupDict)
                 {
                     string groupName = group.Key.ToString();
                     if (group.Value is List<object> prefabs)
                     {
                         HashSet<string> prefabNames = new HashSet<string>();
-                        foreach (var prefab in prefabs)
+                        foreach (object? prefab in prefabs)
                         {
                             prefabNames.Add(prefab.ToString());
                         }
@@ -43,8 +43,8 @@ public static class YamlUtils
     }
     public static void WriteYaml(string filePath)
     {
-        var serializer = new SerializerBuilder().Build();
-        using var output = new StreamWriter(filePath);
+        ISerializer? serializer = new SerializerBuilder().Build();
+        using StreamWriter? output = new StreamWriter(filePath);
         serializer.Serialize(output, AzuCraftyBoxesPlugin.yamlData);
 
         // Serialize the data again to YAML format
