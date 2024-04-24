@@ -14,9 +14,7 @@ static class FireplaceInteractPatch
     static bool Prefix(Fireplace __instance, Humanoid user, bool hold, ref bool __result, ZNetView ___m_nview)
     {
         __result = true;
-        bool pullAll =
-            Input.GetKey(AzuCraftyBoxesPlugin.fillAllModKey.Value
-                .MainKey); // Used to be fillAllModKey.Value.IsPressed(); something is wrong with KeyboardShortcuts always returning false
+        bool pullAll = Input.GetKey(AzuCraftyBoxesPlugin.fillAllModKey.Value.MainKey); // Used to be fillAllModKey.Value.IsPressed(); something is wrong with KeyboardShortcuts always returning false
         Inventory inventory = user.GetInventory();
 
         if (!MiscFunctions.AllowByKey() || hold || inventory == null ||
@@ -31,22 +29,24 @@ static class FireplaceInteractPatch
 
         if (pullAll && inventory.HaveItem(__instance.m_fuelItem.m_itemData.m_shared.m_name))
         {
-            int amount =
-                (int)Mathf.Min(__instance.m_maxFuel - Mathf.CeilToInt(___m_nview.GetZDO().GetFloat("fuel")),
-                    inventory.CountItems(__instance.m_fuelItem.m_itemData.m_shared.m_name));
-            inventory.RemoveItem(__instance.m_fuelItem.m_itemData.m_shared.m_name, amount);
-            inventory.Changed();
-            for (int i = 0; i < amount; ++i)
-                ___m_nview.InvokeRPC("RPC_AddFuel");
+            if (Boxes.CanItemBePulled(Utils.GetPrefabName(__instance.gameObject), __instance.m_fuelItem.name))
+            {
+                int amount =
+                    (int)Mathf.Min(__instance.m_maxFuel - Mathf.CeilToInt(___m_nview.GetZDO().GetFloat("fuel")),
+                        inventory.CountItems(__instance.m_fuelItem.m_itemData.m_shared.m_name));
+                inventory.RemoveItem(__instance.m_fuelItem.m_itemData.m_shared.m_name, amount);
+                inventory.Changed();
+                for (int i = 0; i < amount; ++i)
+                    ___m_nview.InvokeRPC("RPC_AddFuel");
 
-            user.Message(MessageHud.MessageType.Center,
-                Localization.instance.Localize("$msg_fireadding", __instance.m_fuelItem.m_itemData.m_shared.m_name));
+                user.Message(MessageHud.MessageType.Center,
+                    Localization.instance.Localize("$msg_fireadding", __instance.m_fuelItem.m_itemData.m_shared.m_name));
 
-            __result = false;
+                __result = false;
+            }
         }
 
-        if (inventory.HaveItem(__instance.m_fuelItem.m_itemData.m_shared.m_name) ||
-            !(Mathf.CeilToInt(___m_nview.GetZDO().GetFloat("fuel")) < __instance.m_maxFuel)) return __result;
+        if (inventory.HaveItem(__instance.m_fuelItem.m_itemData.m_shared.m_name) || !(Mathf.CeilToInt(___m_nview.GetZDO().GetFloat("fuel")) < __instance.m_maxFuel)) return __result;
         {
             List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(__instance, AzuCraftyBoxesPlugin.mRange.Value);
 
@@ -113,7 +113,7 @@ static class FireplaceGetHoverTextPatch
             /*AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug("Found " + newItem + " of " +
                                                                __instance.m_fuelItem.m_itemData.m_shared.m_name +
                                                                " in " + c.name + "");*/
-            if (Boxes.CanItemBePulled(Utils.GetPrefabName(__instance.gameObject), fuelPrefabName));
+            if (Boxes.CanItemBePulled(Utils.GetPrefabName(__instance.gameObject), fuelPrefabName)) ;
             {
                 inContainers += result;
             }
@@ -137,7 +137,7 @@ static class FireplaceGetHoverTextPatch
         if (items.Count > 0)
         {
             __result += Localization.instance.Localize(
-                    $"\n[<b><color=yellow>{AzuCraftyBoxesPlugin.fillAllModKey.Value}</color> + <color=yellow>$KEY_Use</color></b>] {string.Join(" and ", items)}");
+                $"\n[<b><color=yellow>{AzuCraftyBoxesPlugin.fillAllModKey.Value}</color> + <color=yellow>$KEY_Use</color></b>] {string.Join(" and ", items)}");
         }
     }
 }

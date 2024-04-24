@@ -8,7 +8,6 @@ using UnityEngine;
 
 namespace AzuCraftyBoxes.Patches;
 
-
 [HarmonyPatch(typeof(CookingStation), nameof(CookingStation.OnAddFuelSwitch))]
 static class CookingStationOnAddFuelSwitchPatch
 {
@@ -18,7 +17,7 @@ static class CookingStationOnAddFuelSwitchPatch
 
         if (AzuCraftyBoxesPlugin.ModEnabled.Value == AzuCraftyBoxesPlugin.Toggle.Off || !MiscFunctions.AllowByKey() || item != null ||
             __instance.GetFuel() > __instance.m_maxFuel - 1 ||
-            user.GetInventory().HaveItem(__instance.m_fuelItem.m_itemData.m_shared.m_name))
+            (user.GetInventory().HaveItem(__instance.m_fuelItem.m_itemData.m_shared.m_name) && Boxes.CanItemBePulled(Utils.GetPrefabName(__instance.gameObject), __instance.m_fuelItem.name)))
             return true;
 
         AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"(CookingStationOnAddFuelSwitchPatch) Missing fuel in player inventory");
@@ -76,6 +75,7 @@ static class CookingStationFindCookableItemPatch
                     AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"(CookingStationFindCookableItemPatch) Container at {c.GetPosition()} has {result} {fromPrefabName} but it's forbidden by config");
                     continue;
                 }
+
                 AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"(CookingStationFindCookableItemPatch) Container at {c.GetPosition()} has {result} {fromPrefabName}, taking one");
                 GameObject drop = ObjectDB.instance.m_itemByHash[fromPrefabName.GetStableHashCode()];
                 ItemDrop.ItemData itemData = drop.GetComponent<ItemDrop>().m_itemData.Clone();

@@ -134,8 +134,7 @@ public class Boxes
         Dictionary<object, object>? containerData = AzuCraftyBoxesPlugin.yamlData[container] as Dictionary<object, object>;
         if (containerData == null)
         {
-            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogError(
-                $"Unable to cast containerData for container '{container}' to Dictionary<object, object>.");
+            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogError($"Unable to cast containerData for container '{container}' to Dictionary<object, object>.");
             return false;
         }
 
@@ -148,15 +147,13 @@ public class Boxes
 
         if (excludeList == null)
         {
-            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogError(
-                $"Unable to cast excludeList for container '{container}' to List<object>.");
+            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogError($"Unable to cast excludeList for container '{container}' to List<object>.");
             return false;
         }
 
         if (includeOverrideList == null)
         {
-            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogError(
-                $"Unable to cast includeOverrideList for container '{container}' to List<object>.");
+            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogError($"Unable to cast includeOverrideList for container '{container}' to List<object>.");
             return false;
         }
 
