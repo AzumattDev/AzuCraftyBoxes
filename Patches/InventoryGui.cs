@@ -48,21 +48,22 @@ static class InventoryGuiSetupRequirementPatch
         }
 
         int invAmount = player.GetInventory().CountItems(req.m_resItem.m_itemData.m_shared.m_name);
-        int amount = req.GetAmount(quality);
-        if (MiscFunctions.GetCurrentCraftAmountMethod != null)
+        TextMeshProUGUI text = elementRoot.transform.Find("res_amount").GetComponent<TextMeshProUGUI>();
+        if (text == null) return;
+        int amount = int.Parse(text.text);
+        /*if (MiscFunctions.GetCurrentCraftAmountMethod != null)
         {
             if (craft)
             {
                 amount *= (int)MiscFunctions.GetCurrentCraftAmountMethod.Invoke(null, null);
             }
-        }
+        }*/
         if (amount <= 0)
         {
             return;
         }
 
-        TextMeshProUGUI text = elementRoot.transform.Find("res_amount").GetComponent<TextMeshProUGUI>();
-        if (text == null) return;
+
         if (invAmount < amount)
         {
             List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(Player.m_localPlayer, AzuCraftyBoxesPlugin.mRange.Value);
