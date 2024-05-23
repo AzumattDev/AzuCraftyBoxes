@@ -87,7 +87,7 @@ public class Boxes
             AzuCraftyBoxesPlugin.yamlData[containerName] = new Dictionary<string, object>
             {
                 { "exclude", new List<string>() },
-                { "includeOverride", new List<string>() }
+                { "includeOverride", new List<string>() },
             };
 
             YamlUtils.WriteYaml(AzuCraftyBoxesPlugin.yamlPath);

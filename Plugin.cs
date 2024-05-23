@@ -56,7 +56,7 @@ namespace AzuCraftyBoxes
         public enum Toggle
         {
             On = 1,
-            Off = 0
+            Off = 0,
         }
 
         public void Awake()
@@ -258,7 +258,7 @@ namespace AzuCraftyBoxes
         {
             ConfigurationManagerAttributes attributes = new()
             {
-                CustomDrawer = TextAreaDrawer
+                CustomDrawer = TextAreaDrawer,
             };
             return config(group, name, value, new ConfigDescription(desc, null, attributes), synchronizedSetting);
         }

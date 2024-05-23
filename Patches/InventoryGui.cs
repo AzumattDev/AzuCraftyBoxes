@@ -51,6 +51,17 @@ static class InventoryGuiSetupRequirementPatch
     }
 }*/
 
+[HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.SetupRequirementList))]
+static class InventoryGuiCollectRequirements
+{
+    public static Dictionary<Piece.Requirement, int> actualAmounts = new();
+    
+    private static void Prefix()
+    {
+        actualAmounts.Clear();
+    }
+}
+
 [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.SetupRequirement))]
 static class InventoryGuiSetupRequirementPatch
 {
@@ -92,14 +103,18 @@ static class InventoryGuiSetupRequirementPatch
         }
 
         int invAmount = player.GetInventory().CountItems(req.m_resItem.m_itemData.m_shared.m_name);
-        int amount = req.GetAmount(quality);
+        TextMeshProUGUI text = elementRoot.transform.Find("res_amount").GetComponent<TextMeshProUGUI>();
+        if (text == null) return;
+        if (!int.TryParse(text.text, out int amount))
+        {
+            amount = req.GetAmount(quality);
+        }
+        
         if (amount <= 0)
         {
             return;
         }
 
-        TextMeshProUGUI text = elementRoot.transform.Find("res_amount").GetComponent<TextMeshProUGUI>();
-        if (text == null) return;
         if (invAmount < amount)
         {
             List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(Player.m_localPlayer, AzuCraftyBoxesPlugin.mRange.Value);
@@ -136,6 +151,7 @@ static class InventoryGuiSetupRequirementPatch
                 text.color = ((Mathf.Sin(Time.time * 10f) > 0f)
                     ? AzuCraftyBoxesPlugin.flashColor.Value
                     : AzuCraftyBoxesPlugin.unFlashColor.Value);
+                InventoryGuiCollectRequirements.actualAmounts[req] = amount;
             }
         }
 

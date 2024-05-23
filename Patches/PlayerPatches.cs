@@ -42,7 +42,10 @@ static class PlayerHaveRequirementsPatch
                 bool proceed = MiscFunctions.CheckItemDropIntegrity(requirement.m_resItem);
                 if (!proceed)
                     continue;
-                int amount = requirement.GetAmount(qualityLevel);
+                if (!InventoryGuiCollectRequirements.actualAmounts.TryGetValue(requirement, out int amount))
+                {
+                    amount = requirement.GetAmount(qualityLevel);
+                }
                 int invAmount = __instance.GetInventory().CountItems(requirement.m_resItem.m_itemData.m_shared.m_name);
                 if (invAmount >= amount) continue;
 
