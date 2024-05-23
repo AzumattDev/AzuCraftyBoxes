@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using AzuCraftyBoxes.IContainers;
 using HarmonyLib;
 using UnityEngine;
@@ -10,6 +11,7 @@ namespace AzuCraftyBoxes.Util.Functions;
 
 public class MiscFunctions
 {
+    public static MethodInfo? GetCurrentCraftAmountMethod; 
     internal static bool AllowByKey()
     {
         /*if (AzuCraftyBoxesPlugin.preventModKey.Value.IsPressed())

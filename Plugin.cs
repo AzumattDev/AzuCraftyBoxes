@@ -27,7 +27,7 @@ namespace AzuCraftyBoxes
     public class AzuCraftyBoxesPlugin : BaseUnityPlugin
     {
         internal const string ModName = "AzuCraftyBoxes";
-        internal const string ModVersion = "1.3.0";
+        internal const string ModVersion = "1.3.1";
         internal const string Author = "Azumatt";
         private const string ModGUID = $"{Author}.{ModName}";
         private static string ConfigFileName = $"{ModGUID}.cfg";
@@ -109,8 +109,24 @@ namespace AzuCraftyBoxes
         private void Start()
         {
             AutoDoc();
-           // if (!Chainloader.PluginInfos.ContainsKey(EpicLootReflectionHelper.elGuid)) return;
-           // epicLootAssembly = Chainloader.PluginInfos[EpicLootReflectionHelper.elGuid].Instance.GetType().Assembly;
+
+            // Get Azumatt.AzuAntiArthriticCrafting from the chainloader if possible
+            Chainloader.PluginInfos.TryGetValue("Azumatt.AzuAntiArthriticCrafting", out PluginInfo antiArthriticCraftingPlugin);
+            if (antiArthriticCraftingPlugin != null)
+            {
+                AzuCraftyBoxesLogger.LogInfo("AzuAntiArthriticCrafting found, enabling compatibility");
+                // Get the AzuAntiArthriticCrafting.Patches.HaveRequirementItemsTranspiler.GetCurrentCraftAmount method
+                var aaaCraftingAssembly = antiArthriticCraftingPlugin.Instance.GetType().Assembly;
+                MethodInfo getCurrentCraftAmountMethod = aaaCraftingAssembly.GetType("AzuAntiArthriticCrafting.Patches.HaveRequirementItemsTranspiler").GetMethod("GetCurrentCraftAmount");
+                if (getCurrentCraftAmountMethod != null)
+                {
+                    // Add the method to the AzuCraftyBoxes.Util.Functions.MiscFunctions.GetCurrentCraftAmountMethod
+                    MiscFunctions.GetCurrentCraftAmountMethod = getCurrentCraftAmountMethod;
+                }
+            }
+
+            // if (!Chainloader.PluginInfos.ContainsKey(EpicLootReflectionHelper.elGuid)) return;
+            // epicLootAssembly = Chainloader.PluginInfos[EpicLootReflectionHelper.elGuid].Instance.GetType().Assembly;
         }
 
         private void LateUpdate()
@@ -121,7 +137,6 @@ namespace AzuCraftyBoxes
         private void AutoDoc()
         {
 #if DEBUG
-
             // Store Regex to get all characters after a [
             Regex regex = new(@"\[(.*?)\]");
 

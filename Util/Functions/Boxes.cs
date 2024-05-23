@@ -120,8 +120,7 @@ public class Boxes
     {
         if (AzuCraftyBoxesPlugin.yamlData == null)
         {
-            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogError(
-                "yamlData is null. Make sure to call DeserializeYamlFile() before using CanItemBePulled.");
+            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogError("yamlData is null. Make sure to call DeserializeYamlFile() before using CanItemBePulled.");
             return false;
         }
 

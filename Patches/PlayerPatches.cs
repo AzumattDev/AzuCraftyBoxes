@@ -76,7 +76,11 @@ static class PlayerHaveRequirementsPatch
                 if (piece.m_requireOnlyOneIngredient)
                 {
                     if (invAmount < amount) continue;
-                    cando = true;
+                    //cando = true;
+                    if (__instance.m_knownMaterial.Contains(requirement.m_resItem.m_itemData.m_shared.m_name))
+                    {
+                        cando = true;
+                    }
                 }
                 else if (invAmount < amount)
                     return;
@@ -98,8 +102,7 @@ static class PlayerHaveRequirementsPatch
 static class HaveRequirementsPatch2
 {
     [HarmonyWrapSafe]
-    static void Postfix(Player __instance, ref bool __result, Piece piece, Player.RequirementMode mode,
-        HashSet<string> ___m_knownMaterial, Dictionary<string, int> ___m_knownStations)
+    static void Postfix(Player __instance, ref bool __result, Piece piece, Player.RequirementMode mode, HashSet<string> ___m_knownMaterial, Dictionary<string, int> ___m_knownStations)
     {
         try
         {
