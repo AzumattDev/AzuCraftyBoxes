@@ -22,6 +22,13 @@ public class kgDrawer(ItemDrawers_API.Drawer _drawer) : IContainer
         result = _drawer.Amount;
         return result >= amount;
     }
+    public bool ContainsItem(string prefab, int amount, string sharedName, out int result)
+    {
+        result = 0;
+        if (_drawer.Prefab != prefab) return false;
+        result = _drawer.Amount;
+        return result >= amount;
+    }
 
     public void RemoveItem(string prefab, int amount)
     {

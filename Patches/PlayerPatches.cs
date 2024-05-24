@@ -65,13 +65,14 @@ static class PlayerHaveRequirementsPatch
                 }
 
                 string itemPrefabName = Utils.GetPrefabName(requirement.m_resItem.name);
+                string sharedName = requirement.m_resItem.m_itemData.m_shared.m_name;
                 foreach (IContainer c in nearbyContainers)
                 {
                     if (requirement.m_resItem?.m_itemData?.m_dropPrefab == null)
                         continue;
                     if (Boxes.CanItemBePulled(c.GetPrefabName(), itemPrefabName))
                     {
-                        c.ContainsItem(itemPrefabName, 1, out int result);
+                        c.ContainsItem(itemPrefabName, 1, sharedName, out int result);
                         invAmount += result;
                     }
                 }
@@ -160,6 +161,7 @@ static class HaveRequirementsPatch2
                         {
                             bool hasItem = false;
                             string resPrefabName = requirement.m_resItem.name;
+                            string sharedName = requirement.m_resItem.m_itemData.m_shared.m_name;
                             foreach (IContainer c in nearbyContainers)
                             {
                                 requirement.m_resItem.m_itemData.m_dropPrefab = requirement.m_resItem.gameObject;
@@ -168,7 +170,7 @@ static class HaveRequirementsPatch2
                                 string itemPrefabName = Utils.GetPrefabName(requirement.m_resItem.m_itemData.m_dropPrefab);
                                 bool canItemBePulled = Boxes.CanItemBePulled(c.GetPrefabName(), itemPrefabName);
 
-                                if (canItemBePulled && c.ContainsItem(resPrefabName, 1, out _))
+                                if (canItemBePulled && c.ContainsItem(resPrefabName, 1, sharedName, out _))
                                 {
                                     hasItem = true;
                                     break;
@@ -192,13 +194,14 @@ static class HaveRequirementsPatch2
                                 if (requirement.m_resItem.m_itemData.m_dropPrefab == null)
                                     continue;
                                 string itemPrefabName = requirement.m_resItem.name;
+                                string sharedName = requirement.m_resItem.m_itemData.m_shared.m_name;
                                 bool canItemBePulled = Boxes.CanItemBePulled(c.GetPrefabName(), itemPrefabName);
 
                                 if (canItemBePulled)
                                 {
                                     try
                                     {
-                                        c.ContainsItem(itemPrefabName, 1, out int result);
+                                        c.ContainsItem(itemPrefabName, 1, sharedName, out int result);
                                         hasItems += result;
                                         if (hasItems >= requirement.m_amount)
                                         {

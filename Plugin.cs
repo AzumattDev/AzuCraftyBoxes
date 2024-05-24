@@ -21,13 +21,14 @@ namespace AzuCraftyBoxes
 {
     [BepInPlugin(ModGUID, ModName, ModVersion)]
     [BepInDependency("kg.ItemDrawers", BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency("org.bepinex.plugins.backpacks", BepInDependency.DependencyFlags.SoftDependency)]
     //[BepInDependency(EpicLootReflectionHelper.elGuid, BepInDependency.DependencyFlags.SoftDependency)]
     [BepInIncompatibility("aedenthorn.CraftFromContainers")]
     [BepInIncompatibility("CFCMod")]
     public class AzuCraftyBoxesPlugin : BaseUnityPlugin
     {
         internal const string ModName = "AzuCraftyBoxes";
-        internal const string ModVersion = "1.3.1";
+        internal const string ModVersion = "1.4.0";
         internal const string Author = "Azumatt";
         private const string ModGUID = $"{Author}.{ModName}";
         private static string ConfigFileName = $"{ModGUID}.cfg";
@@ -52,6 +53,7 @@ namespace AzuCraftyBoxes
         internal static Dictionary<string, bool> CanItemBePulledCache = null!;
 
         internal static Assembly? epicLootAssembly;
+        internal static bool BackpacksIsLoaded = false;
 
         public enum Toggle
         {
@@ -125,6 +127,11 @@ namespace AzuCraftyBoxes
                 }
             }
 
+            if (Chainloader.PluginInfos.ContainsKey("org.bepinex.plugins.backpacks"))
+            {
+                BackpacksIsLoaded = true;
+            }
+            
             // if (!Chainloader.PluginInfos.ContainsKey(EpicLootReflectionHelper.elGuid)) return;
             // epicLootAssembly = Chainloader.PluginInfos[EpicLootReflectionHelper.elGuid].Instance.GetType().Assembly;
         }

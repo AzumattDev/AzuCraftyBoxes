@@ -46,7 +46,7 @@ public class HUDPatches
                 string itemPrefabName = resource.m_resItem.name;
 
                 int playerItemCount = Player.m_localPlayer.GetInventory().CountItems(itemName);
-                int containerItemCount = containers.Sum(c => c.ContainsItem(itemPrefabName, 1, out int result) ? result : 0);
+                int containerItemCount = containers.Sum(c => c.ContainsItem(itemPrefabName, 1, itemName, out int result) ? result : 0);
 #if DEBUG
                 AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Found {playerItemCount} {itemName} in player inventory and {containerItemCount} in containers, returning {(playerItemCount + containerItemCount) / resource.m_amount}");
 #endif

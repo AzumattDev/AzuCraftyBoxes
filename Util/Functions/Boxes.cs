@@ -2,6 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using AzuCraftyBoxes.IContainers;
+using Backpacks;
+using HarmonyLib;
+using ItemDataManager;
 using UnityEngine;
 
 namespace AzuCraftyBoxes.Util.Functions;
@@ -55,8 +58,19 @@ public class Boxes
         List<IContainer> nearbyContainers = [];
         if (Player.m_localPlayer == null) return nearbyContainers;
         IEnumerable<IContainer> kgDrawers = APIs.ItemDrawers_API.AllDrawersInRange(gameObject.transform.position, rangeToUse).Select(kgDrawer.Create);
+        IEnumerable<IContainer> backpacksEnumerable = new List<IContainer>();
+        if (AzuCraftyBoxesPlugin.BackpacksIsLoaded)
+        {
+            if (Backpacks.API.GetEquippedBackpack() != null)
+            {
+                BackpackContainer backpack = BackpackContainer.Create(Backpacks.API.GetEquippedBackpack().Data().Get<ItemContainer>());
+                backpacksEnumerable = new List<IContainer> { backpack };
+            }
+        }
+
+
         if (Vector3.Distance(gameObject.transform.position, AzuCraftyBoxesPlugin.lastPosition) < 0.5f)
-            return AzuCraftyBoxesPlugin.cachedContainerList.Concat(kgDrawers).ToList();
+            return AzuCraftyBoxesPlugin.cachedContainerList.Concat(kgDrawers).Concat(backpacksEnumerable).ToList();
 
         foreach (Container container in Containers)
         {
@@ -77,7 +91,7 @@ public class Boxes
 
         AzuCraftyBoxesPlugin.lastPosition = gameObject.transform.position;
         AzuCraftyBoxesPlugin.cachedContainerList = nearbyContainers;
-        return nearbyContainers.Concat(kgDrawers).ToList();
+        return nearbyContainers.Concat(kgDrawers).Concat(backpacksEnumerable).ToList();
     }
 
     public static void AddContainerIfNotExists(string containerName)

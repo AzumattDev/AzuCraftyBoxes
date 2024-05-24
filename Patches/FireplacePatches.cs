@@ -51,9 +51,10 @@ static class FireplaceInteractPatch
             List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(__instance, AzuCraftyBoxesPlugin.mRange.Value);
 
             string fuelPrefabName = __instance.m_fuelItem.name;
+            string sharedName = __instance.m_fuelItem.m_itemData.m_shared.m_name;
             foreach (IContainer c in nearbyContainers)
             {
-                if (!c.ContainsItem(fuelPrefabName, 1, out int result) || !(Mathf.CeilToInt(___m_nview.GetZDO().GetFloat("fuel")) < __instance.m_maxFuel)) continue;
+                if (!c.ContainsItem(fuelPrefabName, 1, sharedName, out int result) || !(Mathf.CeilToInt(___m_nview.GetZDO().GetFloat("fuel")) < __instance.m_maxFuel)) continue;
                 if (!Boxes.CanItemBePulled(Utils.GetPrefabName(__instance.gameObject), fuelPrefabName))
                 {
                     AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"(FireplaceInteractPatch) Container at {c.GetPosition()} has {result} {fuelPrefabName} but it's forbidden by config");
@@ -107,9 +108,10 @@ static class FireplaceGetHoverTextPatch
         int inContainers = 0;
         __instance.m_fuelItem.m_itemData.m_dropPrefab = __instance.m_fuelItem.gameObject;
         string fuelPrefabName = __instance.m_fuelItem.name;
+        string sharedName = __instance.m_fuelItem.m_itemData.m_shared.m_name;
         foreach (IContainer c in nearbyContainers)
         {
-            if (!c.ContainsItem(fuelPrefabName, 1, out int result)) continue;
+            if (!c.ContainsItem(fuelPrefabName, 1, sharedName, out int result)) continue;
             /*AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug("Found " + newItem + " of " +
                                                                __instance.m_fuelItem.m_itemData.m_shared.m_name +
                                                                " in " + c.name + "");*/
