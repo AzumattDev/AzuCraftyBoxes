@@ -26,9 +26,10 @@ static class CookingStationOnAddFuelSwitchPatch
         List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(__instance, AzuCraftyBoxesPlugin.mRange.Value);
 
         string fuelPrefabName = __instance.m_fuelItem.name;
+        string sharedName = __instance.m_fuelItem.m_itemData.m_shared.m_name;
         foreach (IContainer c in nearbyContainers)
         {
-            if (!c.ContainsItem(fuelPrefabName, 1, out int result)) continue;
+            if (!c.ContainsItem(fuelPrefabName, 1, sharedName, out int result)) continue;
             if (!Boxes.CanItemBePulled(Utils.GetPrefabName(__instance.gameObject), fuelPrefabName))
             {
                 AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"(CookingStationOnAddFuelSwitchPatch) Container at {c.GetPosition()} has {result} {fuelPrefabName} but it's forbidden by config");
@@ -67,9 +68,10 @@ static class CookingStationFindCookableItemPatch
         foreach (CookingStation.ItemConversion itemConversion in __instance.m_conversion)
         {
             string fromPrefabName = itemConversion.m_from.name;
+            string sharedName = itemConversion.m_from.m_itemData.m_shared.m_name;
             foreach (IContainer c in nearbyContainers)
             {
-                if (!c.ContainsItem(fromPrefabName, 1, out int result)) continue;
+                if (!c.ContainsItem(fromPrefabName, 1, sharedName, out int result)) continue;
                 if (!Boxes.CanItemBePulled(Utils.GetPrefabName(__instance.gameObject), fromPrefabName))
                 {
                     AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"(CookingStationFindCookableItemPatch) Container at {c.GetPosition()} has {result} {fromPrefabName} but it's forbidden by config");

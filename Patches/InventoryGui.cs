@@ -55,7 +55,7 @@ static class InventoryGuiSetupRequirementPatch
 static class InventoryGuiCollectRequirements
 {
     public static Dictionary<Piece.Requirement, int> actualAmounts = new();
-    
+
     private static void Prefix()
     {
         actualAmounts.Clear();
@@ -109,7 +109,7 @@ static class InventoryGuiSetupRequirementPatch
         {
             amount = req.GetAmount(quality);
         }
-        
+
         if (amount <= 0)
         {
             return;
@@ -133,10 +133,11 @@ static class InventoryGuiSetupRequirementPatch
                     if (req.m_resItem.m_itemData.m_dropPrefab == null)
                         continue;
                     string itemPrefabName = req.m_resItem.name;
+                    string sharedName = req.m_resItem.m_itemData.m_shared.m_name;
 
                     if (Boxes.CanItemBePulled(containerPrefabName, itemPrefabName))
                     {
-                        container.ContainsItem(itemPrefabName, 1, out int result);
+                        container.ContainsItem(itemPrefabName, 1, sharedName, out int result);
                         invAmount += result;
                     }
                 }

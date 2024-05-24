@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using AzuCraftyBoxes.IContainers;
 using AzuCraftyBoxes.Patches;
 using HarmonyLib;
@@ -11,6 +12,7 @@ namespace AzuCraftyBoxes.Util.Functions;
 
 public class MiscFunctions
 {
+    public static MethodInfo? GetCurrentCraftAmountMethod; 
     internal static bool AllowByKey()
     {
         /*if (AzuCraftyBoxesPlugin.preventModKey.Value.IsPressed())
@@ -20,8 +22,7 @@ public class MiscFunctions
     }
 
     /* Consume Resources */
-    internal static void ProcessRequirements(Piece.Requirement[] requirements, int qualityLevel, Inventory pInventory,
-        List<IContainer> nearbyContainers, int itemQuality)
+    internal static void ProcessRequirements(Piece.Requirement[] requirements, int qualityLevel, Inventory pInventory, List<IContainer> nearbyContainers, int itemQuality)
     {
         foreach (Piece.Requirement requirement in requirements)
         {
@@ -59,8 +60,7 @@ public class MiscFunctions
         AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"(ConsumeResourcesPatch) Have {totalAmount}/{totalRequirement} {reqName} in player inventory");
     }
 
-    private static int ConsumeResourcesFromContainers(string reqPrefab, string reqName, int totalAmount, int totalRequirement,
-        List<IContainer> nearbyContainers)
+    private static int ConsumeResourcesFromContainers(string reqPrefab, string reqName, int totalAmount, int totalRequirement, List<IContainer> nearbyContainers)
     {
         int newTotalAmount = totalAmount;
         foreach (IContainer c in nearbyContainers)

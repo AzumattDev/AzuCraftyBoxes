@@ -1,18 +1,18 @@
 ﻿using System;
 using AzuCraftyBoxes.Util.Functions;
+using Backpacks;
 using UnityEngine;
 
 namespace AzuCraftyBoxes.IContainers;
 
-public class VanillaContainer(Container _container) : IContainer
+public class BackpackContainer(ItemContainer _container) : IContainer
 {
     public int ProcessContainerInventory(string reqPrefab, string reqName, int totalAmount, int totalRequirement)
     {
-        Inventory cInventory = _container.GetInventory();
+        Inventory cInventory = _container.Inventory;
         if (cInventory == null) return totalAmount;
         int thisAmount = Mathf.Min(cInventory.CountItems(reqName), totalRequirement - totalAmount);
 
-        AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"(ConsumeResourcesPatch) Container at {_container.transform.position} has {cInventory.CountItems(reqName)}");
 
         if (thisAmount == 0) return totalAmount;
 
@@ -64,70 +64,34 @@ public class VanillaContainer(Container _container) : IContainer
 
     public bool ContainsItem(string prefab, int amount, out int result)
     {
-        result = 0;
-        Inventory cInventory = _container.GetInventory();
-        if (cInventory == null) return false;
-        foreach (ItemDrop.ItemData item in cInventory.GetAllItems())
-        {
-            if (item.m_dropPrefab.name == prefab)
-            {
-                result += item.m_stack;
-            }
-        }
+        AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Checking for {amount} {prefab} in backpacks");
+        result = Backpacks.API.CountItemsInBackpacks(Player.m_localPlayer.GetInventory(), prefab);
+        AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Found {result} {prefab} in backpacks");
         return result >= amount;
     }
     public bool ContainsItem(string prefab, int amount, string sharedName, out int result)
     {
-        result = 0;
-        Inventory cInventory = _container.GetInventory();
-        if (cInventory == null) return false;
-        foreach (ItemDrop.ItemData item in cInventory.GetAllItems())
-        {
-            if (item.m_dropPrefab.name == prefab)
-            {
-                result += item.m_stack;
-            }
-        }
+        AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Checking for {amount} {prefab} or {sharedName} in backpacks");
+        result = Backpacks.API.CountItemsInBackpacks(Player.m_localPlayer.GetInventory(), prefab);
+        result += Backpacks.API.CountItemsInBackpacks(Player.m_localPlayer.GetInventory(), sharedName);
+        AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Found {result} {prefab} or {sharedName} in backpacks");
         return result >= amount;
     }
 
     public void RemoveItem(string prefab, int amount)
     {
-        Inventory cInventory = _container.GetInventory();
-        if (cInventory == null) return;
-        for (int i = 0; i < cInventory.GetAllItems().Count; ++i)
-        {
-            ItemDrop.ItemData item = cInventory.GetItem(i);
-            if (item?.m_dropPrefab?.name != prefab) continue;
-            int stackAmount = Mathf.Min(item.m_stack, amount);
-            if (stackAmount == item.m_stack)
-            {
-                cInventory.RemoveItem(i);
-                --i;
-            }
-            else
-            {
-                item.m_stack -= stackAmount;
-            }
-            amount -= stackAmount;
-            if (amount <= 0)
-            {
-                break;
-            }
-        }
-        _container.Save();
-        cInventory.Changed();
+        Backpacks.API.DeleteItemsFromBackpacks(Player.m_localPlayer.GetInventory(), prefab, amount);
     }
     
     public void Save()
     {
         _container.Save();
-        _container.m_inventory?.Changed();
+        _container.Inventory?.Changed();
     }
 
-    public Vector3 GetPosition() => _container.transform.position;
-    public string GetPrefabName() => Utils.GetPrefabName(_container.gameObject);
+    public Vector3 GetPosition() => Player.m_localPlayer.transform.position;
+    public string GetPrefabName() => "bp_explorer";
 
 
-    public static VanillaContainer Create(Container container) => new(container);
+    public static BackpackContainer Create(ItemContainer container) => new(container);
 }

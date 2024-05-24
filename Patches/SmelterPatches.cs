@@ -137,7 +137,7 @@ public static class OverrideHoverText
 
         foreach (IContainer c in nearbyContainers)
         {
-            c.ContainsItem(itemPrefab, 1, out int result);
+            c.ContainsItem(itemPrefab, 1, itemName, out int result);
             inInv += result;
         }
 
@@ -229,7 +229,7 @@ static class SmelterOnAddOrePatch
 
             foreach (IContainer c in nearbyContainers)
             {
-                if (!c.ContainsItem(prefabName, 1, out int result)) continue;
+                if (!c.ContainsItem(prefabName, 1, name, out int result)) continue;
                 if (!Boxes.CanItemBePulled(Utils.GetPrefabName(__instance.gameObject), prefabName))
                 {
                     AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"(SmelterOnAddOrePatch) Container at {c.GetPosition()} has {result} {prefabName} but it's forbidden by config");
@@ -350,9 +350,10 @@ static class SmelterOnAddFuelPatch
 
         List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(__instance, AzuCraftyBoxesPlugin.mRange.Value);
         string fuelPrefabName = __instance.m_fuelItem.name;
+        string sharedName = __instance.m_fuelItem.m_itemData.m_shared.m_name;
         foreach (IContainer c in nearbyContainers)
         {
-            if (!c.ContainsItem(fuelPrefabName, 1, out int result)) continue;
+            if (!c.ContainsItem(fuelPrefabName, 1, sharedName, out int result)) continue;
             if (!Boxes.CanItemBePulled(Utils.GetPrefabName(__instance.gameObject), fuelPrefabName))
             {
                 AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"(SmelterOnAddFuelPatch) Container at {c.GetPosition()} has {result} {fuelPrefabName} but it's forbidden by config");

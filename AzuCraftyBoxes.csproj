@@ -75,8 +75,14 @@
         <Reference Include="assembly_valheim">
             <HintPath>$(PublicizedAssembliesPath)\assembly_valheim_publicized.dll</HintPath>
         </Reference>
+        <Reference Include="Backpacks">
+          <HintPath>Libs\BackpacksAPI.dll</HintPath>
+        </Reference>
         <Reference Include="BepInEx">
             <HintPath>$(BepInExPath)\core\BepInEx.dll</HintPath>
+        </Reference>
+        <Reference Include="ItemDataManager">
+          <HintPath>Libs\ItemDataManager.dll</HintPath>
         </Reference>
         <Reference Include="ServerSync">
             <HintPath>Libs\ServerSync.dll</HintPath>
@@ -114,6 +120,7 @@
         <Compile Include="Compatibility\ModCompat.cs" />
         <Compile Include="Compatibility\WardIsLove\WardIsLovePlugin.cs" />
         <Compile Include="Compatibility\WardIsLove\WardMonoscript.cs" />
+        <Compile Include="IContainers\BackpackContainer.cs" />
         <Compile Include="IContainers\IContainer.cs" />
         <Compile Include="IContainers\kgDrawers.cs" />
         <Compile Include="IContainers\VanillaContainer.cs" />
@@ -124,6 +131,7 @@
         <Compile Include="Patches\InventoryGui.cs" />
         <Compile Include="Patches\PlayerPatches.cs" />
         <Compile Include="Patches\PredefinedGroups.cs" />
+        <Compile Include="Patches\RecipePatch.cs" />
         <Compile Include="Patches\SmelterPatches.cs" />
         <Compile Include="Plugin.cs" />
         <Compile Include="Properties\AssemblyInfo.cs" />
@@ -139,6 +147,12 @@
         <Content Include="environment.props" />
         <EmbeddedResource Include="Example.yml" />
         <Content Include="ILRepack.targets" />
+        <Content Include="Libs\BackpacksAPI.dll">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="Libs\ItemDataManager.dll">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
         <Content Include="Libs\ServerSync.dll">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </Content>
