@@ -72,7 +72,7 @@ static class PlayerHaveRequirementsPatch
                         continue;
                     if (Boxes.CanItemBePulled(c.GetPrefabName(), itemPrefabName))
                     {
-                        c.ContainsItem(itemPrefabName, 1, sharedName, out int result);
+                        c.ContainsItem(sharedName, 1, out int result);
                         invAmount += result;
                     }
                 }
@@ -160,7 +160,6 @@ static class HaveRequirementsPatch2
                         case Player.RequirementMode.CanAlmostBuild:
                         {
                             bool hasItem = false;
-                            string resPrefabName = requirement.m_resItem.name;
                             string sharedName = requirement.m_resItem.m_itemData.m_shared.m_name;
                             foreach (IContainer c in nearbyContainers)
                             {
@@ -170,7 +169,7 @@ static class HaveRequirementsPatch2
                                 string itemPrefabName = Utils.GetPrefabName(requirement.m_resItem.m_itemData.m_dropPrefab);
                                 bool canItemBePulled = Boxes.CanItemBePulled(c.GetPrefabName(), itemPrefabName);
 
-                                if (canItemBePulled && c.ContainsItem(resPrefabName, 1, sharedName, out _))
+                                if (canItemBePulled && c.ContainsItem(sharedName, 1, out _))
                                 {
                                     hasItem = true;
                                     break;
@@ -201,7 +200,7 @@ static class HaveRequirementsPatch2
                                 {
                                     try
                                     {
-                                        c.ContainsItem(itemPrefabName, 1, sharedName, out int result);
+                                        c.ContainsItem(sharedName, 1, out int result);
                                         hasItems += result;
                                         if (hasItems >= requirement.m_amount)
                                         {

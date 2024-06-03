@@ -48,8 +48,8 @@ namespace AzuCraftyBoxes
         internal static readonly CustomSyncedValue<string> CraftyContainerGroupsData = new(ConfigSync, "craftyboxesGroupsData", "");
 
         //
-        internal static Dictionary<string, object> yamlData;
-        internal static Dictionary<string, HashSet<string>> groups;
+        internal static Dictionary<string, Dictionary<string, List<string>>> yamlData = null!;
+        internal static Dictionary<string, HashSet<string>> groups = new();
         internal static Dictionary<string, bool> CanItemBePulledCache = null!;
 
         internal static Assembly? epicLootAssembly;

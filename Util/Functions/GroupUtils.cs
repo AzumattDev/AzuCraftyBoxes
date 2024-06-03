@@ -8,18 +8,12 @@ public class GroupUtils
     // Get a list of all excluded groups for a container
     public static List<string> GetExcludedGroups(string container)
     {
-        if (AzuCraftyBoxesPlugin.yamlData.TryGetValue(container, out object containerData))
+        if (AzuCraftyBoxesPlugin.yamlData.TryGetValue(container, out Dictionary<string, List<string>> containerData))
         {
-            Dictionary<object, object>? containerInfo = containerData as Dictionary<object, object>;
-            if (containerInfo != null && containerInfo.TryGetValue("exclude", out object excludeData))
+            if (containerData.TryGetValue("exclude", out List<string> excludeList))
             {
-                List<object>? excludeList = excludeData as List<object>;
-                if (excludeList != null)
-                {
-                    return excludeList.Where(excludeItem =>
-                            AzuCraftyBoxesPlugin.groups.ContainsKey(excludeItem.ToString()))
-                        .Select(excludeItem => excludeItem.ToString()).ToList();
-                }
+                return excludeList.Where(excludeItem =>
+                        AzuCraftyBoxesPlugin.groups.ContainsKey(excludeItem)).ToList();
             }
         }
 
@@ -36,18 +30,9 @@ public class GroupUtils
 
         bool groupInYaml = false;
 
-        if (AzuCraftyBoxesPlugin.yamlData.ContainsKey("groups"))
+        if (AzuCraftyBoxesPlugin.yamlData.TryGetValue("groups", out Dictionary<string, List<string>> groupsData))
         {
-            Dictionary<object, object>? groupsData = AzuCraftyBoxesPlugin.yamlData["groups"] as Dictionary<object, object>;
-            if (groupsData != null)
-            {
-                groupInYaml = groupsData.ContainsKey(groupName);
-            }
-            else
-            {
-                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogError(
-                    "Unable to cast groupsData to Dictionary<object, object>.");
-            }
+            groupInYaml = groupsData.ContainsKey(groupName);
         }
 
         // Check for the group in both yamlData and predefined groups
