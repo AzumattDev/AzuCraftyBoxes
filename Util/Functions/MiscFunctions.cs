@@ -30,7 +30,6 @@ public class MiscFunctions
             int totalRequirement = requirement.GetAmount(qualityLevel);
             if (totalRequirement <= 0) continue;
 
-            string reqPrefab = requirement.m_resItem.name;
             string reqName = requirement.m_resItem.m_itemData.m_shared.m_name;
             int totalAmount = pInventory.CountItems(reqName);
             LogResourceInfo(totalAmount, totalRequirement, reqName);
@@ -38,7 +37,7 @@ public class MiscFunctions
 
             if (totalAmount < totalRequirement)
             {
-                int newTotalAmount = ConsumeResourcesFromContainers(reqPrefab, reqName, totalAmount, totalRequirement, nearbyContainers);
+                int newTotalAmount = ConsumeResourcesFromContainers(reqName, totalAmount, totalRequirement, nearbyContainers);
                 if (newTotalAmount >= totalRequirement)
                 {
                     AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"(ConsumeResourcesPatch) Consumed enough {reqName}");
@@ -60,12 +59,12 @@ public class MiscFunctions
         AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"(ConsumeResourcesPatch) Have {totalAmount}/{totalRequirement} {reqName} in player inventory");
     }
 
-    private static int ConsumeResourcesFromContainers(string reqPrefab, string reqName, int totalAmount, int totalRequirement, List<IContainer> nearbyContainers)
+    private static int ConsumeResourcesFromContainers(string reqName, int totalAmount, int totalRequirement, List<IContainer> nearbyContainers)
     {
         int newTotalAmount = totalAmount;
         foreach (IContainer c in nearbyContainers)
         {
-            newTotalAmount = c.ProcessContainerInventory(reqPrefab, reqName, newTotalAmount, totalRequirement);
+            newTotalAmount = c.ProcessContainerInventory(reqName, newTotalAmount, totalRequirement);
             if (newTotalAmount >= totalRequirement)
             {
                 break;

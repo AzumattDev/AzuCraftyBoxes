@@ -61,10 +61,9 @@ public class Boxes
         IEnumerable<IContainer> backpacksEnumerable = new List<IContainer>();
         if (AzuCraftyBoxesPlugin.BackpacksIsLoaded)
         {
-            if (Backpacks.API.GetEquippedBackpack() != null)
+            if (Backpacks.API.GetEquippedBackpack()?.Data("org.bepinex.plugins.backpacks")?.Get<ItemContainer>() is {} backpack)
             {
-                BackpackContainer backpack = BackpackContainer.Create(Backpacks.API.GetEquippedBackpack().Data().Get<ItemContainer>());
-                backpacksEnumerable = new List<IContainer> { backpack };
+                backpacksEnumerable = new List<IContainer> { BackpackContainer.Create(backpack) };
             }
         }
 
@@ -98,7 +97,7 @@ public class Boxes
     {
         if (!AzuCraftyBoxesPlugin.yamlData.ContainsKey(containerName))
         {
-            AzuCraftyBoxesPlugin.yamlData[containerName] = new Dictionary<string, object>
+            AzuCraftyBoxesPlugin.yamlData[containerName] = new Dictionary<string, List<string>>
             {
                 { "exclude", new List<string>() },
                 { "includeOverride", new List<string>() },
@@ -138,38 +137,15 @@ public class Boxes
             return false;
         }
 
-        if (!AzuCraftyBoxesPlugin.yamlData.ContainsKey(container))
+        if (!AzuCraftyBoxesPlugin.yamlData.TryGetValue(container, out Dictionary<string, List<string>> containerData))
         {
             //AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogInfo($"Container '{container}' not found in yamlData.");
             return true; // Allow pulling by default if the container is not defined in yamlData
         }
 
-        Dictionary<object, object>? containerData = AzuCraftyBoxesPlugin.yamlData[container] as Dictionary<object, object>;
-        if (containerData == null)
-        {
-            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogError($"Unable to cast containerData for container '{container}' to Dictionary<object, object>.");
-            return false;
-        }
-
-        List<object>? excludeList = containerData.TryGetValue("exclude", out object? value1)
-            ? value1 as List<object>
-            : new List<object>();
-        List<object>? includeOverrideList = containerData.TryGetValue("includeOverride", out object? value)
-            ? value as List<object>
-            : new List<object>();
-
-        if (excludeList == null)
-        {
-            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogError($"Unable to cast excludeList for container '{container}' to List<object>.");
-            return false;
-        }
-
-        if (includeOverrideList == null)
-        {
-            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogError($"Unable to cast includeOverrideList for container '{container}' to List<object>.");
-            return false;
-        }
-
+        List<string> excludeList = containerData.TryGetValue("exclude", out List<string> value1) ? value1 : new List<string>();
+        List<string> includeOverrideList = containerData.TryGetValue("includeOverride", out List<string> value) ? value : new List<string>();
+ 
         if (includeOverrideList.Contains(prefab))
         {
             return true;
@@ -223,30 +199,24 @@ public class Boxes
 
     public static List<string> GetExcludedPrefabs(string container)
     {
-        if (AzuCraftyBoxesPlugin.yamlData.TryGetValue(container, out object containerData))
+        if (AzuCraftyBoxesPlugin.yamlData.TryGetValue(container, out Dictionary<string, List<string>> containerData))
         {
-            Dictionary<object, object>? containerInfo = containerData as Dictionary<object, object>;
-            if (containerInfo != null && containerInfo.TryGetValue("exclude", out object excludeData))
+            if (containerData.TryGetValue("exclude", out List<string> excludeList))
             {
-                List<object>? excludeList = excludeData as List<object>;
-                if (excludeList != null)
+                List<string> excludedPrefabs = new List<string>();
+                foreach (string excludeItem in excludeList)
                 {
-                    List<string> excludedPrefabs = new List<string>();
-                    foreach (object? excludeItem in excludeList)
+                    if (AzuCraftyBoxesPlugin.groups.TryGetValue(excludeItem, out HashSet<string> groupPrefabs))
                     {
-                        string excludeItemName = excludeItem.ToString();
-                        if (AzuCraftyBoxesPlugin.groups.TryGetValue(excludeItemName, out HashSet<string> groupPrefabs))
-                        {
-                            excludedPrefabs.AddRange(groupPrefabs);
-                        }
-                        else
-                        {
-                            excludedPrefabs.Add(excludeItemName);
-                        }
+                        excludedPrefabs.AddRange(groupPrefabs);
                     }
-
-                    return excludedPrefabs;
+                    else
+                    {
+                        excludedPrefabs.Add(excludeItem);
+                    }
                 }
+
+                return excludedPrefabs;
             }
         }
 

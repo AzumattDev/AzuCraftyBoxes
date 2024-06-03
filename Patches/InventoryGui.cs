@@ -137,7 +137,7 @@ static class InventoryGuiSetupRequirementPatch
 
                     if (Boxes.CanItemBePulled(containerPrefabName, itemPrefabName))
                     {
-                        container.ContainsItem(itemPrefabName, 1, sharedName, out int result);
+                        container.ContainsItem(sharedName, 1, out int result);
                         invAmount += result;
                     }
                 }

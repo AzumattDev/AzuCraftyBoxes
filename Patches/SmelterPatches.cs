@@ -130,15 +130,18 @@ public static class OverrideHoverText
         }
     }
 
-    private static int GetItemCountInInventoryAndContainers(string itemPrefab, string itemName, Smelter smelterInstance)
+    private static int GetItemCountInInventoryAndContainers(string prefabName, string itemName, Smelter smelterInstance)
     {
         int inInv = Player.m_localPlayer?.m_inventory.CountItems(itemName) ?? 0;
         List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(smelterInstance, AzuCraftyBoxesPlugin.mRange.Value);
 
         foreach (IContainer c in nearbyContainers)
         {
-            c.ContainsItem(itemPrefab, 1, itemName, out int result);
-            inInv += result;
+            if (Boxes.CanItemBePulled(prefabName, c.GetPrefabName()))
+            {
+                c.ContainsItem(itemName, 1, out int result);
+                inInv += result;
+            }
         }
 
         return inInv;
@@ -227,34 +230,37 @@ static class SmelterOnAddOrePatch
                     break;
             }
 
-            foreach (IContainer c in nearbyContainers)
+            if (Boxes.CanItemBePulled(Utils.GetPrefabName(__instance.gameObject), prefabName))
             {
-                if (!c.ContainsItem(prefabName, 1, name, out int result)) continue;
-                if (!Boxes.CanItemBePulled(Utils.GetPrefabName(__instance.gameObject), prefabName))
+                foreach (IContainer c in nearbyContainers)
                 {
-                    AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"(SmelterOnAddOrePatch) Container at {c.GetPosition()} has {result} {prefabName} but it's forbidden by config");
-                    continue;
+                    if (!c.ContainsItem(name, 1, out int result)) continue;
+                    if (!Boxes.CanItemBePulled(c.GetPrefabName(), prefabName))
+                    {
+                        AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"(SmelterOnAddOrePatch) Container at {c.GetPosition()} has {result} {prefabName} but it's forbidden by config");
+                        continue;
+                    }
+
+                    int amount = pullAll ? Mathf.Min(__instance.m_maxOre - __instance.GetQueueSize(), result) : 1;
+
+                    if (!added.ContainsKey(name))
+                        added[name] = 0;
+                    added[name] += amount;
+                    AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Pull ALL is {pullAll}");
+                    AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"(SmelterOnAddOrePatch) Container at {c.GetPosition()} has {result} {prefabName}, taking {amount}");
+
+                    c.RemoveItem(name, amount);
+                    c.Save();
+
+                    for (int i = 0; i < amount; ++i)
+                        ___m_nview.InvokeRPC("RPC_AddOre", prefabName);
+
+                    user.Message(MessageHud.MessageType.TopLeft, $"$msg_added {amount} {name}");
+
+                    if (__instance.GetQueueSize() >= __instance.m_maxOre ||
+                        !pullAll)
+                        break;
                 }
-
-                int amount = pullAll ? Mathf.Min(__instance.m_maxOre - __instance.GetQueueSize(), result) : 1;
-
-                if (!added.ContainsKey(name))
-                    added[name] = 0;
-                added[name] += amount;
-                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Pull ALL is {pullAll}");
-                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"(SmelterOnAddOrePatch) Container at {c.GetPosition()} has {result} {prefabName}, taking {amount}");
-
-                c.RemoveItem(prefabName, amount);
-                c.Save();
-
-                for (int i = 0; i < amount; ++i)
-                    ___m_nview.InvokeRPC("RPC_AddOre", prefabName);
-
-                user.Message(MessageHud.MessageType.TopLeft, $"$msg_added {amount} {name}");
-
-                if (__instance.GetQueueSize() >= __instance.m_maxOre ||
-                    !pullAll)
-                    break;
             }
         }
 
@@ -351,36 +357,39 @@ static class SmelterOnAddFuelPatch
         List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(__instance, AzuCraftyBoxesPlugin.mRange.Value);
         string fuelPrefabName = __instance.m_fuelItem.name;
         string sharedName = __instance.m_fuelItem.m_itemData.m_shared.m_name;
-        foreach (IContainer c in nearbyContainers)
+        if (Boxes.CanItemBePulled(Utils.GetPrefabName(__instance.gameObject), fuelPrefabName))
         {
-            if (!c.ContainsItem(fuelPrefabName, 1, sharedName, out int result)) continue;
-            if (!Boxes.CanItemBePulled(Utils.GetPrefabName(__instance.gameObject), fuelPrefabName))
+            foreach (IContainer c in nearbyContainers)
             {
-                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"(SmelterOnAddFuelPatch) Container at {c.GetPosition()} has {result} {fuelPrefabName} but it's forbidden by config");
-                continue;
+                if (!c.ContainsItem(sharedName, 1, out int result)) continue;
+                if (!Boxes.CanItemBePulled(c.GetPrefabName(), fuelPrefabName))
+                {
+                    AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"(SmelterOnAddFuelPatch) Container at {c.GetPosition()} has {result} {sharedName} but it's forbidden by config");
+                    continue;
+                }
+
+                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Pull ALL is {pullAll}");
+                int amount = pullAll
+                    ? (int)Mathf.Min(__instance.m_maxFuel - __instance.GetFuel(), result)
+                    : 1;
+
+                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"(SmelterOnAddFuelPatch) Container at {c.GetPosition()} has {result} {sharedName}, taking {amount}");
+
+                c.RemoveItem(sharedName, amount);
+                c.Save();
+
+                for (int i = 0; i < amount; ++i)
+                    ___m_nview.InvokeRPC("RPC_AddFuel");
+
+                added += amount;
+
+                user.Message(MessageHud.MessageType.TopLeft, "$msg_added " + __instance.m_fuelItem.m_itemData.m_shared.m_name);
+
+                __result = false;
+
+                if (!pullAll || Mathf.CeilToInt(___m_nview.GetZDO().GetFloat("fuel")) >= __instance.m_maxFuel)
+                    return false;
             }
-
-            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Pull ALL is {pullAll}");
-            int amount = pullAll
-                ? (int)Mathf.Min(__instance.m_maxFuel - __instance.GetFuel(), result)
-                : 1;
-
-            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"(SmelterOnAddFuelPatch) Container at {c.GetPosition()} has {result} {fuelPrefabName}, taking {amount}");
-
-            c.RemoveItem(fuelPrefabName, amount);
-            c.Save();
-
-            for (int i = 0; i < amount; ++i)
-                ___m_nview.InvokeRPC("RPC_AddFuel");
-
-            added += amount;
-
-            user.Message(MessageHud.MessageType.TopLeft, "$msg_added " + __instance.m_fuelItem.m_itemData.m_shared.m_name);
-
-            __result = false;
-
-            if (!pullAll || Mathf.CeilToInt(___m_nview.GetZDO().GetFloat("fuel")) >= __instance.m_maxFuel)
-                return false;
         }
 
         user.Message(MessageHud.MessageType.Center, added == 0

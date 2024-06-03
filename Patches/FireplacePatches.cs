@@ -26,24 +26,25 @@ static class FireplaceInteractPatch
             ___m_nview.ClaimOwnership();
         }
 
+        if (Boxes.CanItemBePulled(Utils.GetPrefabName(__instance.gameObject), __instance.m_fuelItem.name))
+        {
+            return true;
+        }
 
         if (pullAll && inventory.HaveItem(__instance.m_fuelItem.m_itemData.m_shared.m_name))
         {
-            if (Boxes.CanItemBePulled(Utils.GetPrefabName(__instance.gameObject), __instance.m_fuelItem.name))
-            {
-                int amount =
-                    (int)Mathf.Min(__instance.m_maxFuel - Mathf.CeilToInt(___m_nview.GetZDO().GetFloat("fuel")),
-                        inventory.CountItems(__instance.m_fuelItem.m_itemData.m_shared.m_name));
-                inventory.RemoveItem(__instance.m_fuelItem.m_itemData.m_shared.m_name, amount);
-                inventory.Changed();
-                for (int i = 0; i < amount; ++i)
-                    ___m_nview.InvokeRPC("RPC_AddFuel");
+            int amount =
+                (int)Mathf.Min(__instance.m_maxFuel - Mathf.CeilToInt(___m_nview.GetZDO().GetFloat("fuel")),
+                    inventory.CountItems(__instance.m_fuelItem.m_itemData.m_shared.m_name));
+            inventory.RemoveItem(__instance.m_fuelItem.m_itemData.m_shared.m_name, amount);
+            inventory.Changed();
+            for (int i = 0; i < amount; ++i)
+                ___m_nview.InvokeRPC("RPC_AddFuel");
 
-                user.Message(MessageHud.MessageType.Center,
-                    Localization.instance.Localize("$msg_fireadding", __instance.m_fuelItem.m_itemData.m_shared.m_name));
+            user.Message(MessageHud.MessageType.Center,
+                Localization.instance.Localize("$msg_fireadding", __instance.m_fuelItem.m_itemData.m_shared.m_name));
 
-                __result = false;
-            }
+            __result = false;
         }
 
         if (inventory.HaveItem(__instance.m_fuelItem.m_itemData.m_shared.m_name) || !(Mathf.CeilToInt(___m_nview.GetZDO().GetFloat("fuel")) < __instance.m_maxFuel)) return __result;
@@ -54,8 +55,8 @@ static class FireplaceInteractPatch
             string sharedName = __instance.m_fuelItem.m_itemData.m_shared.m_name;
             foreach (IContainer c in nearbyContainers)
             {
-                if (!c.ContainsItem(fuelPrefabName, 1, sharedName, out int result) || !(Mathf.CeilToInt(___m_nview.GetZDO().GetFloat("fuel")) < __instance.m_maxFuel)) continue;
-                if (!Boxes.CanItemBePulled(Utils.GetPrefabName(__instance.gameObject), fuelPrefabName))
+                if (!c.ContainsItem(sharedName, 1, out int result) || !(Mathf.CeilToInt(___m_nview.GetZDO().GetFloat("fuel")) < __instance.m_maxFuel)) continue;
+                if (!Boxes.CanItemBePulled(c.GetPrefabName(), fuelPrefabName))
                 {
                     AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"(FireplaceInteractPatch) Container at {c.GetPosition()} has {result} {fuelPrefabName} but it's forbidden by config");
                     continue;
@@ -65,7 +66,7 @@ static class FireplaceInteractPatch
                 AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Pull ALL is {pullAll}");
                 AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"(FireplaceInteractPatch) Container at {c.GetPosition()} has {result} {fuelPrefabName}, taking {amount}");
 
-                c.RemoveItem(fuelPrefabName, amount);
+                c.RemoveItem(sharedName, amount);
                 c.Save();
 
                 if (__result)
@@ -103,19 +104,25 @@ static class FireplaceGetHoverTextPatch
             return;
         }
 
+        string fuelPrefabName = __instance.m_fuelItem.name;
+        string sharedName = __instance.m_fuelItem.m_itemData.m_shared.m_name;
+
+        if (!Boxes.CanItemBePulled(Utils.GetPrefabName(__instance.gameObject), fuelPrefabName))
+        {
+            return;
+        }
+        
         int inInv = Player.m_localPlayer?.m_inventory.CountItems(__instance.m_fuelItem.m_itemData.m_shared.m_name) ?? 0;
         List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(__instance, AzuCraftyBoxesPlugin.mRange.Value);
         int inContainers = 0;
         __instance.m_fuelItem.m_itemData.m_dropPrefab = __instance.m_fuelItem.gameObject;
-        string fuelPrefabName = __instance.m_fuelItem.name;
-        string sharedName = __instance.m_fuelItem.m_itemData.m_shared.m_name;
         foreach (IContainer c in nearbyContainers)
         {
-            if (!c.ContainsItem(fuelPrefabName, 1, sharedName, out int result)) continue;
+            if (!c.ContainsItem(sharedName, 1, out int result)) continue;
             /*AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug("Found " + newItem + " of " +
                                                                __instance.m_fuelItem.m_itemData.m_shared.m_name +
                                                                " in " + c.name + "");*/
-            if (Boxes.CanItemBePulled(Utils.GetPrefabName(__instance.gameObject), fuelPrefabName)) ;
+            if (Boxes.CanItemBePulled(c.GetPrefabName(), fuelPrefabName)) ;
             {
                 inContainers += result;
             }

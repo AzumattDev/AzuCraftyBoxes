@@ -1,16 +1,13 @@
-﻿using System;
-using AzuCraftyBoxes.Util.Functions;
-using Backpacks;
+﻿using Backpacks;
 using UnityEngine;
 
 namespace AzuCraftyBoxes.IContainers;
 
 public class BackpackContainer(ItemContainer _container) : IContainer
 {
-    public int ProcessContainerInventory(string reqPrefab, string reqName, int totalAmount, int totalRequirement)
+    public int ProcessContainerInventory(string reqName, int totalAmount, int totalRequirement)
     {
         Inventory cInventory = _container.Inventory;
-        if (cInventory == null) return totalAmount;
         int thisAmount = Mathf.Min(cInventory.CountItems(reqName), totalRequirement - totalAmount);
 
 
@@ -62,25 +59,16 @@ public class BackpackContainer(ItemContainer _container) : IContainer
         return totalAmount;
     }
 
-    public bool ContainsItem(string prefab, int amount, out int result)
+    public int ItemCount(string name)
     {
-        AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Checking for {amount} {prefab} in backpacks");
-        result = Backpacks.API.CountItemsInBackpacks(Player.m_localPlayer.GetInventory(), prefab);
-        AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Found {result} {prefab} in backpacks");
-        return result >= amount;
-    }
-    public bool ContainsItem(string prefab, int amount, string sharedName, out int result)
-    {
-        AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Checking for {amount} {prefab} or {sharedName} in backpacks");
-        result = Backpacks.API.CountItemsInBackpacks(Player.m_localPlayer.GetInventory(), prefab);
-        result += Backpacks.API.CountItemsInBackpacks(Player.m_localPlayer.GetInventory(), sharedName);
-        AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Found {result} {prefab} or {sharedName} in backpacks");
-        return result >= amount;
+        int result = Backpacks.API.CountItemsInBackpacks(Player.m_localPlayer.GetInventory(), name);
+        AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Found {result} {name} in backpacks");
+        return result;
     }
 
-    public void RemoveItem(string prefab, int amount)
+    public void RemoveItem(string name, int amount)
     {
-        Backpacks.API.DeleteItemsFromBackpacks(Player.m_localPlayer.GetInventory(), prefab, amount);
+        Backpacks.API.DeleteItemsFromBackpacks(Player.m_localPlayer.GetInventory(), name, amount);
     }
     
     public void Save()

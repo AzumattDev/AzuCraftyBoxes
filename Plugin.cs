@@ -28,7 +28,7 @@ namespace AzuCraftyBoxes
     public class AzuCraftyBoxesPlugin : BaseUnityPlugin
     {
         internal const string ModName = "AzuCraftyBoxes";
-        internal const string ModVersion = "1.4.0";
+        internal const string ModVersion = "1.4.1";
         internal const string Author = "Azumatt";
         private const string ModGUID = $"{Author}.{ModName}";
         private static string ConfigFileName = $"{ModGUID}.cfg";
@@ -48,8 +48,8 @@ namespace AzuCraftyBoxes
         internal static readonly CustomSyncedValue<string> CraftyContainerGroupsData = new(ConfigSync, "craftyboxesGroupsData", "");
 
         //
-        internal static Dictionary<string, object> yamlData;
-        internal static Dictionary<string, HashSet<string>> groups;
+        internal static Dictionary<string, Dictionary<string, List<string>>> yamlData = null!;
+        internal static Dictionary<string, HashSet<string>> groups = new();
         internal static Dictionary<string, bool> CanItemBePulledCache = null!;
 
         internal static Assembly? epicLootAssembly;
