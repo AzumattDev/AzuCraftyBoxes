@@ -15,8 +15,7 @@ namespace AzuCraftyBoxes
         {
             // Register version check call
             AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug("Registering version RPC handler");
-            peer.m_rpc.Register($"{AzuCraftyBoxesPlugin.ModName}_VersionCheck",
-                new Action<ZRpc, ZPackage>(RpcHandlers.RPC_AzuCraftyBoxes_Version));
+            peer.m_rpc.Register($"{AzuCraftyBoxesPlugin.ModName}_VersionCheck", new Action<ZRpc, ZPackage>(RpcHandlers.RPC_AzuCraftyBoxes_Version));
 
             // Make calls to check versions
             AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogInfo("Invoking version check");
@@ -33,16 +32,14 @@ namespace AzuCraftyBoxes
         {
             if (!__instance.IsServer() || RpcHandlers.ValidatedPeers.Contains(rpc)) return true;
             // Disconnect peer if they didn't send mod version at all
-            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogWarning(
-                $"Peer ({rpc.m_socket.GetHostName()}) never sent version or couldn't due to previous disconnect, disconnecting");
+            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogWarning($"Peer ({rpc.m_socket.GetHostName()}) never sent version or couldn't due to previous disconnect, disconnecting");
             rpc.Invoke("Error", 3);
             return false; // Prevent calling underlying method
         }
 
         private static void Postfix(ZNet __instance)
         {
-            ZRoutedRpc.instance.InvokeRoutedRPC(ZRoutedRpc.instance.GetServerPeerID(), $"{AzuCraftyBoxesPlugin.ModName}RequestAdminSync",
-                new ZPackage());
+            ZRoutedRpc.instance.InvokeRoutedRPC(ZRoutedRpc.instance.GetServerPeerID(), $"{AzuCraftyBoxesPlugin.ModName}RequestAdminSync", new ZPackage());
         }
     }
 

@@ -8,6 +8,7 @@ public interface IContainer
     public bool ContainsItem(string prefab, int amount, out int result);
     public bool ContainsItem(string prefab, int amount, string sharedName, out int result);
     public void RemoveItem(string prefab, int amount);
+    public void RemoveItem(string prefab, string sharedName, int amount);
     public Vector3 GetPosition();
     public void Save();
     public string GetPrefabName();

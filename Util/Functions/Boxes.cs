@@ -59,13 +59,18 @@ public class Boxes
         if (Player.m_localPlayer == null) return nearbyContainers;
         IEnumerable<IContainer> kgDrawers = APIs.ItemDrawers_API.AllDrawersInRange(gameObject.transform.position, rangeToUse).Select(kgDrawer.Create);
         IEnumerable<IContainer> backpacksEnumerable = new List<IContainer>();
+        List<IContainer> backpackList = [];
         if (AzuCraftyBoxesPlugin.BackpacksIsLoaded)
         {
-            if (Backpacks.API.GetEquippedBackpack() != null)
+            // Get all backpacks in the player inventory
+            foreach (ItemDrop.ItemData? allItem in Player.m_localPlayer.GetInventory().GetAllItems().Where(x => x?.Data("org.bepinex.plugins.backpacks")?.Get<ItemContainer>() != null))
             {
-                BackpackContainer backpack = BackpackContainer.Create(Backpacks.API.GetEquippedBackpack().Data().Get<ItemContainer>());
-                backpacksEnumerable = new List<IContainer> { backpack };
+                BackpackContainer backpackContainer = BackpackContainer.Create(allItem?.Data("org.bepinex.plugins.backpacks")?.Get<ItemContainer>()!);
+                if (backpackList.Contains(backpackContainer)) continue;
+                backpackList.Add(backpackContainer);
             }
+
+            backpacksEnumerable = backpackList;
         }
 
 

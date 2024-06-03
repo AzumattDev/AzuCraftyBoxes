@@ -28,7 +28,7 @@ public class VanillaContainer(Container _container) : IContainer
             {
                 AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"(ConsumeResourcesPatch) Removing item {reqName} from container");
                 AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Container inventory before removal: {cInventory.GetAllItems().Count}, Item at index {i}: {cInventory.GetItem(i)?.m_shared?.m_name}");
-                
+
                 bool removed = cInventory.RemoveItem(i);
                 AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug("Removed was " + removed);
                 AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Container inventory after attempted removal: {cInventory.GetAllItems().Count}");
@@ -50,6 +50,7 @@ public class VanillaContainer(Container _container) : IContainer
                 break;
             }
         }
+
         _container.Save();
         cInventory.Changed();
         AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug("Saved container");
@@ -74,8 +75,10 @@ public class VanillaContainer(Container _container) : IContainer
                 result += item.m_stack;
             }
         }
+
         return result >= amount;
     }
+
     public bool ContainsItem(string prefab, int amount, string sharedName, out int result)
     {
         result = 0;
@@ -88,6 +91,7 @@ public class VanillaContainer(Container _container) : IContainer
                 result += item.m_stack;
             }
         }
+
         return result >= amount;
     }
 
@@ -109,16 +113,48 @@ public class VanillaContainer(Container _container) : IContainer
             {
                 item.m_stack -= stackAmount;
             }
+
             amount -= stackAmount;
             if (amount <= 0)
             {
                 break;
             }
         }
+
         _container.Save();
         cInventory.Changed();
     }
-    
+
+    public void RemoveItem(string prefab, string sharedName, int amount)
+    {
+        Inventory cInventory = _container.GetInventory();
+        if (cInventory == null) return;
+        for (int i = 0; i < cInventory.GetAllItems().Count; ++i)
+        {
+            ItemDrop.ItemData item = cInventory.GetItem(i);
+            if (item?.m_dropPrefab?.name != prefab) continue;
+            int stackAmount = Mathf.Min(item.m_stack, amount);
+            if (stackAmount == item.m_stack)
+            {
+                cInventory.RemoveItem(i);
+                --i;
+            }
+            else
+            {
+                item.m_stack -= stackAmount;
+            }
+
+            amount -= stackAmount;
+            if (amount <= 0)
+            {
+                break;
+            }
+        }
+
+        _container.Save();
+        cInventory.Changed();
+    }
+
     public void Save()
     {
         _container.Save();

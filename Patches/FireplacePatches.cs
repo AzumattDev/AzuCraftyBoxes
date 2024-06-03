@@ -65,7 +65,7 @@ static class FireplaceInteractPatch
                 AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Pull ALL is {pullAll}");
                 AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"(FireplaceInteractPatch) Container at {c.GetPosition()} has {result} {fuelPrefabName}, taking {amount}");
 
-                c.RemoveItem(fuelPrefabName, amount);
+                c.RemoveItem(fuelPrefabName, sharedName, amount);
                 c.Save();
 
                 if (__result)
