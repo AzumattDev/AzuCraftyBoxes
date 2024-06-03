@@ -187,11 +187,11 @@ static class SmelterOnAddOrePatch
             if (__instance.GetQueueSize() >= __instance.m_maxOre || (added.Any() && !pullAll))
                 break;
 
-            string sharedName = itemConversion.m_from.m_itemData.m_shared.m_name;
+            string name = itemConversion.m_from.m_itemData.m_shared.m_name;
             string prefabName = itemConversion.m_from.name;
-            if (pullAll && inventory.HaveItem(sharedName))
+            if (pullAll && inventory.HaveItem(name))
             {
-                ItemDrop.ItemData newItem = inventory.GetItem(sharedName);
+                ItemDrop.ItemData newItem = inventory.GetItem(name);
                 if (newItem == null) continue;
                 try
                 {
@@ -213,11 +213,11 @@ static class SmelterOnAddOrePatch
                 }
 
                 int amount = pullAll
-                    ? Mathf.Min(__instance.m_maxOre - __instance.GetQueueSize(), inventory.CountItems(sharedName))
+                    ? Mathf.Min(__instance.m_maxOre - __instance.GetQueueSize(), inventory.CountItems(name))
                     : 1;
-                if (!added.ContainsKey(sharedName))
-                    added[sharedName] = 0;
-                added[sharedName] += amount;
+                if (!added.ContainsKey(name))
+                    added[name] = 0;
+                added[name] += amount;
 
                 inventory.RemoveItem(itemConversion.m_from.m_itemData.m_shared.m_name, amount);
                 //typeof(Inventory).GetMethod("Changed", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(inventory, new object[] { });
@@ -225,7 +225,7 @@ static class SmelterOnAddOrePatch
                 for (int i = 0; i < amount; ++i)
                     ___m_nview.InvokeRPC("RPC_AddOre", newItem.m_dropPrefab.name);
 
-                user.Message(MessageHud.MessageType.TopLeft, $"$msg_added {amount} {sharedName}");
+                user.Message(MessageHud.MessageType.TopLeft, $"$msg_added {amount} {name}");
                 if (__instance.GetQueueSize() >= __instance.m_maxOre)
                     break;
             }
