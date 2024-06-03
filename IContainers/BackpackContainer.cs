@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using Backpacks;
 using UnityEngine;
 
@@ -71,8 +72,10 @@ public class BackpackContainer(ItemContainer _container) : IContainer
 
     public int ItemCount(string name)
     {
-        int result = Backpacks.API.CountItemsInBackpacks(Player.m_localPlayer.GetInventory(), name);
-        AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Found {result} {name} in backpacks");
+        Inventory cInventory = _container.Inventory;
+        if (cInventory == null) return 0;
+        int result = cInventory.GetAllItems().Where(item => item.m_shared.m_name == name).Sum(item => item.m_stack);
+        AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Found {result} {name} in [{GetPrefabName()}]");
         return result;
     }
 

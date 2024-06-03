@@ -68,10 +68,14 @@ public class Boxes
                 BackpackContainer backpackContainer = BackpackContainer.Create(allItem?.Data("org.bepinex.plugins.backpacks")?.Get<ItemContainer>()!);
                 if (backpackList.Contains(backpackContainer)) continue;
                 backpackList.Add(backpackContainer);
-
             }
 
             backpacksEnumerable = backpackList;
+
+            /*if (Backpacks.API.GetEquippedBackpack()?.Data("org.bepinex.plugins.backpacks")?.Get<ItemContainer>() is {} backpack)
+            {
+                backpacksEnumerable = new List<IContainer> { BackpackContainer.Create(backpack) };
+            }*/
         }
 
 
@@ -152,7 +156,7 @@ public class Boxes
 
         List<string> excludeList = containerData.TryGetValue("exclude", out List<string> value1) ? value1 : new List<string>();
         List<string> includeOverrideList = containerData.TryGetValue("includeOverride", out List<string> value) ? value : new List<string>();
- 
+
         if (includeOverrideList.Contains(prefab))
         {
             return true;
