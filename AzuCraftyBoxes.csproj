@@ -135,7 +135,6 @@
         <Compile Include="Patches\SmelterPatches.cs" />
         <Compile Include="Plugin.cs" />
         <Compile Include="Properties\AssemblyInfo.cs" />
-        <Compile Include="Util\DataClasses.cs" />
         <Compile Include="Util\Functions\Boxes.cs" />
         <Compile Include="Util\Functions\ForTheYams.cs" />
         <Compile Include="Util\Functions\GroupUtils.cs" />

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using AzuCraftyBoxes.IContainers;
@@ -42,6 +42,7 @@ static class CookingStationOnAddFuelSwitchPatch
             }
 
             AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"(CookingStationOnAddFuelSwitchPatch) Container at {c.GetPosition()} has {result} {fuelPrefabName}, taking one");
+
             c.RemoveItem(sharedName, 1);
             c.Save();
             user.Message(MessageHud.MessageType.Center, "$msg_added " + __instance.m_fuelItem.m_itemData.m_shared.m_name);
@@ -94,7 +95,9 @@ static class CookingStationFindCookableItemPatch
                 ItemDrop.ItemData itemData = drop.GetComponent<ItemDrop>().m_itemData.Clone();
                 itemData.m_dropPrefab = drop;
                 __result = itemData;
+
                 c.RemoveItem(sharedName, 1);
+
                 c.Save();
                 return;
             }

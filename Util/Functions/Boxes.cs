@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using AzuCraftyBoxes.IContainers;
@@ -59,12 +59,19 @@ public class Boxes
         if (Player.m_localPlayer == null) return nearbyContainers;
         IEnumerable<IContainer> kgDrawers = APIs.ItemDrawers_API.AllDrawersInRange(gameObject.transform.position, rangeToUse).Select(kgDrawer.Create);
         IEnumerable<IContainer> backpacksEnumerable = new List<IContainer>();
+        List<IContainer> backpackList = [];
         if (AzuCraftyBoxesPlugin.BackpacksIsLoaded)
         {
-            if (Backpacks.API.GetEquippedBackpack()?.Data("org.bepinex.plugins.backpacks")?.Get<ItemContainer>() is {} backpack)
+            // Get all backpacks in the player inventory
+            foreach (ItemDrop.ItemData? allItem in Player.m_localPlayer.GetInventory().GetAllItems().Where(x => x?.Data("org.bepinex.plugins.backpacks")?.Get<ItemContainer>() != null))
             {
-                backpacksEnumerable = new List<IContainer> { BackpackContainer.Create(backpack) };
+                BackpackContainer backpackContainer = BackpackContainer.Create(allItem?.Data("org.bepinex.plugins.backpacks")?.Get<ItemContainer>()!);
+                if (backpackList.Contains(backpackContainer)) continue;
+                backpackList.Add(backpackContainer);
+
             }
+
+            backpacksEnumerable = backpackList;
         }
 
 

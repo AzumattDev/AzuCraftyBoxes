@@ -25,7 +25,7 @@ public class BackpackContainer(ItemContainer _container) : IContainer
             {
                 AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"(ConsumeResourcesPatch) Removing item {reqName} from container");
                 AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Container inventory before removal: {cInventory.GetAllItems().Count}, Item at index {i}: {cInventory.GetItem(i)?.m_shared?.m_name}");
-                
+
                 bool removed = cInventory.RemoveItem(i);
                 AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug("Removed was " + removed);
                 AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Container inventory after attempted removal: {cInventory.GetAllItems().Count}");
@@ -47,8 +47,17 @@ public class BackpackContainer(ItemContainer _container) : IContainer
                 break;
             }
         }
-        _container.Save();
-        cInventory.Changed();
+
+        try
+        {
+            _container.Save();
+            cInventory.Changed();
+        }
+        catch
+        {
+            // Do nothing because this occasionally fails on backpacks. Fix better later.
+        }
+
         AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug("Saved container");
 
         if (totalAmount >= totalRequirement)
@@ -70,15 +79,27 @@ public class BackpackContainer(ItemContainer _container) : IContainer
     {
         Backpacks.API.DeleteItemsFromBackpacks(Player.m_localPlayer.GetInventory(), name, amount);
     }
-    
+
+    public void RemoveItem(string prefab, string sharedName, int amount)
+    {
+        Backpacks.API.DeleteItemsFromBackpacks(Player.m_localPlayer.GetInventory(), sharedName, amount);
+    }
+
     public void Save()
     {
-        _container.Save();
-        _container.Inventory?.Changed();
+        try
+        {
+            _container.Save();
+            _container.Inventory?.Changed();
+        }
+        catch (Exception e)
+        {
+            // Ignored for Backpacks.
+        }
     }
 
     public Vector3 GetPosition() => Player.m_localPlayer.transform.position;
-    public string GetPrefabName() => "bp_explorer";
+    public string GetPrefabName() => _container.Item.m_dropPrefab.name;
 
 
     public static BackpackContainer Create(ItemContainer container) => new(container);

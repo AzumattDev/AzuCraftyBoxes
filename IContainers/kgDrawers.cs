@@ -1,4 +1,4 @@
-﻿using AzuCraftyBoxes.APIs;
+using AzuCraftyBoxes.APIs;
 using UnityEngine;
 
 namespace AzuCraftyBoxes.IContainers;
@@ -23,7 +23,16 @@ public class kgDrawer(ItemDrawers_API.Drawer _drawer) : IContainer
         _drawer.Remove(amount);
     }
 
-    public void Save(){}
+    public void RemoveItem(string prefab, string sharedName, int amount)
+    {
+        amount = Mathf.Min(amount, _drawer.Amount);
+        _drawer.Remove(amount);
+    }
+
+    public void Save()
+    {
+    }
+
     public Vector3 GetPosition() => _drawer.Position;
     public string GetPrefabName() => _drawer.ZNVName;
 

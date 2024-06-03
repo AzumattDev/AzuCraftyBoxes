@@ -1,9 +1,10 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 namespace AzuCraftyBoxes.IContainers;
 
 public interface IContainer
 {
+
     public int ProcessContainerInventory(string reqName, int totalAmount, int totalRequirement);
     public int ItemCount(string name);
     public void RemoveItem(string name, int amount);
