@@ -26,16 +26,14 @@ static class FireplaceInteractPatch
             ___m_nview.ClaimOwnership();
         }
 
-        if (Boxes.CanItemBePulled(Utils.GetPrefabName(__instance.gameObject), __instance.m_fuelItem.name))
+        if (!Boxes.CanItemBePulled(Utils.GetPrefabName(__instance.gameObject), __instance.m_fuelItem.name))
         {
             return true;
         }
 
         if (pullAll && inventory.HaveItem(__instance.m_fuelItem.m_itemData.m_shared.m_name))
         {
-            int amount =
-                (int)Mathf.Min(__instance.m_maxFuel - Mathf.CeilToInt(___m_nview.GetZDO().GetFloat("fuel")),
-                    inventory.CountItems(__instance.m_fuelItem.m_itemData.m_shared.m_name));
+            int amount = (int)Mathf.Min(__instance.m_maxFuel - Mathf.CeilToInt(___m_nview.GetZDO().GetFloat(ZDOVars.s_fuel)), inventory.CountItems(__instance.m_fuelItem.m_itemData.m_shared.m_name));
             inventory.RemoveItem(__instance.m_fuelItem.m_itemData.m_shared.m_name, amount);
             inventory.Changed();
             for (int i = 0; i < amount; ++i)
@@ -47,7 +45,7 @@ static class FireplaceInteractPatch
             __result = false;
         }
 
-        if (inventory.HaveItem(__instance.m_fuelItem.m_itemData.m_shared.m_name) || !(Mathf.CeilToInt(___m_nview.GetZDO().GetFloat("fuel")) < __instance.m_maxFuel)) return __result;
+        if (inventory.HaveItem(__instance.m_fuelItem.m_itemData.m_shared.m_name) || !(Mathf.CeilToInt(___m_nview.GetZDO().GetFloat(ZDOVars.s_fuel)) < __instance.m_maxFuel)) return __result;
         {
             List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(__instance, AzuCraftyBoxesPlugin.mRange.Value);
 
@@ -55,14 +53,14 @@ static class FireplaceInteractPatch
             string sharedName = __instance.m_fuelItem.m_itemData.m_shared.m_name;
             foreach (IContainer c in nearbyContainers)
             {
-                if (!c.ContainsItem(sharedName, 1, out int result) || !(Mathf.CeilToInt(___m_nview.GetZDO().GetFloat("fuel")) < __instance.m_maxFuel)) continue;
+                if (!c.ContainsItem(sharedName, 1, out int result) || !(Mathf.CeilToInt(___m_nview.GetZDO().GetFloat(ZDOVars.s_fuel)) < __instance.m_maxFuel)) continue;
                 if (!Boxes.CanItemBePulled(c.GetPrefabName(), fuelPrefabName))
                 {
                     AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"(FireplaceInteractPatch) Container at {c.GetPosition()} has {result} {fuelPrefabName} but it's forbidden by config");
                     continue;
                 }
 
-                int amount = pullAll ? (int)Mathf.Min(__instance.m_maxFuel - Mathf.CeilToInt(___m_nview.GetZDO().GetFloat("fuel")), result) : 1;
+                int amount = pullAll ? (int)Mathf.Min(__instance.m_maxFuel - Mathf.CeilToInt(___m_nview.GetZDO().GetFloat(ZDOVars.s_fuel)), result) : 1;
                 AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Pull ALL is {pullAll}");
                 AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"(FireplaceInteractPatch) Container at {c.GetPosition()} has {result} {fuelPrefabName}, taking {amount}");
 
@@ -77,7 +75,7 @@ static class FireplaceInteractPatch
 
                 __result = false;
 
-                if (!pullAll || Mathf.CeilToInt(___m_nview.GetZDO().GetFloat("fuel")) >= __instance.m_maxFuel)
+                if (!pullAll || Mathf.CeilToInt(___m_nview.GetZDO().GetFloat(ZDOVars.s_fuel)) >= __instance.m_maxFuel)
                     return false;
             }
         }
@@ -96,7 +94,7 @@ static class FireplaceGetHoverTextPatch
             return;
         }
 
-        double free = __instance.m_maxFuel - (double)Mathf.CeilToInt(__instance.m_nview.GetZDO().GetFloat("fuel"));
+        double free = __instance.m_maxFuel - (double)Mathf.CeilToInt(__instance.m_nview.GetZDO().GetFloat(ZDOVars.s_fuel));
         List<string> items = new();
 
         if (free <= 0)
@@ -145,8 +143,7 @@ static class FireplaceGetHoverTextPatch
 
         if (items.Count > 0)
         {
-            __result += Localization.instance.Localize(
-                $"\n[<b><color=yellow>{AzuCraftyBoxesPlugin.fillAllModKey.Value}</color> + <color=yellow>$KEY_Use</color></b>] {string.Join(" and ", items)}");
+            __result += Localization.instance.Localize($"\n[<b><color=yellow>{AzuCraftyBoxesPlugin.fillAllModKey.Value}</color> + <color=yellow>$KEY_Use</color></b>] {string.Join(" and ", items)}");
         }
     }
 }

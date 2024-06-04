@@ -75,7 +75,6 @@ public class BackpackContainer(ItemContainer _container) : IContainer
         Inventory cInventory = _container.Inventory;
         if (cInventory == null) return 0;
         int result = cInventory.GetAllItems().Where(item => item.m_shared.m_name == name).Sum(item => item.m_stack);
-        AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Found {result} {name} in [{GetPrefabName()}]");
         return result;
     }
 

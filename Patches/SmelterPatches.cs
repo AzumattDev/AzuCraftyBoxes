@@ -388,7 +388,7 @@ static class SmelterOnAddFuelPatch
 
                 __result = false;
 
-                if (!pullAll || Mathf.CeilToInt(___m_nview.GetZDO().GetFloat("fuel")) >= __instance.m_maxFuel)
+                if (!pullAll || Mathf.CeilToInt(___m_nview.GetZDO().GetFloat(ZDOVars.s_fuel)) >= __instance.m_maxFuel)
                     return false;
             }
         }

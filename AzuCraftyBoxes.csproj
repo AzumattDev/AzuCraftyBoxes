@@ -126,13 +126,16 @@
         <Compile Include="IContainers\VanillaContainer.cs" />
         <Compile Include="Patches\ChestPatches.cs" />
         <Compile Include="Patches\CookingStationPatches.cs" />
+        <Compile Include="Patches\FermenterPatches.cs" />
         <Compile Include="Patches\FireplacePatches.cs" />
         <Compile Include="Patches\HUDPatches.cs" />
         <Compile Include="Patches\InventoryGui.cs" />
         <Compile Include="Patches\PlayerPatches.cs" />
         <Compile Include="Patches\PredefinedGroups.cs" />
         <Compile Include="Patches\RecipePatch.cs" />
+        <Compile Include="Patches\ShieldGeneratorPatches.cs" />
         <Compile Include="Patches\SmelterPatches.cs" />
+        <Compile Include="Patches\TurretPatches.cs" />
         <Compile Include="Plugin.cs" />
         <Compile Include="Properties\AssemblyInfo.cs" />
         <Compile Include="Util\Functions\Boxes.cs" />
