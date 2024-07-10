@@ -36,6 +36,17 @@
         <WarningLevel>4</WarningLevel>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     </PropertyGroup>
+    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'EpicLootTesting|AnyCPU' ">
+        <PlatformTarget>AnyCPU</PlatformTarget>
+        <DebugSymbols>true</DebugSymbols>
+        <DebugType>full</DebugType>
+        <Optimize>false</Optimize>
+        <OutputPath>bin\EpicLootTesting\</OutputPath>
+        <DefineConstants>EpicLootTesting;TRACE</DefineConstants>
+        <ErrorReport>prompt</ErrorReport>
+        <WarningLevel>4</WarningLevel>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    </PropertyGroup>
     <Choose>
         <When Condition="($(OS) == 'Unix' OR $(OS) == 'OSX') AND $(GamePath) == ''">
             <PropertyGroup>
@@ -117,6 +128,7 @@
         <Compile Include="APIs\API.cs" />
         <Compile Include="APIs\kg_ItemDrawersAPI.cs" />
         <Compile Include="Compatibility\EpicLoot\EpicLootReflectionHelper.cs" />
+        <Compile Include="Compatibility\EpicLoot\EpicLootReflectionHelpers.cs" />
         <Compile Include="Compatibility\ModCompat.cs" />
         <Compile Include="Compatibility\WardIsLove\WardIsLovePlugin.cs" />
         <Compile Include="Compatibility\WardIsLove\WardMonoscript.cs" />
@@ -142,6 +154,7 @@
         <Compile Include="Util\Functions\ForTheYams.cs" />
         <Compile Include="Util\Functions\GroupUtils.cs" />
         <Compile Include="Util\Functions\MiscFunctions.cs" />
+        <Compile Include="Util\GlobalUsings.cs" />
         <Compile Include="VersionHandshake.cs" />
     </ItemGroup>
     <ItemGroup>

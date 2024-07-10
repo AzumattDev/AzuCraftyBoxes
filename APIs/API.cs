@@ -1,12 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using AzuCraftyBoxes.APIs;
+﻿using AzuCraftyBoxes.APIs;
 using AzuCraftyBoxes.IContainers;
 using AzuCraftyBoxes.Util.Functions;
-using JetBrains.Annotations;
-using UnityEngine;
 #if ! API
-using System.Linq;
 #endif
 
 namespace AzuCraftyBoxes;

@@ -1,13 +1,6 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using System.Reflection.Emit;
-using AzuCraftyBoxes.IContainers;
-using AzuCraftyBoxes.Util;
+﻿using AzuCraftyBoxes.IContainers;
 using AzuCraftyBoxes.Util.Functions;
-using HarmonyLib;
 using TMPro;
-using UnityEngine;
-using UnityEngine.UI;
 
 namespace AzuCraftyBoxes.Patches;
 

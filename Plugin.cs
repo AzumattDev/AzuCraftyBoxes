@@ -1,40 +1,26 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Text.RegularExpressions;
+﻿using System.IO;
+using AzuCraftyBoxes.Compatibility.EpicLoot;
 //using AzuCraftyBoxes.Compatibility.EpicLoot;
 using AzuCraftyBoxes.IContainers;
 using AzuCraftyBoxes.Util.Functions;
-using BepInEx;
-using BepInEx.Bootstrap;
-using BepInEx.Configuration;
-using BepInEx.Logging;
-using HarmonyLib;
-using JetBrains.Annotations;
-using ServerSync;
-using UnityEngine;
 
 namespace AzuCraftyBoxes
 {
     [BepInPlugin(ModGUID, ModName, ModVersion)]
     [BepInDependency("kg.ItemDrawers", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency("org.bepinex.plugins.backpacks", BepInDependency.DependencyFlags.SoftDependency)]
-    //[BepInDependency(EpicLootReflectionHelper.elGuid, BepInDependency.DependencyFlags.SoftDependency)]
     [BepInIncompatibility("aedenthorn.CraftFromContainers")]
     [BepInIncompatibility("CFCMod")]
     public class AzuCraftyBoxesPlugin : BaseUnityPlugin
     {
         internal const string ModName = "AzuCraftyBoxes";
-        internal const string ModVersion = "1.4.3";
+        internal const string ModVersion = "1.5.0";
         internal const string Author = "Azumatt";
         private const string ModGUID = $"{Author}.{ModName}";
         private static string ConfigFileName = $"{ModGUID}.cfg";
         private static string ConfigFileFullPath = Paths.ConfigPath + Path.DirectorySeparatorChar + ConfigFileName;
         internal static string ConnectionError = "";
-        private readonly Harmony _harmony = new(ModGUID);
+        internal static readonly Harmony harmony = new(ModGUID);
         public static readonly ManualLogSource AzuCraftyBoxesLogger = BepInEx.Logging.Logger.CreateLogSource(ModName);
         private static readonly ConfigSync ConfigSync = new(ModGUID) { DisplayName = ModName, CurrentVersion = ModVersion, MinimumRequiredVersion = ModVersion };
 
@@ -51,8 +37,6 @@ namespace AzuCraftyBoxes
         internal static Dictionary<string, Dictionary<string, List<string>>> yamlData = null!;
         internal static Dictionary<string, HashSet<string>> groups = new();
         internal static Dictionary<string, bool> CanItemBePulledCache = null!;
-
-        internal static Assembly? epicLootAssembly;
         internal static bool BackpacksIsLoaded = false;
 
         public enum Toggle
@@ -87,7 +71,7 @@ namespace AzuCraftyBoxes
             CraftyContainerData.AssignLocalValue(File.ReadAllText(yamlPath));
 
             Assembly assembly = Assembly.GetExecutingAssembly();
-            _harmony.PatchAll(assembly);
+            harmony.PatchAll(assembly);
             SetupWatcher();
         }
 
@@ -131,9 +115,9 @@ namespace AzuCraftyBoxes
             {
                 BackpacksIsLoaded = true;
             }
-            
-            // if (!Chainloader.PluginInfos.ContainsKey(EpicLootReflectionHelper.elGuid)) return;
-            // epicLootAssembly = Chainloader.PluginInfos[EpicLootReflectionHelper.elGuid].Instance.GetType().Assembly;
+
+            if (!Chainloader.PluginInfos.TryGetValue(EpicLoot.elGuid, out PluginInfo? epicLootInfo)) return;
+            EpicLoot.Init(epicLootInfo);
         }
 
         private void LateUpdate()
@@ -327,6 +311,23 @@ namespace AzuCraftyBoxes
         public static bool IsKeyHeld(this KeyboardShortcut shortcut)
         {
             return shortcut.MainKey != KeyCode.None && Input.GetKey(shortcut.MainKey) && shortcut.Modifiers.All(Input.GetKey);
+        }
+    }
+
+    public static class LoggerExtensions
+    {
+        public static void LogIfDebugBuild(this ManualLogSource logger, string message)
+        {
+#if DEBUG
+            logger.LogDebug(message);
+#endif
+        }
+
+        public static void LogIfDebuggingEpicLoot(this ManualLogSource logger, string message)
+        {
+#if EpicLootTesting
+            logger.LogDebug(message);
+#endif
         }
     }
 }

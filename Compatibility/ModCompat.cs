@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace AzuCraftyBoxes.Compatibility {
+﻿namespace AzuCraftyBoxes.Compatibility {
     public class ModCompat {
         protected static T InvokeMethod<T>(Type type, object instance, string methodName, object[] parameter) {
             return (T)type.GetMethod(methodName)?.Invoke(instance, parameter);

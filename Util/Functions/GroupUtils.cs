@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-
+﻿
 namespace AzuCraftyBoxes.Util.Functions;
 
 public class GroupUtils
@@ -12,8 +10,7 @@ public class GroupUtils
         {
             if (containerData.TryGetValue("exclude", out List<string> excludeList))
             {
-                return excludeList.Where(excludeItem =>
-                        AzuCraftyBoxesPlugin.groups.ContainsKey(excludeItem)).ToList();
+                return excludeList.Where(excludeItem => AzuCraftyBoxesPlugin.groups.ContainsKey(excludeItem)).ToList();
             }
         }
 
@@ -23,8 +20,7 @@ public class GroupUtils
     {
         if (AzuCraftyBoxesPlugin.yamlData == null)
         {
-            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogError(
-                "yamlData is null. Make sure to call DeserializeYamlFile() before using IsGroupDefined.");
+            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogError("yamlData is null. Make sure to call DeserializeYamlFile() before using IsGroupDefined.");
             return false;
         }
 

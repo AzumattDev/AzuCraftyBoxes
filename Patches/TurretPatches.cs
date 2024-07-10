@@ -1,8 +1,5 @@
-﻿using System.Collections.Generic;
-using AzuCraftyBoxes.IContainers;
+﻿using AzuCraftyBoxes.IContainers;
 using AzuCraftyBoxes.Util.Functions;
-using HarmonyLib;
-using UnityEngine;
 
 namespace AzuCraftyBoxes.Patches;
 

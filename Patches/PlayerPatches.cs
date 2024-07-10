@@ -1,11 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using AzuCraftyBoxes.IContainers;
-using AzuCraftyBoxes.Util;
+﻿using AzuCraftyBoxes.IContainers;
 using AzuCraftyBoxes.Util.Functions;
-using HarmonyLib;
-using UnityEngine;
 
 namespace AzuCraftyBoxes.Patches;
 
@@ -180,10 +174,7 @@ static class HaveRequirementsPatch2
                                 return;
                             break;
                         }
-                        case Player.RequirementMode.CanBuild
-                            when __instance.GetInventory()
-                                     .CountItems(requirement.m_resItem.m_itemData.m_shared.m_name) <
-                                 requirement.m_amount:
+                        case Player.RequirementMode.CanBuild when __instance.GetInventory().CountItems(requirement.m_resItem.m_itemData.m_shared.m_name) < requirement.m_amount:
                         {
                             int hasItems = __instance.GetInventory()
                                 .CountItems(requirement.m_resItem.m_itemData.m_shared.m_name);

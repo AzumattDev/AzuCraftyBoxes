@@ -1,8 +1,4 @@
-﻿using System;
-using BepInEx.Bootstrap;
-using BepInEx.Configuration;
-
-namespace AzuCraftyBoxes.Compatibility.WardIsLove {
+﻿namespace AzuCraftyBoxes.Compatibility.WardIsLove {
     public class WardIsLovePlugin : ModCompat {
         private const string GUID = "Azumatt.WardIsLove";
         private static readonly System.Version MinVersion = new(2, 3, 3);

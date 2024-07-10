@@ -1,12 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Reflection;
-using System.Security.Cryptography;
-using System.Text;
-using HarmonyLib;
-
-namespace AzuCraftyBoxes
+﻿namespace AzuCraftyBoxes
 {
     [HarmonyPatch(typeof(ZNet), nameof(ZNet.OnNewConnection))]
     public static class RegisterAndCheckVersion

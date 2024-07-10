@@ -1,11 +1,6 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using AzuCraftyBoxes.IContainers;
 using Backpacks;
-using HarmonyLib;
 using ItemDataManager;
-using UnityEngine;
 
 namespace AzuCraftyBoxes.Util.Functions;
 

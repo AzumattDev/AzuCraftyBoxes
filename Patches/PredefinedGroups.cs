@@ -1,7 +1,4 @@
-﻿using System.Linq;
-using AzuCraftyBoxes.Util.Functions;
-using HarmonyLib;
-using UnityEngine;
+﻿using AzuCraftyBoxes.Util.Functions;
 
 namespace AzuCraftyBoxes.Patches;
 

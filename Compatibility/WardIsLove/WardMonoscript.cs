@@ -1,7 +1,4 @@
-﻿using System;
-using UnityEngine;
-
-namespace AzuCraftyBoxes.Compatibility.WardIsLove
+﻿namespace AzuCraftyBoxes.Compatibility.WardIsLove
 {
     public class WardMonoscript : ModCompat
     {

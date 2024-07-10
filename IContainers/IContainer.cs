@@ -1,5 +1,3 @@
-using UnityEngine;
-
 namespace AzuCraftyBoxes.IContainers;
 
 public interface IContainer

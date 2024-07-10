@@ -1,12 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Reflection;
-using AzuCraftyBoxes.IContainers;
-using AzuCraftyBoxes.Patches;
-using HarmonyLib;
-using UnityEngine;
+﻿using AzuCraftyBoxes.IContainers;
 
 namespace AzuCraftyBoxes.Util.Functions;
 
@@ -50,8 +42,7 @@ public class MiscFunctions
 
     private static bool IsValidRequirement(Piece.Requirement requirement)
     {
-        return requirement.m_resItem &&
-               requirement.m_resItem.m_itemData is { m_shared: not null };
+        return requirement.m_resItem && requirement.m_resItem.m_itemData is { m_shared: not null };
     }
 
     private static void LogResourceInfo(int totalAmount, int totalRequirement, string reqName)

@@ -1,7 +1,4 @@
-﻿using System;
-using System.Linq;
-using Backpacks;
-using UnityEngine;
+﻿using Backpacks;
 
 namespace AzuCraftyBoxes.IContainers;
 

@@ -52,10 +52,6 @@ UnFlashColor [Not Synced with Server]
 * Resource amounts will flash from this colour when coming from containers (set both colors to the same color for no flashing)
     * Default Value: FFFFFFFF
 
-PulledMessage [Not Synced with Server]
-* Message to show after pulling items to player inventory
-    * Default Value: Pulled items to inventory
-
 `3 - Keys`
 
 FillAllModKey [Not Synced with Server]
