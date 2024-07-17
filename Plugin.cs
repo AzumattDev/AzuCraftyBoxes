@@ -1,5 +1,4 @@
 ﻿using System.IO;
-using AzuCraftyBoxes.Compatibility.EpicLoot;
 //using AzuCraftyBoxes.Compatibility.EpicLoot;
 using AzuCraftyBoxes.IContainers;
 using AzuCraftyBoxes.Util.Functions;
@@ -14,7 +13,7 @@ namespace AzuCraftyBoxes
     public class AzuCraftyBoxesPlugin : BaseUnityPlugin
     {
         internal const string ModName = "AzuCraftyBoxes";
-        internal const string ModVersion = "1.5.0";
+        internal const string ModVersion = "1.5.1";
         internal const string Author = "Azumatt";
         private const string ModGUID = $"{Author}.{ModName}";
         private static string ConfigFileName = $"{ModGUID}.cfg";
@@ -116,8 +115,8 @@ namespace AzuCraftyBoxes
                 BackpacksIsLoaded = true;
             }
 
-            if (!Chainloader.PluginInfos.TryGetValue(EpicLoot.elGuid, out PluginInfo? epicLootInfo)) return;
-            EpicLoot.Init(epicLootInfo);
+            /*if (!Chainloader.PluginInfos.TryGetValue(EpicLoot.elGuid, out PluginInfo? epicLootInfo)) return;
+            EpicLoot.Init(epicLootInfo);*/
         }
 
         private void LateUpdate()

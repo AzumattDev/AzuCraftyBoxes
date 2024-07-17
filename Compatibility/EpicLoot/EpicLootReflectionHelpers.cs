@@ -1,4 +1,4 @@
-﻿using System.Collections;
+﻿/*using System.Collections;
 using AzuCraftyBoxes.Util.Functions;
 
 namespace AzuCraftyBoxes.Compatibility.EpicLoot;
@@ -187,7 +187,7 @@ public class EpicLootReflectionHelpers
         bool yep = (bool)EpicLoot.getCanBeDisenchantedItemMethod.Invoke(null, new object[] { item });
         AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfDebuggingEpicLoot($"Item {item.m_shared.m_name} can be disenchanted: {yep}");
         return yep;
-    }*/
+    }#1#
 
     /*public static bool CanBeDisenchanted(ItemDrop.ItemData item)
     {
@@ -204,7 +204,7 @@ public class EpicLootReflectionHelpers
             return (bool)EpicLoot.getCanBeDisenchantedItemMethod.Invoke(magicItem, null);
         }
         return false;
-    }*/
+    }#1#
 
 
     public static object CreateInventoryItemListElement(ItemDrop.ItemData item)
@@ -294,4 +294,4 @@ public class EpicLootReflectionHelpers
             return null;
         }
     }
-}
+}*/

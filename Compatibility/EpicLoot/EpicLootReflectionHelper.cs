@@ -1,4 +1,4 @@
-﻿namespace AzuCraftyBoxes.Compatibility.EpicLoot;
+﻿/*namespace AzuCraftyBoxes.Compatibility.EpicLoot;
 
 public static class EpicLoot
 {
@@ -219,7 +219,7 @@ public static class EpicLoot
                 AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogWarning($"Error in Prefix: {ex}");
                 return; // If there's an error, fall back to the original method
             }
-        }#1#
+        }#2#
 
         [HarmonyPatch("EpicLoot.CraftingV2.EnchantingUIController, EpicLoot", "GetAugmentableItems"), HarmonyPostfix]
         private static void GetAugmentableItemsPostfixPatch(ref object __result)
@@ -297,7 +297,7 @@ public static class EpicLoot
                 return; // If there's an error, fall back to the original method
             }
         }
-    }*/
+    }#1#
 
     public static class EpicLootEnchantingUI
     {
@@ -316,7 +316,7 @@ public static class EpicLoot
         private static void GetSacrificeItemsPostfixPatch(ref object __result)
         {
             EpicLootReflectionHelpers.AppendItemsFromContainers(ref __result, EpicLootReflectionHelpers.CanBeMagicItem);
-        }*/
+        }#1#
 
         [HarmonyPatch("EpicLoot.CraftingV2.EnchantingUIController, EpicLoot", "GetAugmentableItems"), HarmonyPostfix]
         private static void GetAugmentableItemsPostfixPatch(ref object __result)
@@ -328,6 +328,6 @@ public static class EpicLoot
         private static void GetDisenchantItemsPostfixPatch(ref object __result)
         {
             EpicLootReflectionHelpers.AppendItemsFromContainers(ref __result, EpicLootReflectionHelpers.CanBeDisenchanted, true);
-        }*/
+        }#1#
     }
-}
+}*/
