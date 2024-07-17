@@ -20,6 +20,7 @@ static class UpdateKnownRecipesListPatch
 [HarmonyPatch(typeof(Player), nameof(Player.HaveRequirementItems), new[] { typeof(Recipe), typeof(bool), typeof(int) })]
 static class PlayerHaveRequirementsPatch
 {
+    [HarmonyPriority(Priority.VeryHigh)]
     static void Postfix(Player __instance, ref bool __result, Recipe piece, bool discover, int qualityLevel, HashSet<string> ___m_knownMaterial)
     {
         try
@@ -40,6 +41,7 @@ static class PlayerHaveRequirementsPatch
                 {
                     amount = requirement.GetAmount(qualityLevel);
                 }
+
                 int invAmount = __instance.GetInventory().CountItems(requirement.m_resItem.m_itemData.m_shared.m_name);
                 if (invAmount >= amount) continue;
 
@@ -87,7 +89,8 @@ static class PlayerHaveRequirementsPatch
                     cando = true;
                 }
             }
-            if(cando)
+
+            if (cando)
                 __result = true;
         }
         catch
@@ -96,10 +99,98 @@ static class PlayerHaveRequirementsPatch
     }
 }
 
+[HarmonyPatch(typeof(Player), nameof(Player.HaveRequirements), typeof(Recipe), typeof(bool), typeof(int))]
+static class PlayerHaveRequirementsPatchRBoolInt
+{
+    static void Postfix(Player __instance, Recipe recipe, bool discover, int qualityLevel, ref bool __result)
+    {
+        if (discover)
+        {
+            if (recipe.m_craftingStation && !__instance.KnowStationLevel(recipe.m_craftingStation.m_name, recipe.m_minStationLevel))
+                return;
+        }
+        else if (!__instance.RequiredCraftingStation(recipe, qualityLevel, true))
+            return;
+
+        bool test = (recipe.m_item.m_itemData.m_shared.m_dlc.Length <= 0 || DLCMan.instance.IsDLCInstalled(recipe.m_item.m_itemData.m_shared.m_dlc)) && HaveRequirementItemsTEST(__instance, recipe, discover, qualityLevel);
+        if (test && !__result)
+            __result = true;
+    }
+
+    public static bool HaveRequirementItemsTEST(Player p, Recipe piece, bool discover, int qualityLevel)
+    {
+        if (p == null)
+            return false;
+        foreach (Piece.Requirement resource in piece.m_resources)
+        {
+            if (resource.m_resItem)
+            {
+                if (discover)
+                {
+                    if (resource.m_amount > 0)
+                    {
+                        if (piece.m_requireOnlyOneIngredient)
+                        {
+                            if (p.m_knownMaterial.Contains(resource.m_resItem.m_itemData.m_shared.m_name))
+                                return true;
+                        }
+                        else if (!p.m_knownMaterial.Contains(resource.m_resItem.m_itemData.m_shared.m_name))
+                            return false;
+                    }
+                }
+                else
+                {
+                    List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(p, AzuCraftyBoxesPlugin.mRange.Value);
+                    int amount = resource.GetAmount(qualityLevel);
+                    int num = p.m_inventory.CountItems(resource.m_resItem.m_itemData.m_shared.m_name);
+
+                    foreach (IContainer c in nearbyContainers)
+                    {
+                        resource.m_resItem.m_itemData.m_dropPrefab = resource.m_resItem.gameObject;
+                        if (resource.m_resItem.m_itemData.m_dropPrefab == null)
+                            continue;
+                        string itemPrefabName = resource.m_resItem.name;
+                        string sharedName = resource.m_resItem.m_itemData.m_shared.m_name;
+                        bool canItemBePulled = Boxes.CanItemBePulled(c.GetPrefabName(), itemPrefabName);
+
+                        if (canItemBePulled)
+                        {
+                            try
+                            {
+                                c.ContainsItem(sharedName, 1, out int result);
+                                num += result;
+                                if (num >= amount)
+                                {
+                                    break;
+                                }
+                            }
+                            catch
+                            {
+// ignored
+                            }
+                        }
+                    }
+
+                    if (piece.m_requireOnlyOneIngredient)
+                    {
+                        if (num >= amount)
+                            return true;
+                    }
+                    else if (num < amount)
+                        return false;
+                }
+            }
+        }
+
+        return !piece.m_requireOnlyOneIngredient;
+    }
+}
+
 [HarmonyPatch(typeof(Player), nameof(Player.HaveRequirements), typeof(Piece), typeof(Player.RequirementMode))]
 static class HaveRequirementsPatch2
 {
     [HarmonyWrapSafe]
+    [HarmonyPriority(Priority.VeryHigh)]
     static void Postfix(Player __instance, ref bool __result, Piece piece, Player.RequirementMode mode, HashSet<string> ___m_knownMaterial, Dictionary<string, int> ___m_knownStations)
     {
         try
