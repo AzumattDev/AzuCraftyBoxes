@@ -100,6 +100,7 @@ public class BackpackContainer(ItemContainer _container) : IContainer
 
     public Vector3 GetPosition() => Player.m_localPlayer.transform.position;
     public string GetPrefabName() => _container.Item.m_dropPrefab.name;
+    public Inventory GetInventory() => _container.Inventory;
 
 
     public static BackpackContainer Create(ItemContainer container) => new(container);

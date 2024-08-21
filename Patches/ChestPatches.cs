@@ -8,8 +8,7 @@ internal static class ContainerAwakePatch
 {
     private static void Postfix(Container __instance)
     {
-        if (__instance.name.StartsWith("Treasure") || __instance.GetInventory() == null ||
-            !__instance.m_nview.IsValid() || __instance.m_nview.GetZDO().GetLong("creator".GetStableHashCode()) == 0L)
+        if (__instance.GetInventory() == null || !__instance.m_nview.IsValid() || __instance.m_nview.GetZDO().GetLong("creator".GetStableHashCode()) == 0L)
             return;
 
         try
@@ -53,7 +52,7 @@ static class ContainerLoadPatch
 {
     static void Postfix(Container __instance)
     {
-        if (__instance.name.StartsWith("Treasure") || __instance.GetInventory() == null || !__instance.m_nview.IsValid() || __instance.m_nview.GetZDO().GetLong("creator".GetStableHashCode()) == 0L)
+        if (__instance.GetInventory() == null || !__instance.m_nview.IsValid() || __instance.m_nview.GetZDO().GetLong("creator".GetStableHashCode()) == 0L)
             return;
 
         if (Player.m_localPlayer == null) return;
@@ -67,8 +66,7 @@ static class ContainerLoadPatch
 
         if (Player.m_localPlayer.m_isLoading || Player.m_localPlayer.m_teleporting) return;
         // Only add containers that the player should have access to
-        if (WardIsLovePlugin.IsLoaded() && WardIsLovePlugin.WardEnabled()!.Value &&
-            WardMonoscript.CheckAccess(__instance.transform.position, flash: false, wardCheck: true))
+        if (WardIsLovePlugin.IsLoaded() && WardIsLovePlugin.WardEnabled()!.Value && WardMonoscript.CheckAccess(__instance.transform.position, flash: false, wardCheck: true))
         {
             long playerId = Game.instance.GetPlayerProfile().GetPlayerID();
             if (__instance.CheckAccess(playerId))
@@ -91,11 +89,35 @@ internal static class ContainerOnDestroyedPatch
 {
     private static void Postfix(Container __instance)
     {
-        if (__instance.name.StartsWith("Treasure") || __instance.GetInventory() == null ||
-            !__instance.m_nview.IsValid() || __instance.m_nview.GetZDO().GetLong("creator".GetStableHashCode()) == 0L)
+        if (__instance.GetInventory() == null || !__instance.m_nview.IsValid() || __instance.m_nview.GetZDO().GetLong("creator".GetStableHashCode()) == 0L)
             return;
 
         Boxes.RemoveContainer(__instance);
+    }
+}
+
+[HarmonyPatch(typeof(WearNTear), nameof(WearNTear.OnDestroy))]
+static class WearNTearOnDestroyPatch
+{
+    static void Prefix(WearNTear __instance)
+    {
+        Container[]? container = __instance.GetComponentsInChildren<Container>();
+        Container[]? parentContainer = __instance.GetComponentsInParent<Container>();
+        if (container.Length > 0)
+        {
+            foreach (Container c in container)
+            {
+                Boxes.RemoveContainer(c);
+            }
+        }
+
+        if (parentContainer.Length <= 0) return;
+        {
+            foreach (Container c in parentContainer)
+            {
+                Boxes.RemoveContainer(c);
+            }
+        }
     }
 }
 
@@ -106,8 +128,7 @@ public static class PlayerUpdateTeleportPatchCleanupContainers
     {
         if (!(Player.m_localPlayer != null) || !Player.m_localPlayer.m_teleporting)
             return;
-        foreach (Container container in Boxes.Containers.ToList().Where(container =>
-                     (!(container != null) || !(container.transform != null)
+        foreach (Container container in Boxes.Containers.ToList().Where(container => (!(container != null) || !(container.transform != null)
                          ? 0
                          : (container.GetInventory() != null ? 1 : 0)) == 0).Where(container => container != null))
         {

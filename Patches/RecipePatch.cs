@@ -1,48 +1,63 @@
-﻿/*using System.Collections.Generic;
+﻿/*using System.Reflection.Emit;
 using AzuCraftyBoxes.IContainers;
 using AzuCraftyBoxes.Util.Functions;
-using HarmonyLib;
-using UnityEngine;
 
 namespace AzuCraftyBoxes.Patches;
 
 [HarmonyPatch(typeof(Recipe), nameof(Recipe.GetAmount))]
-static class RecipeGetAmountPatch
+public static class RecipeGetAmountTranspiler
 {
-    static void Postfix(Recipe __instance, int quality, out int need, out ItemDrop.ItemData singleReqItem)
+    private static readonly MethodInfo MethodPlayerGetFirstRequiredItem = AccessTools.Method(typeof(Player), nameof(Player.GetFirstRequiredItem));
+
+    private static readonly MethodInfo MethodGetFirstRequiredItemFromNearbyChests = AccessTools.Method(typeof(RecipeGetAmountTranspiler), nameof(GetFirstRequiredItem));
+
+    [UsedImplicitly]
+    [HarmonyPriority(Priority.VeryHigh)]
+    public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
     {
-        need = 0;
-        singleReqItem = null;
-        if (__instance.m_requireOnlyOneIngredient)
+        AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogWarning("Transpiling Recipe::GetAmount");
+        List<CodeInstruction> il = instructions.ToList();
+        for (int i = 0; i < il.Count; ++i)
         {
-            List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(Player.m_localPlayer, AzuCraftyBoxesPlugin.mRange.Value);
-            foreach (IContainer nearbyContainer in nearbyContainers)
+            if (il[i].Calls(MethodPlayerGetFirstRequiredItem))
             {
-                singleReqItem = GetFirstRequiredItem(nearbyContainer, __instance, quality, out need, out int extraAmount);
-                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Found {singleReqItem.m_shared.m_name} in player inventory, returning {singleReqItem.m_shared.m_name}");
+                il[i] = new CodeInstruction(OpCodes.Call, MethodGetFirstRequiredItemFromNearbyChests);
+                return il.AsEnumerable();
             }
         }
+
+        AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogError("Couldn't transpile `Recipe.GetAmount` like expected");
+        return il.AsEnumerable();
     }
 
-    public static ItemDrop.ItemData GetFirstRequiredItem(IContainer container, Recipe recipe, int qualityLevel, out int amount, out int extraAmount)
+    private static ItemDrop.ItemData GetFirstRequiredItem(Player player, Inventory inventory, Recipe recipe, int qualityLevel, out int amount, out int extraAmount)
     {
-        foreach (Piece.Requirement resource in recipe.m_resources)
+        ItemDrop.ItemData? result = player.GetFirstRequiredItem(inventory, recipe, qualityLevel, out amount, out extraAmount);
+        if (result != null)
         {
-            if (resource.m_resItem)
+            return result;
+        }
+
+        Piece.Requirement[]? requirements = recipe.m_resources;
+        foreach (IContainer? chest in Boxes.GetNearbyContainers(recipe.m_craftingStation, AzuCraftyBoxesPlugin.mRange.Value))
+        {
+            if (chest == null) continue;
+            foreach (Piece.Requirement? requirement in requirements)
             {
-                int amount1 = resource.GetAmount(qualityLevel);
-                for (int quality = 0; quality <= resource.m_resItem.m_itemData.m_shared.m_maxQuality; ++quality)
+                if (!requirement.m_resItem) continue;
+
+                int requiredAmount = requirement.GetAmount(qualityLevel);
+                ItemDrop.ItemData.SharedData? requirementSharedItemData = requirement.m_resItem.m_itemData.m_shared;
+                for (int i = 0; i <= requirementSharedItemData.m_maxQuality; ++i)
                 {
-                    if (container.ContainsItem(resource.m_resItem.name, 1, out int count) >= amount1)
-                    {
-                        
-                    }
-                    if (inventory.CountItems(resource.m_resItem.m_itemData.m_shared.m_name, quality) >= amount1)
-                    {
-                        amount = amount1;
-                        extraAmount = resource.m_extraAmountOnlyOneIngredient;
-                        return inventory.GetItem(resource.m_resItem.m_itemData.m_shared.m_name, quality);
-                    }
+                    string? requirementName = requirementSharedItemData.m_name;
+                    AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Checking {requirementName} in {chest.GetPrefabName()}, we have {chest.ItemCount(requirementName)} and need {requiredAmount}");
+                    if (chest.ItemCount(requirementName) < requiredAmount) continue;
+                    Inventory? chestInventory = chest.GetInventory();
+
+                    amount = requiredAmount;
+                    extraAmount = requirement.m_extraAmountOnlyOneIngredient;
+                    return chestInventory?.GetItem(requirementName, i);
                 }
             }
         }
@@ -50,5 +65,53 @@ static class RecipeGetAmountPatch
         amount = 0;
         extraAmount = 0;
         return null;
+    }
+}
+
+[HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.DoCrafting))]
+public static class InventoryGuiDoCraftingTranspiler
+{
+    private static MethodInfo _methodPlayerInventoryRemoveItem = AccessTools.Method(typeof(Inventory), nameof(Inventory.RemoveItem), new Type[] { typeof(string), typeof(int), typeof(int), typeof(bool) });
+    private static MethodInfo _methodUseItemFromInventoryOrChest = AccessTools.Method(typeof(InventoryGuiDoCraftingTranspiler), nameof(UseItemFromInventoryOrChest));
+
+    [HarmonyPriority(Priority.VeryHigh)]
+    public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+    {
+        AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogWarning("Transpiling InventoryGui::DoCrafting");
+        List<CodeInstruction> il = instructions.ToList();
+
+        for (int i = 0; i < il.Count; i++)
+        {
+            if (il[i].Calls(_methodPlayerInventoryRemoveItem))
+            {
+                il[i] = new CodeInstruction(OpCodes.Call, _methodUseItemFromInventoryOrChest);
+                il.RemoveAt(i - 8); // removes calls to Player::GetInventory
+
+                return il.AsEnumerable();
+            }
+        }
+
+        return instructions;
+    }
+
+    private static void UseItemFromInventoryOrChest(Player player, string itemName, int quantity, int quality, bool worldLevelBased)
+    {
+        AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Trying to remove {quantity} {itemName} from player inventory or nearby chests");
+        Inventory playerInventory = player.GetInventory();
+        if (playerInventory.CountItems(itemName, quality) >= quantity)
+        {
+            playerInventory.RemoveItem(itemName, quantity, quality, worldLevelBased);
+            return;
+        }
+
+        foreach (IContainer chest in Boxes.GetNearbyContainers(player, AzuCraftyBoxesPlugin.mRange.Value))
+        {
+            if (chest.ItemCount(itemName) > 0)
+            {
+                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Removing {quantity} {itemName} from {chest.GetPrefabName()}");
+                chest.RemoveItem(itemName, quantity);
+                chest.Save();
+            }
+        }
     }
 }*/

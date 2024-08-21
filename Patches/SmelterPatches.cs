@@ -151,14 +151,10 @@ static class SmelterOnAddOrePatch
     {
         int ore = __instance.GetQueueSize();
         __state = new KeyValuePair<ItemDrop.ItemData?, int>(item, ore);
-        /*bool pullAll =
-            Input.GetKey(AzuCraftyBoxesPlugin.fillAllModKey.Value
-                .MainKey);*/
+        /*bool pullAll = Input.GetKey(AzuCraftyBoxesPlugin.fillAllModKey.Value.MainKey);*/
         // Used to be fillAllModKey.Value.isPressed(); something is wrong with KeyboardShortcuts always returning false
         bool pullAll = AzuCraftyBoxesPlugin.fillAllModKey.Value.IsKeyHeld();
-        if (AzuCraftyBoxesPlugin.ModEnabled.Value == AzuCraftyBoxesPlugin.Toggle.Off ||
-            (!MiscFunctions.AllowByKey() && !pullAll) || item != null ||
-            __instance.GetQueueSize() >= __instance.m_maxOre)
+        if (AzuCraftyBoxesPlugin.ModEnabled.Value == AzuCraftyBoxesPlugin.Toggle.Off || (!MiscFunctions.AllowByKey() && !pullAll) || item != null || __instance.GetQueueSize() >= __instance.m_maxOre)
             return true;
 
         Inventory inventory = user.GetInventory();
@@ -272,8 +268,7 @@ static class SmelterOnAddOrePatch
         return false;
     }
 
-    public static void Postfix(Smelter __instance, Switch sw, Humanoid user,
-        KeyValuePair<ItemDrop.ItemData?, int> __state, bool __result)
+    public static void Postfix(Smelter __instance, Switch sw, Humanoid user, KeyValuePair<ItemDrop.ItemData?, int> __state, bool __result)
     {
         if (AzuCraftyBoxesPlugin.fillAllModKey.Value.IsKeyHeld() && __result && __state.Key is null)
         {

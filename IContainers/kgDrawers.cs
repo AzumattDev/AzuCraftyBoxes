@@ -5,7 +5,7 @@ namespace AzuCraftyBoxes.IContainers;
 public class kgDrawer(ItemDrawers_API.Drawer _drawer) : IContainer
 {
     private string? Name => ObjectDB.instance.GetItemPrefab(_drawer.Prefab)?.GetComponent<ItemDrop>()?.m_itemData.m_shared.m_name;
-    
+
     public int ProcessContainerInventory(string reqName, int totalAmount, int totalRequirement)
     {
         if (Name != reqName) return totalAmount;
@@ -34,6 +34,7 @@ public class kgDrawer(ItemDrawers_API.Drawer _drawer) : IContainer
 
     public Vector3 GetPosition() => _drawer.Position;
     public string GetPrefabName() => _drawer.ZNVName;
+    public Inventory GetInventory() => null;
 
 
     public static kgDrawer Create(ItemDrawers_API.Drawer drawer) => new(drawer);

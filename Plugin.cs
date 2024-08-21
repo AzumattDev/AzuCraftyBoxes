@@ -13,7 +13,7 @@ namespace AzuCraftyBoxes
     public class AzuCraftyBoxesPlugin : BaseUnityPlugin
     {
         internal const string ModName = "AzuCraftyBoxes";
-        internal const string ModVersion = "1.5.2";
+        internal const string ModVersion = "1.5.3";
         internal const string Author = "Azumatt";
         private const string ModGUID = $"{Author}.{ModName}";
         private static string ConfigFileName = $"{ModGUID}.cfg";
@@ -278,10 +278,10 @@ namespace AzuCraftyBoxes
 
         private class ConfigurationManagerAttributes
         {
-            [UsedImplicitly] public int? Order;
-            [UsedImplicitly] public bool? Browsable;
-            [UsedImplicitly] public string? Category;
-            [UsedImplicitly] public Action<ConfigEntryBase>? CustomDrawer;
+            [UsedImplicitly] public int? Order = null!;
+            [UsedImplicitly] public bool? Browsable = null!;
+            [UsedImplicitly] public string Category = null!;
+            [UsedImplicitly] public Action<ConfigEntryBase>? CustomDrawer = null!;
         }
 
         class AcceptableShortcuts : AcceptableValueBase // Used for KeyboardShortcut Configs 

@@ -1,3 +1,5 @@
+using System.Collections.Concurrent;
+using System.Diagnostics;
 using AzuCraftyBoxes.IContainers;
 using Backpacks;
 using ItemDataManager;
@@ -9,6 +11,7 @@ public class Boxes
     internal static readonly List<Container> Containers = new();
     private static readonly List<Container> ContainersToAdd = new();
     private static readonly List<Container> ContainersToRemove = new();
+    private static ConcurrentDictionary<float, Stopwatch> stopwatches = new ConcurrentDictionary<float, Stopwatch>();
 
     internal static void AddContainer(Container container)
     {
@@ -227,5 +230,24 @@ public class Boxes
         }
 
         return new List<string>();
+    }
+
+    public static Stopwatch GetStopwatch(GameObject o)
+    {
+        float hash = GetGameObjectPosHash(o);
+        Stopwatch stopwatch = null;
+
+        if (!stopwatches.TryGetValue(hash, out stopwatch))
+        {
+            stopwatch = new Stopwatch();
+            stopwatches.TryAdd(hash, stopwatch);
+        }
+
+        return stopwatch;
+    }
+
+    private static float GetGameObjectPosHash(GameObject o)
+    {
+        return (1000f * o.transform.position.x) + o.transform.position.y + (.001f * o.transform.position.z);
     }
 }

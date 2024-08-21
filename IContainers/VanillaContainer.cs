@@ -72,6 +72,7 @@ public class VanillaContainer(Container _container) : IContainer
 
     public Vector3 GetPosition() => _container.transform.position;
     public string GetPrefabName() => Utils.GetPrefabName(_container.gameObject);
+    public Inventory GetInventory() => _container.GetInventory();
 
 
     public static VanillaContainer Create(Container container) => new(container);
