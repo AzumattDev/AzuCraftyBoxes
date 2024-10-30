@@ -18,7 +18,7 @@ public class Boxes
         if (!Containers.Contains(container))
         {
             ContainersToAdd.Add(container);
-            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Added container {container.name} to list");
+            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"Added container {container.name} to list");
         }
 
         UpdateContainers();
@@ -29,7 +29,7 @@ public class Boxes
         if (Containers.Contains(container))
         {
             ContainersToRemove.Add(container);
-            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Removed container {container.name} from list");
+            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"Removed container {container.name} from list");
         }
 
         UpdateContainers();
@@ -88,7 +88,7 @@ public class Boxes
             {
                 // log the distance and the range to use
 #if DEBUG
-                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Distance to container {container.name} is {distance}m, within the range of {rangeToUse}m set to store items for this chest");
+                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"Distance to container {container.name} is {distance}m, within the range of {rangeToUse}m set to store items for this chest");
 #endif
                 if (!container.IsInUse())
                 {
@@ -250,4 +250,16 @@ public class Boxes
     {
         return (1000f * o.transform.position.x) + o.transform.position.y + (.001f * o.transform.position.z);
     }
+
+
+    /*internal static int CheckAndDecrement(int amount)
+    {
+        if (amount <= 1) return amount;
+        if (AzuCraftyBoxesPlugin.leaveOne.Value == AzuCraftyBoxesPlugin.Toggle.On)
+        {
+            return amount - 1;
+        }
+
+        return amount;
+    }*/
 }

@@ -6,7 +6,7 @@
         private static void Prefix(ZNetPeer peer, ref ZNet __instance)
         {
             // Register version check call
-            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug("Registering version RPC handler");
+            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable("Registering version RPC handler");
             peer.m_rpc.Register($"{AzuCraftyBoxesPlugin.ModName}_VersionCheck", new Action<ZRpc, ZPackage>(RpcHandlers.RPC_AzuCraftyBoxes_Version));
 
             // Make calls to check versions

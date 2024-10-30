@@ -17,11 +17,11 @@ static class UpdateKnownRecipesListPatch
     }
 }
 
-[HarmonyPatch(typeof(Player), nameof(Player.HaveRequirementItems), new[] { typeof(Recipe), typeof(bool), typeof(int) })]
+[HarmonyPatch(typeof(Player), nameof(Player.HaveRequirementItems), new[] { typeof(Recipe), typeof(bool), typeof(int), typeof(int) })]
 static class PlayerHaveRequirementsPatch
 {
     [HarmonyPriority(Priority.VeryHigh)]
-    static void Postfix(Player __instance, ref bool __result, Recipe piece, bool discover, int qualityLevel, HashSet<string> ___m_knownMaterial)
+    static void Postfix(Player __instance, ref bool __result, Recipe piece, bool discover, int qualityLevel, int amount, HashSet<string> ___m_knownMaterial)
     {
         try
         {
@@ -37,13 +37,13 @@ static class PlayerHaveRequirementsPatch
                 bool proceed = MiscFunctions.CheckItemDropIntegrity(requirement.m_resItem);
                 if (!proceed)
                     continue;
-                if (!InventoryGuiCollectRequirements.actualAmounts.TryGetValue(requirement, out int amount))
+                if (!InventoryGuiCollectRequirements.actualAmounts.TryGetValue(requirement, out int amount2))
                 {
-                    amount = requirement.GetAmount(qualityLevel);
+                    amount2 = requirement.GetAmount(qualityLevel) * amount;
                 }
 
                 int invAmount = __instance.GetInventory().CountItems(requirement.m_resItem.m_itemData.m_shared.m_name);
-                if (invAmount >= amount) continue;
+                if (invAmount >= amount2) continue;
 
                 GameObject itemPrefab = MiscFunctions.GetItemPrefabFromGameObject(requirement.m_resItem, requirement.m_resItem.gameObject)!;
                 requirement.m_resItem.m_itemData.m_dropPrefab = requirement.m_resItem.gameObject;
@@ -99,10 +99,10 @@ static class PlayerHaveRequirementsPatch
     }
 }
 
-[HarmonyPatch(typeof(Player), nameof(Player.HaveRequirements), typeof(Recipe), typeof(bool), typeof(int))]
+[HarmonyPatch(typeof(Player), nameof(Player.HaveRequirements), typeof(Recipe), typeof(bool), typeof(int), typeof(int))]
 static class PlayerHaveRequirementsPatchRBoolInt
 {
-    static void Postfix(Player __instance, Recipe recipe, bool discover, int qualityLevel, ref bool __result)
+    static void Postfix(Player __instance, Recipe recipe, bool discover, int qualityLevel, int amount, ref bool __result)
     {
         if (discover)
         {
@@ -112,12 +112,12 @@ static class PlayerHaveRequirementsPatchRBoolInt
         else if (!__instance.RequiredCraftingStation(recipe, qualityLevel, true))
             return;
 
-        bool test = (recipe.m_item.m_itemData.m_shared.m_dlc.Length <= 0 || DLCMan.instance.IsDLCInstalled(recipe.m_item.m_itemData.m_shared.m_dlc)) && HaveRequirementItemsTEST(__instance, recipe, discover, qualityLevel);
+        bool test = (recipe.m_item.m_itemData.m_shared.m_dlc.Length <= 0 || DLCMan.instance.IsDLCInstalled(recipe.m_item.m_itemData.m_shared.m_dlc)) && HaveRequirementItems(__instance, recipe, discover, qualityLevel, amount);
         if (test && !__result)
             __result = true;
     }
 
-    public static bool HaveRequirementItemsTEST(Player p, Recipe piece, bool discover, int qualityLevel)
+    public static bool HaveRequirementItems(Player p, Recipe piece, bool discover, int qualityLevel, int amountVanilla)
     {
         if (p == null)
             return false;
@@ -141,7 +141,7 @@ static class PlayerHaveRequirementsPatchRBoolInt
                 else
                 {
                     List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(p, AzuCraftyBoxesPlugin.mRange.Value);
-                    int amount = resource.GetAmount(qualityLevel);
+                    int amount = resource.GetAmount(qualityLevel) * amountVanilla;
                     int num = p.m_inventory.CountItems(resource.m_resItem.m_itemData.m_shared.m_name);
 
                     foreach (IContainer c in nearbyContainers)
@@ -151,7 +151,12 @@ static class PlayerHaveRequirementsPatchRBoolInt
                             continue;
                         string itemPrefabName = resource.m_resItem.name;
                         string sharedName = resource.m_resItem.m_itemData.m_shared.m_name;
-                        bool canItemBePulled = Boxes.CanItemBePulled(c.GetPrefabName(), itemPrefabName);
+                        bool canItemBePulled = false;
+                        if (c == null) continue;
+                        if (!string.IsNullOrWhiteSpace(c.GetPrefabName()))
+                        {
+                            canItemBePulled = Boxes.CanItemBePulled(c.GetPrefabName(), itemPrefabName);
+                        }
 
                         if (canItemBePulled)
                         {
@@ -267,8 +272,7 @@ static class HaveRequirementsPatch2
                         }
                         case Player.RequirementMode.CanBuild when __instance.GetInventory().CountItems(requirement.m_resItem.m_itemData.m_shared.m_name) < requirement.m_amount:
                         {
-                            int hasItems = __instance.GetInventory()
-                                .CountItems(requirement.m_resItem.m_itemData.m_shared.m_name);
+                            int hasItems = __instance.GetInventory().CountItems(requirement.m_resItem.m_itemData.m_shared.m_name);
                             foreach (IContainer c in nearbyContainers)
                             {
                                 requirement.m_resItem.m_itemData.m_dropPrefab = requirement.m_resItem.gameObject;

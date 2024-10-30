@@ -1,4 +1,7 @@
-﻿/*namespace AzuCraftyBoxes.Compatibility.EpicLoot;
+﻿/*using System.Collections;
+using AzuCraftyBoxes.Util.Functions;
+
+namespace AzuCraftyBoxes.Compatibility.EpicLoot;
 
 public static class EpicLoot
 {
@@ -50,255 +53,6 @@ public static class EpicLoot
         AzuCraftyBoxesPlugin.harmony.PatchAll(typeof(EpicLootEnchantingUI));
     }
 
-    /*private static class EpicLootEnchantingUI
-    {
-        static Type listType = AccessTools.TypeByName("EpicLoot_UnityLib.InventoryItemListElement");
-        static Type genericListType = typeof(List<>).MakeGenericType(listType);
-        static object? specificListInstance = Activator.CreateInstance(genericListType);
-
-        [HarmonyPatch("EpicLoot.CraftingV2.EnchantingUIController, EpicLoot", "GetEnchantableItems"), HarmonyPostfix]
-        private static void GetEnchantableItemsPostfixPatch(ref object __result)
-        {
-            try
-            {
-                if (listType == null)
-                {
-                    AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogWarning("List type not found.");
-                    return;
-                }
-
-                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogWarning($"Specific list instance: {specificListInstance}");
-                MethodInfo addMethod = genericListType.GetMethod("Add");
-                MethodInfo clearMethod = genericListType.GetMethod("Clear");
-                if (addMethod == null)
-                {
-                    AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogWarning("Add method not found.");
-                    return;
-                }
-
-                if (clearMethod == null)
-                {
-                    AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogWarning("Clear method not found.");
-                    return;
-                }
-
-                // Cast __result to the appropriate collection type
-                var enchantableItems = (IList)Activator.CreateInstance(genericListType);
-                if (__result is IEnumerable existingItems)
-                {
-                    foreach (var item in existingItems)
-                    {
-                        enchantableItems.Add(item);
-                    }
-                }
-
-                clearMethod.Invoke(specificListInstance, null);
-                try
-                {
-                    foreach (Container container in Boxes.Containers)
-                    {
-                        AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfDebuggingEpicLoot("Checking container");
-                        foreach (ItemDrop.ItemData item in container.GetInventory().GetAllItems())
-                        {
-                            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfDebuggingEpicLoot($"Checking item {item.m_shared.m_name}");
-                            if (isMagicMethod == null)
-                            {
-                                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfDebuggingEpicLoot("IsMagic method not found.");
-                                return;
-                            }
-
-                            if (getCanBeMagicItemMethod == null)
-                            {
-                                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfDebuggingEpicLoot("GetCanBeMagicItem method not found.");
-                                return;
-                            }
-
-                            if (!(bool)isMagicMethod?.Invoke(null, [item])! && EpicLootReflectionHelpers.CanBeMagicItem(item))
-                            {
-                                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfDebuggingEpicLoot("Item can be magic");
-                                object element = EpicLootReflectionHelpers.CreateInventoryItemListElement(item, listType);
-                                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfDebuggingEpicLoot($"Element: {element}");
-                                if (addMethod != null)
-                                {
-                                    AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfDebuggingEpicLoot("Adding item to enchantable items");
-                                    addMethod.Invoke(enchantableItems, new[] { element });
-                                }
-                            }
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogError($"Error adding items to enchantable items: {ex}");
-                }
-
-                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfDebuggingEpicLoot($"Specific list instance count: {genericListType.GetProperty("Count")?.GetValue(specificListInstance)}");
-
-
-                // Set the result to be the result plus the custom items
-                __result = enchantableItems;
-            }
-            catch (Exception ex)
-            {
-                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogWarning($"Error in Prefix: {ex}");
-            }
-        }
-
-        /*[HarmonyPatch("EpicLoot.CraftingV2.EnchantingUIController, EpicLoot", "GetSacrificeItems"), HarmonyPostfix]
-        private static void GetSacrificeItemsPostfixPatch(ref object __result)
-        {
-            try
-            {
-                if (listType == null)
-                {
-                    AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogWarning("List type not found.");
-                    return; // Fall back to original method
-                }
-
-                MethodInfo addMethod = genericListType.GetMethod("Add");
-                if (addMethod == null)
-                {
-                    AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogWarning("Add method not found.");
-                    return; // Fall back to the original method
-                }
-
-                // Cast __result to the appropriate collection type
-                var sacrificeItems = (IList)Activator.CreateInstance(genericListType);
-                if (__result is IEnumerable existingItems)
-                {
-                    foreach (var item in existingItems)
-                    {
-                        sacrificeItems.Add(item);
-                    }
-                }
-
-                try
-                {
-                    foreach (Container container in Boxes.Containers)
-                    {
-                        AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogWarning("Checking container");
-                        foreach (ItemDrop.ItemData item in container.GetInventory().GetAllItems())
-                        {
-                            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogWarning($"Checking item {item.m_shared.m_name}");
-                            if (isMagicMethod == null)
-                            {
-                                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogWarning("IsMagic method not found.");
-                                return;
-                            }
-
-                            if (getCanBeMagicItemMethod == null)
-                            {
-                                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogWarning("GetCanBeMagicItem method not found.");
-                                return;
-                            }
-
-                            if (!(bool)isMagicMethod?.Invoke(null, new object[] { item })! && EpicLootReflectionHelpers.CanBeMagicItem(item))
-                            {
-                                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogWarning("Item can be magic");
-                                object element = EpicLootReflectionHelpers.CreateInventoryItemListElement(item, listType);
-                                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogWarning($"Element: {element}");
-                                if (addMethod != null)
-                                {
-                                    AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogWarning("Adding item to sacrifice items");
-                                    addMethod.Invoke(sacrificeItems, new[] { element });
-                                }
-                            }
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogError($"Error adding items to sacrifice items: {ex}");
-                }
-
-                // Update __result to include the appended items
-                __result = sacrificeItems;
-            }
-            catch (Exception ex)
-            {
-                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogWarning($"Error in Prefix: {ex}");
-                return; // If there's an error, fall back to the original method
-            }
-        }#2#
-
-        [HarmonyPatch("EpicLoot.CraftingV2.EnchantingUIController, EpicLoot", "GetAugmentableItems"), HarmonyPostfix]
-        private static void GetAugmentableItemsPostfixPatch(ref object __result)
-        {
-            try
-            {
-                if (listType == null)
-                {
-                    AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogWarning("List type not found.");
-                    return; // Fall back to original method
-                }
-
-                MethodInfo addMethod = genericListType.GetMethod("Add");
-                if (addMethod == null)
-                {
-                    AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogWarning("Add method not found.");
-                    return; // Fall back to the original method
-                }
-
-                // Cast __result to the appropriate collection type
-                var augmentableItems = (IList)Activator.CreateInstance(genericListType);
-                if (__result is IEnumerable existingItems)
-                {
-                    foreach (var item in existingItems)
-                    {
-                        augmentableItems.Add(item);
-                    }
-                }
-
-                try
-                {
-                    foreach (Container container in Boxes.Containers)
-                    {
-                        AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogWarning("Checking container");
-                        foreach (ItemDrop.ItemData item in container.GetInventory().GetAllItems())
-                        {
-                            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogWarning($"Checking item {item.m_shared.m_name}");
-                            if (isMagicMethod == null)
-                            {
-                                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogWarning("IsMagic method not found.");
-                                return;
-                            }
-
-                            if (getCanBeMagicItemMethod == null)
-                            {
-                                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogWarning("GetCanBeMagicItem method not found.");
-                                return;
-                            }
-
-                            if ((bool)isMagicMethod?.Invoke(null, new object[] { item })! && EpicLootReflectionHelpers.CanBeAugmented(item))
-                            {
-                                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogWarning("Item can be magic");
-                                object element = EpicLootReflectionHelpers.CreateInventoryItemListElement(item, listType);
-                                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogWarning($"Element: {element}");
-                                if (addMethod != null)
-                                {
-                                    AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogWarning("Adding item to augmentable items");
-                                    addMethod.Invoke(augmentableItems, new[] { element });
-                                }
-                            }
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogError($"Error adding items to augmentable items: {ex}");
-                }
-
-                // Update __result to include the appended items
-                __result = augmentableItems;
-            }
-            catch (Exception ex)
-            {
-                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogWarning($"Error in Prefix: {ex}");
-                return; // If there's an error, fall back to the original method
-            }
-        }
-    }#1#
-
     public static class EpicLootEnchantingUI
     {
         public static Type listType = AccessTools.TypeByName("EpicLoot_UnityLib.InventoryItemListElement");
@@ -306,7 +60,7 @@ public static class EpicLoot
         public static MethodInfo addMethod = genericListType.GetMethod("Add");
         public static MethodInfo clearMethod = genericListType.GetMethod("Clear");
 
-        [HarmonyPatch("EpicLoot.CraftingV2.EnchantingUIController, EpicLoot", "GetEnchantableItems"), HarmonyPostfix]
+        /*[HarmonyPatch("EpicLoot.CraftingV2.EnchantingUIController, EpicLoot", "GetEnchantableItems"), HarmonyPostfix]
         private static void GetEnchantableItemsPostfixPatch(ref object __result)
         {
             EpicLootReflectionHelpers.AppendItemsFromContainers(ref __result, EpicLootReflectionHelpers.CanBeMagicItem);
@@ -316,7 +70,7 @@ public static class EpicLoot
         private static void GetSacrificeItemsPostfixPatch(ref object __result)
         {
             EpicLootReflectionHelpers.AppendItemsFromContainers(ref __result, EpicLootReflectionHelpers.CanBeMagicItem);
-        }#1#
+        }#2#
 
         [HarmonyPatch("EpicLoot.CraftingV2.EnchantingUIController, EpicLoot", "GetAugmentableItems"), HarmonyPostfix]
         private static void GetAugmentableItemsPostfixPatch(ref object __result)
@@ -328,6 +82,85 @@ public static class EpicLoot
         private static void GetDisenchantItemsPostfixPatch(ref object __result)
         {
             EpicLootReflectionHelpers.AppendItemsFromContainers(ref __result, EpicLootReflectionHelpers.CanBeDisenchanted, true);
+        }#2##1#
+
+        [HarmonyPatch("EpicLoot_UnityLib.InventoryManagement, EpicLoot-UnityLib", "GetAllItems"), HarmonyPostfix]
+        private static void GetEnchantableItemsPostfixPatch(ref List<ItemDrop.ItemData> __result)
+        {
+            EpicLootReflectionHelpers.AppendContainerItemsToInventory(ref __result);
+        }
+
+        /*[HarmonyPatch("EpicLoot_UnityLib.InventoryManagement, EpicLoot-UnityLib", "GetInventory"), HarmonyPostfix]
+        private static void GetEnchantableItemsPostfixPatch(ref Inventory __result)
+        {
+            EpicLootReflectionHelpers.AppendContainerItemsToInventory(ref __result);
         }#1#
+    }
+
+    public class EpicLootReflectionHelpers
+    {
+        public static void AppendContainerItemsToInventory(ref List<ItemDrop.ItemData> playerInventory)
+        {
+            try
+            {
+                // Create a list to hold combined items from the player and containers
+                List<ItemDrop.ItemData> combinedItems = new List<ItemDrop.ItemData>(playerInventory);
+
+                // Iterate over all containers and collect items
+                foreach (Container container in Boxes.Containers)
+                {
+                    Inventory containerInventory = container.GetInventory(); // Assumes Container has GetInventory
+
+                    if (containerInventory != null)
+                    {
+                        // Add each item in container to the combined list
+                        foreach (ItemDrop.ItemData item in containerInventory.GetAllItems())
+                        {
+                            combinedItems.Add(item);
+                        }
+                    }
+                }
+
+                // Temporarily replace player inventory items with the combined list
+                // If Inventory class has a method like SetItems, use that; otherwise, reassign to m_inventory
+                playerInventory = combinedItems;
+            }
+            catch (Exception ex)
+            {
+                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogWarning($"Error combining container items: {ex}");
+            }
+        }
+
+        public static void AppendContainerItemsToInventory(ref Inventory playerInventory)
+        {
+            try
+            {
+                // Create a list to hold combined items from the player and containers
+                List<ItemDrop.ItemData> combinedItems = new List<ItemDrop.ItemData>(playerInventory.GetAllItems());
+
+                // Iterate over all containers and collect items
+                foreach (Container container in Boxes.Containers)
+                {
+                    Inventory containerInventory = container.GetInventory(); // Assumes Container has GetInventory
+
+                    if (containerInventory != null)
+                    {
+                        // Add each item in container to the combined list
+                        foreach (ItemDrop.ItemData item in containerInventory.GetAllItems())
+                        {
+                            combinedItems.Add(item);
+                        }
+                    }
+                }
+
+                // Temporarily replace player inventory items with the combined list
+                // If Inventory class has a method like SetItems, use that; otherwise, reassign to m_inventory
+                playerInventory.m_inventory = combinedItems;
+            }
+            catch (Exception ex)
+            {
+                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogWarning($"Error combining container items: {ex}");
+            }
+        }
     }
 }*/

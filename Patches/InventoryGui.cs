@@ -233,7 +233,7 @@ public static class RecipeGetAmountPatch
                     string containerPrefabName = c.GetPrefabName();
                     if (requirement.m_resItem?.m_itemData?.m_dropPrefab == null)
                         continue;
-                    AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"(CheckNearbyContainers) Checking container {containerPrefabName} for item {itemPrefabName}");
+                    AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(CheckNearbyContainers) Checking container {containerPrefabName} for item {itemPrefabName}");
 
                     if (Boxes.CanItemBePulled(c.GetPrefabName(), itemPrefabName))
                     {
@@ -242,12 +242,12 @@ public static class RecipeGetAmountPatch
                         {
                             // Update the singleReqItem if the required item is found
                             singleReqItem = requirement.m_resItem.m_itemData; // Or get the item data in the correct way
-                            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"(CheckNearbyContainers) Found required item {requirement.m_resItem.name} in container {containerPrefabName}");
+                            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(CheckNearbyContainers) Found required item {requirement.m_resItem.name} in container {containerPrefabName}");
                             need += result;
                             break; // Stop checking after finding the required item
                         }
 
-                        AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"(CheckNearbyContainers) Required item {itemPrefabName} not found in container {containerPrefabName}");
+                        AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(CheckNearbyContainers) Required item {itemPrefabName} not found in container {containerPrefabName}");
                     }
                 }
             }
@@ -272,7 +272,7 @@ static class InventoryGuiOnCraftPressedPatch
             return true;
         }
 
-        AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug(
+        AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable(
             $"(InventoryGuiOnCraftPressedPatch) Pulling resources to player inventory for crafting item {___m_selectedRecipe.Key.m_item.m_itemData.m_shared.m_name}");
         Boxes.PullResources(Player.m_localPlayer, ___m_selectedRecipe.Key.m_resources, qualityLevel);
 

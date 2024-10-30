@@ -1,3 +1,4 @@
+using AzuCraftyBoxes.Util.Functions;
 
 namespace AzuCraftyBoxes.IContainers;
 
@@ -9,7 +10,7 @@ public class VanillaContainer(Container _container) : IContainer
         if (cInventory == null) return totalAmount;
         int thisAmount = Mathf.Min(cInventory.CountItems(reqName), totalRequirement - totalAmount);
 
-        AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"(ConsumeResourcesPatch) Container at {_container.transform.position} has {cInventory.CountItems(reqName)}");
+        AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(ConsumeResourcesPatch) Container at {_container.transform.position} has {cInventory.CountItems(reqName)}");
 
         if (thisAmount == 0) return totalAmount;
 
@@ -17,30 +18,30 @@ public class VanillaContainer(Container _container) : IContainer
         {
             ItemDrop.ItemData item = cInventory.GetItem(i);
             if (item?.m_shared?.m_name != reqName) continue;
-            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Container Total Items Count is {cInventory.GetAllItems().Count}");
-            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"(ConsumeResourcesPatch) Got stack of {item.m_stack} {reqName}");
+            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"Container Total Items Count is {cInventory.GetAllItems().Count}");
+            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(ConsumeResourcesPatch) Got stack of {item.m_stack} {reqName}");
 
             int stackAmount = Mathf.Min(item.m_stack, totalRequirement - totalAmount);
             if (stackAmount == item.m_stack)
             {
-                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"(ConsumeResourcesPatch) Removing item {reqName} from container");
-                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Container inventory before removal: {cInventory.GetAllItems().Count}, Item at index {i}: {cInventory.GetItem(i)?.m_shared?.m_name}");
+                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(ConsumeResourcesPatch) Removing item {reqName} from container");
+                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"Container inventory before removal: {cInventory.GetAllItems().Count}, Item at index {i}: {cInventory.GetItem(i)?.m_shared?.m_name}");
 
                 bool removed = cInventory.RemoveItem(i);
-                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug("Removed was " + removed);
-                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Container inventory after attempted removal: {cInventory.GetAllItems().Count}");
+                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable("Removed was " + removed);
+                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"Container inventory after attempted removal: {cInventory.GetAllItems().Count}");
 
                 --i;
             }
             else
             {
-                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"(ConsumeResourcesPatch) Removing {stackAmount} {reqName} from container");
+                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(ConsumeResourcesPatch) Removing {stackAmount} {reqName} from container");
                 item.m_stack -= stackAmount;
             }
 
             totalAmount += stackAmount;
 
-            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"(ConsumeResourcesPatch) Total amount is now {totalAmount}/{totalRequirement} {reqName}");
+            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(ConsumeResourcesPatch) Total amount is now {totalAmount}/{totalRequirement} {reqName}");
 
             if (totalAmount >= totalRequirement)
             {
@@ -50,11 +51,11 @@ public class VanillaContainer(Container _container) : IContainer
 
         _container.Save();
         cInventory.Changed();
-        AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug("Saved container");
+        AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable("Saved container");
 
         if (totalAmount >= totalRequirement)
         {
-            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"(ConsumeResourcesPatch) Consumed enough {reqName}");
+            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(ConsumeResourcesPatch) Consumed enough {reqName}");
         }
 
         return totalAmount;

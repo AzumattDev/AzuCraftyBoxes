@@ -12,7 +12,7 @@ static class Turret_UseItem_Patch
         Inventory inventory = user.GetInventory();
         if (!MiscFunctions.AllowByKey() || item != null || user is not Player)
         {
-            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Not allowed {!MiscFunctions.AllowByKey()} {item is null} {user is Player}");
+            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"Not allowed {!MiscFunctions.AllowByKey()} {item is null} {user is Player}");
             return;
         }
 
@@ -25,12 +25,12 @@ static class Turret_UseItem_Patch
         item = __instance.FindAmmoItem(user.GetInventory(), true);
         if (item is null)
         {
-            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"No item found in inventory, checking containers for {__instance.GetAmmoType()}");
+            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"No item found in inventory, checking containers for {__instance.GetAmmoType()}");
             string? ammoType = __instance.GetAmmoType();
             GameObject prefab = ZNetScene.instance.GetPrefab(ammoType);
             if (!prefab)
             {
-                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"No prefab found for {__instance.GetAmmoType()}");
+                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"No prefab found for {__instance.GetAmmoType()}");
                 ZLog.LogWarning("Turret '" + __instance.name + "' is trying to fire but has no ammo or default ammo!");
                 return;
             }
@@ -39,7 +39,7 @@ static class Turret_UseItem_Patch
             string? ammoPrefabName = ammoType;
             if (!Boxes.CanItemBePulled(Utils.GetPrefabName(__instance.gameObject), ammoType))
             {
-                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"ammoType: {ammoType} could not be pulled due to config");
+                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"ammoType: {ammoType} could not be pulled due to config");
                 return;
             }
 
@@ -63,13 +63,13 @@ static class Turret_UseItem_Patch
                     if (!c.ContainsItem(sharedName, 1, out int result) || !(Mathf.CeilToInt(__instance.GetAmmo()) < __instance.m_maxAmmo)) continue;
                     if (!Boxes.CanItemBePulled(c.GetPrefabName(), ammoPrefabName))
                     {
-                        AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"(TurretUseItemPatch) Container at {c.GetPosition()} has {result} {ammoPrefabName} but it's forbidden by config");
+                        AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(TurretUseItemPatch) Container at {c.GetPosition()} has {result} {ammoPrefabName} but it's forbidden by config");
                         continue;
                     }
 
                     int amount = pullAll ? (int)Mathf.Min(__instance.m_maxAmmo - Mathf.CeilToInt(__instance.GetAmmo()), result) : 1;
-                    AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Pull ALL is {pullAll}");
-                    AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"(TurretUseItemPatch) Container at {c.GetPosition()} has {result} {ammoPrefabName}, taking {amount}");
+                    AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"Pull ALL is {pullAll}");
+                    AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(TurretUseItemPatch) Container at {c.GetPosition()} has {result} {ammoPrefabName}, taking {amount}");
 
                     c.RemoveItem(sharedName, amount);
                     c.Save();

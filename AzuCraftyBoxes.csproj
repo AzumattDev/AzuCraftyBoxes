@@ -31,7 +31,7 @@
         <DebugType>pdbonly</DebugType>
         <Optimize>true</Optimize>
         <OutputPath>bin\Release\</OutputPath>
-        <DefineConstants>TRACE</DefineConstants>
+        <DefineConstants>Release;TRACE</DefineConstants>
         <ErrorReport>prompt</ErrorReport>
         <WarningLevel>4</WarningLevel>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -128,7 +128,6 @@
         <Compile Include="APIs\API.cs" />
         <Compile Include="APIs\kg_ItemDrawersAPI.cs" />
         <Compile Include="Compatibility\EpicLoot\EpicLootReflectionHelper.cs" />
-        <Compile Include="Compatibility\EpicLoot\EpicLootReflectionHelpers.cs" />
         <Compile Include="Compatibility\ModCompat.cs" />
         <Compile Include="Compatibility\WardIsLove\WardIsLovePlugin.cs" />
         <Compile Include="Compatibility\WardIsLove\WardMonoscript.cs" />

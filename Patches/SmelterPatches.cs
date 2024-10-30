@@ -199,7 +199,7 @@ static class SmelterOnAddOrePatch
                 string itemPrefabName = Utils.GetPrefabName(newItem.m_dropPrefab);
                 if (!Boxes.CanItemBePulled(Utils.GetPrefabName(__instance.gameObject), itemPrefabName))
                 {
-                    AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"(SmelterOnAddOrePatch) debug log 1:  Container at {user.transform.position} has {newItem.m_stack} {newItem.m_dropPrefab.name} but it's forbidden by config");
+                    AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(SmelterOnAddOrePatch) debug log 1:  Container at {user.transform.position} has {newItem.m_stack} {newItem.m_dropPrefab.name} but it's forbidden by config");
                     continue;
                 }
 
@@ -228,7 +228,7 @@ static class SmelterOnAddOrePatch
                     if (!c.ContainsItem(name, 1, out int result)) continue;
                     if (!Boxes.CanItemBePulled(c.GetPrefabName(), prefabName))
                     {
-                        AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"(SmelterOnAddOrePatch) Container at {c.GetPosition()} has {result} {prefabName} but it's forbidden by config");
+                        AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(SmelterOnAddOrePatch) Container at {c.GetPosition()} has {result} {prefabName} but it's forbidden by config");
                         continue;
                     }
 
@@ -237,8 +237,8 @@ static class SmelterOnAddOrePatch
                     if (!added.ContainsKey(name))
                         added[name] = 0;
                     added[name] += amount;
-                    AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Pull ALL is {pullAll}");
-                    AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"(SmelterOnAddOrePatch) Container at {c.GetPosition()} has {result} {prefabName}, taking {amount}");
+                    AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"Pull ALL is {pullAll}");
+                    AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(SmelterOnAddOrePatch) Container at {c.GetPosition()} has {result} {prefabName}, taking {amount}");
 
                     c.RemoveItem(name, amount);
                     c.Save();
@@ -355,16 +355,16 @@ static class SmelterOnAddFuelPatch
                 if (!c.ContainsItem(sharedName, 1, out int result)) continue;
                 if (!Boxes.CanItemBePulled(c.GetPrefabName(), fuelPrefabName))
                 {
-                    AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"(SmelterOnAddFuelPatch) Container at {c.GetPosition()} has {result} {sharedName} but it's forbidden by config");
+                    AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(SmelterOnAddFuelPatch) Container at {c.GetPosition()} has {result} {sharedName} but it's forbidden by config");
                     continue;
                 }
 
-                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Pull ALL is {pullAll}");
+                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"Pull ALL is {pullAll}");
                 int amount = pullAll
                     ? (int)Mathf.Min(__instance.m_maxFuel - __instance.GetFuel(), result)
                     : 1;
 
-                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"(SmelterOnAddFuelPatch) Container at {c.GetPosition()} has {result} {sharedName}, taking {amount}");
+                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(SmelterOnAddFuelPatch) Container at {c.GetPosition()} has {result} {sharedName}, taking {amount}");
 
                 c.RemoveItem(sharedName, amount);
                 c.Save();

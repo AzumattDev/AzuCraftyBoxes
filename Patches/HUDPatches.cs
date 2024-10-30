@@ -40,8 +40,9 @@ public class HUDPatches
                 int playerItemCount = Player.m_localPlayer.GetInventory().CountItems(itemName);
                 int containerItemCount = containers.Sum(c => c.ContainsItem(itemName, 1, out int result) ? result : 0);
 #if DEBUG
-                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Found {playerItemCount} {itemName} in player inventory and {containerItemCount} in containers, returning {(playerItemCount + containerItemCount) / resource.m_amount}");
+                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"Found {playerItemCount} {itemName} in player inventory and {containerItemCount} in containers, returning {(playerItemCount + containerItemCount) / resource.m_amount}");
 #endif
+                
                 return (playerItemCount + containerItemCount) / resource.m_amount;
             }).Concat(new[] { int.MaxValue }).Min();
     }

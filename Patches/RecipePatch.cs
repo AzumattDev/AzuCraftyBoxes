@@ -51,7 +51,7 @@ public static class RecipeGetAmountTranspiler
                 for (int i = 0; i <= requirementSharedItemData.m_maxQuality; ++i)
                 {
                     string? requirementName = requirementSharedItemData.m_name;
-                    AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Checking {requirementName} in {chest.GetPrefabName()}, we have {chest.ItemCount(requirementName)} and need {requiredAmount}");
+                    AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"Checking {requirementName} in {chest.GetPrefabName()}, we have {chest.ItemCount(requirementName)} and need {requiredAmount}");
                     if (chest.ItemCount(requirementName) < requiredAmount) continue;
                     Inventory? chestInventory = chest.GetInventory();
 
@@ -96,7 +96,7 @@ public static class InventoryGuiDoCraftingTranspiler
 
     private static void UseItemFromInventoryOrChest(Player player, string itemName, int quantity, int quality, bool worldLevelBased)
     {
-        AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Trying to remove {quantity} {itemName} from player inventory or nearby chests");
+        AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"Trying to remove {quantity} {itemName} from player inventory or nearby chests");
         Inventory playerInventory = player.GetInventory();
         if (playerInventory.CountItems(itemName, quality) >= quantity)
         {
@@ -108,7 +108,7 @@ public static class InventoryGuiDoCraftingTranspiler
         {
             if (chest.ItemCount(itemName) > 0)
             {
-                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Removing {quantity} {itemName} from {chest.GetPrefabName()}");
+                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"Removing {quantity} {itemName} from {chest.GetPrefabName()}");
                 chest.RemoveItem(itemName, quantity);
                 chest.Save();
             }

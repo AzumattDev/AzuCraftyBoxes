@@ -9,7 +9,7 @@ public static class YamlUtils
     {
         IDeserializer deserializer = new DeserializerBuilder().Build();
         AzuCraftyBoxesPlugin.yamlData = deserializer.Deserialize<Dictionary<string, Dictionary<string, List<string>>>>(yamlInput);
-        AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"yamlData:\n{yamlInput}");
+        AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"yamlData:\n{yamlInput}");
     }
 
     internal static void ParseGroups()

@@ -32,7 +32,7 @@ public class MiscFunctions
                 int newTotalAmount = ConsumeResourcesFromContainers(reqName, totalAmount, totalRequirement, nearbyContainers);
                 if (newTotalAmount >= totalRequirement)
                 {
-                    AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"(ConsumeResourcesPatch) Consumed enough {reqName}");
+                    AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(ConsumeResourcesPatch) Consumed enough {reqName}");
                 }
             }
         }
@@ -47,7 +47,7 @@ public class MiscFunctions
 
     private static void LogResourceInfo(int totalAmount, int totalRequirement, string reqName)
     {
-        AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"(ConsumeResourcesPatch) Have {totalAmount}/{totalRequirement} {reqName} in player inventory");
+        AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(ConsumeResourcesPatch) Have {totalAmount}/{totalRequirement} {reqName} in player inventory");
     }
 
     private static int ConsumeResourcesFromContainers(string reqName, int totalAmount, int totalRequirement, List<IContainer> nearbyContainers)
@@ -235,6 +235,6 @@ public class MiscFunctions
         string prefabName = Utils.GetPrefabName(itemDrop.m_itemData.m_dropPrefab);
         if (AzuCraftyBoxesPlugin.groups[groupName].Contains(prefabName)) return;
         AzuCraftyBoxesPlugin.groups[groupName].Add(prefabName);
-        AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"(CreatePredefinedGroups) Added {prefabName} to {groupName}");
+        AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(CreatePredefinedGroups) Added {prefabName} to {groupName}");
     }
 }
