@@ -109,12 +109,12 @@ static class PlayerHaveRequirementsPatchRBoolInt
         else if (!__instance.RequiredCraftingStation(recipe, qualityLevel, true))
             return;
 
-        bool test = (recipe.m_item.m_itemData.m_shared.m_dlc.Length <= 0 || DLCMan.instance.IsDLCInstalled(recipe.m_item.m_itemData.m_shared.m_dlc)) && __instance.HaveRequirementItems(recipe, discover, qualityLevel, amount);
+        bool test = (recipe.m_item.m_itemData.m_shared.m_dlc.Length <= 0 || DLCMan.instance.IsDLCInstalled(recipe.m_item.m_itemData.m_shared.m_dlc)) && HaveRequirementItems(__instance, recipe, discover, qualityLevel, amount);
         if (test && !__result)
             __result = true;
     }
 
-    /*public static bool HaveRequirementItems(Player p, Recipe piece, bool discover, int qualityLevel, int amountVanilla)
+    public static bool HaveRequirementItems(Player p, Recipe piece, bool discover, int qualityLevel, int amountVanilla)
     {
         if (p == null)
             return false;
@@ -185,7 +185,7 @@ static class PlayerHaveRequirementsPatchRBoolInt
         }
 
         return !piece.m_requireOnlyOneIngredient;
-    }*/
+    }
 }
 
 [HarmonyPatch(typeof(Player), nameof(Player.HaveRequirements), typeof(Piece), typeof(Player.RequirementMode))]
