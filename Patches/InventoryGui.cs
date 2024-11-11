@@ -58,11 +58,7 @@ static class InventoryGuiCollectRequirements
 [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.SetupRequirement))]
 static class InventoryGuiSetupRequirementPatch
 {
-    static void Postfix(InventoryGui __instance, Transform elementRoot,
-        Piece.Requirement req,
-        Player player,
-        bool craft,
-        int quality)
+    static void Postfix(InventoryGui __instance, Transform elementRoot, Piece.Requirement req, Player player, bool craft, int quality, int craftMultiplier = 1)
     {
         if (AzuCraftyBoxesPlugin.ModEnabled.Value == AzuCraftyBoxesPlugin.Toggle.Off || !MiscFunctions.AllowByKey())
         {
@@ -100,7 +96,7 @@ static class InventoryGuiSetupRequirementPatch
         if (text == null) return;
         if (!int.TryParse(text.text, out int amount))
         {
-            amount = req.GetAmount(quality);
+            amount = req.GetAmount(quality) * craftMultiplier;
         }
 
         if (amount <= 0)

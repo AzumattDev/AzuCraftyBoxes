@@ -14,12 +14,12 @@ public class MiscFunctions
     }
 
     /* Consume Resources */
-    internal static void ProcessRequirements(Piece.Requirement[] requirements, int qualityLevel, Inventory pInventory, List<IContainer> nearbyContainers, int itemQuality)
+    internal static void ProcessRequirements(Piece.Requirement[] requirements, int qualityLevel, Inventory pInventory, List<IContainer> nearbyContainers, int itemQuality, int multiplier)
     {
         foreach (Piece.Requirement requirement in requirements)
         {
             if (!IsValidRequirement(requirement)) continue;
-            int totalRequirement = requirement.GetAmount(qualityLevel);
+            int totalRequirement = requirement.GetAmount(qualityLevel) * multiplier;
             if (totalRequirement <= 0) continue;
 
             string reqName = requirement.m_resItem.m_itemData.m_shared.m_name;
