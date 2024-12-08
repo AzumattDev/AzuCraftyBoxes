@@ -18,7 +18,8 @@ public class Boxes
         if (!Containers.Contains(container))
         {
             ContainersToAdd.Add(container);
-            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"Added container {container.name} to list");
+            if (container)
+                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"Added container {container.name} to list");
         }
 
         UpdateContainers();
@@ -29,7 +30,8 @@ public class Boxes
         if (Containers.Contains(container))
         {
             ContainersToRemove.Add(container);
-            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"Removed container {container.name} from list");
+            if (container)
+                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"Removed container {container.name} from list");
         }
 
         UpdateContainers();
