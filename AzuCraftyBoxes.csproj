@@ -123,6 +123,9 @@
         <Reference Include="Unity.TextMeshPro">
             <HintPath>$(GamePath)\valheim_Data\Managed\Unity.TextMeshPro.dll</HintPath>
         </Reference>
+        <Reference Include="UnityEngine.PhysicsModule">
+            <HintPath>$(GamePath)\valheim_Data\Managed\UnityEngine.PhysicsModule.dll</HintPath>
+        </Reference>
     </ItemGroup>
     <ItemGroup>
         <Compile Include="APIs\API.cs" />
@@ -137,6 +140,7 @@
         <Compile Include="IContainers\VanillaContainer.cs" />
         <Compile Include="Patches\ChestPatches.cs" />
         <Compile Include="Patches\CookingStationPatches.cs" />
+        <Compile Include="Patches\CraftFromStacks.cs" />
         <Compile Include="Patches\FermenterPatches.cs" />
         <Compile Include="Patches\FireplacePatches.cs" />
         <Compile Include="Patches\HUDPatches.cs" />

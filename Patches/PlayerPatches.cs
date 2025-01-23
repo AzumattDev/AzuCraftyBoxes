@@ -61,7 +61,7 @@ static class PlayerHaveRequirementsPatch
                         if (Boxes.CanItemBePulled(container.GetPrefabName(), itemPrefabName))
                         {
                             container.ContainsItem(sharedName, quality, out int containerAmount);
-                            availableAmount = Math.Max(availableAmount, containerAmount);
+                            availableAmount = Boxes.CheckAndDecrement(Math.Max(availableAmount, containerAmount));
                         }
                     }
                 }
@@ -160,6 +160,7 @@ static class PlayerHaveRequirementsPatchRBoolInt
                             try
                             {
                                 c.ContainsItem(sharedName, 1, out int result);
+                                result = Boxes.CheckAndDecrement(result);
                                 num += result;
                                 if (num >= amount)
                                 {
@@ -282,6 +283,7 @@ static class HaveRequirementsPatch2
                                     try
                                     {
                                         c.ContainsItem(sharedName, 1, out int result);
+                                        result = Boxes.CheckAndDecrement(result);
                                         hasItems += result;
                                         if (hasItems >= requirement.m_amount)
                                         {

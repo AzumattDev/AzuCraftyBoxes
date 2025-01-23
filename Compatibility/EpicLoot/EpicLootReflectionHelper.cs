@@ -1,29 +1,12 @@
-﻿/*using System.Collections;
-using AzuCraftyBoxes.Util.Functions;
+﻿using AzuCraftyBoxes.Util.Functions;
 
 namespace AzuCraftyBoxes.Compatibility.EpicLoot;
 
 public static class EpicLoot
 {
-    public const string elGuid = "randyknapp.mods.epicloot";
+    public const string ElGuid = "randyknapp.mods.epicloot";
     public static PluginInfo? EpicLootPluginInfo { get; set; }
     public static Assembly? EpicLootAssembly { get; private set; }
-
-    internal static Type? epicLootRootType;
-    internal static Type? epicLootLibType;
-    internal static Type? epicLootControllerType;
-    internal static Type? epicLootItemDataExtensionsType;
-    internal static Type? epicLootMagicItemExtentionType;
-    internal static MethodInfo? isMagicMethod;
-    internal static MethodInfo? getRarityMethod;
-    internal static Type? enchantTabControllerType;
-    internal static Type? enchantCostsHelperType;
-    internal static MethodInfo? getEnchantCostsMethod;
-    internal static MethodInfo? getCanBeMagicItemMethod;
-    internal static MethodInfo? getCanBeAugmentedItemMethod;
-    internal static MethodInfo? getCanBeDisenchantedItemMethod;
-    internal static MethodInfo dataMethod;
-    internal static MethodInfo? getGetSacrificeProductsMethod;
 
 
     public static void Init(PluginInfo? pluginInfo)
@@ -31,70 +14,101 @@ public static class EpicLoot
         EpicLootPluginInfo = pluginInfo;
         EpicLootAssembly = pluginInfo?.Instance?.GetType().Assembly;
 
-        if (EpicLootAssembly != null)
-        {
-            epicLootRootType = EpicLootAssembly.GetType("EpicLoot.EpicLoot");
-            epicLootLibType = EpicLootAssembly.GetType("EpicLoot_UnityLib.InventoryItemListElement");
-            epicLootControllerType = EpicLootAssembly.GetType("EpicLoot.CraftingV2.EnchantingUIController");
-            epicLootItemDataExtensionsType = EpicLootAssembly.GetType("EpicLoot.ItemDataExtensions");
-            epicLootMagicItemExtentionType = EpicLootAssembly.GetType("EpicLoot.MagicItem");
-            enchantTabControllerType = EpicLootAssembly.GetType("EpicLoot.Crafting.EnchantHelper");
-            enchantCostsHelperType = EpicLootAssembly.GetType("EpicLoot.Crafting.EnchantCostsHelper");
-            isMagicMethod = epicLootItemDataExtensionsType?.GetMethod("IsMagic", BindingFlags.Public | BindingFlags.Static, null, new Type[] { typeof(ItemDrop.ItemData) }, null);
-            getRarityMethod = epicLootItemDataExtensionsType?.GetMethod("GetRarity", BindingFlags.Public | BindingFlags.Static, null, new[] { typeof(ItemDrop.ItemData) }, null);
-            getGetSacrificeProductsMethod = enchantCostsHelperType?.GetMethod("GetSacrificeProducts", BindingFlags.Public | BindingFlags.Static, null, new Type[] { typeof(ItemDrop.ItemData) }, null);
-            getEnchantCostsMethod = enchantTabControllerType?.GetMethod("GetEnchantCosts", BindingFlags.Public | BindingFlags.Static);
-            getCanBeMagicItemMethod = epicLootRootType?.GetMethod("CanBeMagicItem", BindingFlags.Public | BindingFlags.Static);
-            getCanBeAugmentedItemMethod = epicLootItemDataExtensionsType?.GetMethod("CanBeAugmented", BindingFlags.Public | BindingFlags.Static);
-            getCanBeDisenchantedItemMethod = epicLootMagicItemExtentionType?.GetMethod("CanBeDisenchanted", BindingFlags.Public | BindingFlags.Instance);
-            //dataMethod = itemDataExtensionsType?.GetMethod("Data", BindingFlags.Public | BindingFlags.Static);
-        }
-
         AzuCraftyBoxesPlugin.harmony.PatchAll(typeof(EpicLootEnchantingUI));
     }
 
     public static class EpicLootEnchantingUI
     {
-        public static Type listType = AccessTools.TypeByName("EpicLoot_UnityLib.InventoryItemListElement");
-        public static Type genericListType = typeof(List<>).MakeGenericType(listType);
-        public static MethodInfo addMethod = genericListType.GetMethod("Add");
-        public static MethodInfo clearMethod = genericListType.GetMethod("Clear");
-
-        /*[HarmonyPatch("EpicLoot.CraftingV2.EnchantingUIController, EpicLoot", "GetEnchantableItems"), HarmonyPostfix]
-        private static void GetEnchantableItemsPostfixPatch(ref object __result)
-        {
-            EpicLootReflectionHelpers.AppendItemsFromContainers(ref __result, EpicLootReflectionHelpers.CanBeMagicItem);
-        }
-
-        /*[HarmonyPatch("EpicLoot.CraftingV2.EnchantingUIController, EpicLoot", "GetSacrificeItems"), HarmonyPostfix]
-        private static void GetSacrificeItemsPostfixPatch(ref object __result)
-        {
-            EpicLootReflectionHelpers.AppendItemsFromContainers(ref __result, EpicLootReflectionHelpers.CanBeMagicItem);
-        }#2#
-
-        [HarmonyPatch("EpicLoot.CraftingV2.EnchantingUIController, EpicLoot", "GetAugmentableItems"), HarmonyPostfix]
-        private static void GetAugmentableItemsPostfixPatch(ref object __result)
-        {
-            EpicLootReflectionHelpers.AppendItemsFromContainers(ref __result, EpicLootReflectionHelpers.CanBeAugmented, true);
-        }
-
-        /*[HarmonyPatch("EpicLoot.CraftingV2.EnchantingUIController, EpicLoot", "GetDisenchantItems"), HarmonyPostfix]
-        private static void GetDisenchantItemsPostfixPatch(ref object __result)
-        {
-            EpicLootReflectionHelpers.AppendItemsFromContainers(ref __result, EpicLootReflectionHelpers.CanBeDisenchanted, true);
-        }#2##1#
-
         [HarmonyPatch("EpicLoot_UnityLib.InventoryManagement, EpicLoot-UnityLib", "GetAllItems"), HarmonyPostfix]
-        private static void GetEnchantableItemsPostfixPatch(ref List<ItemDrop.ItemData> __result)
+        private static void GetAllItemsPostfix(ref List<ItemDrop.ItemData> __result)
         {
             EpicLootReflectionHelpers.AppendContainerItemsToInventory(ref __result);
         }
+
+        [HarmonyPatch("EpicLoot_UnityLib.InventoryManagement, EpicLoot-UnityLib", "HasItem"), HarmonyPostfix]
+        private static void HasItemPostfix(ItemDrop.ItemData item, ref bool __result)
+        {
+            EpicLootReflectionHelpers.DoesContainerHaveItem(item, ref __result);
+        }
+
+        [HarmonyPatch("EpicLoot_UnityLib.InventoryManagement, EpicLoot-UnityLib", "CountItem", MethodType.Normal, [typeof(string)]), HarmonyPostfix]
+        private static void CountItemPostfix(string item, ref int __result)
+        {
+            __result += EpicLootReflectionHelpers.CountContainerItems(item);
+        }
+
+        [HarmonyPatch("EpicLoot_UnityLib.InventoryManagement, EpicLoot-UnityLib", "RemoveItem", MethodType.Normal, [typeof(string), typeof(int)]), HarmonyPrefix]
+        private static void RemoveItemPrefix(string item, int amount, ref int __state)
+        {
+            // Capture the initial count of the item in the player's inventory
+            __state = EpicLootReflectionHelpers.CountPlayerItems(item);
+            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Initial count of '{item}' in player inventory: {__state}");
+        }
+
+        [HarmonyPatch("EpicLoot_UnityLib.InventoryManagement, EpicLoot-UnityLib", "RemoveItem", MethodType.Normal, [typeof(string), typeof(int)]), HarmonyPostfix]
+        private static void RemoveItemPostfix(string item, int amount, int __state)
+        {
+            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Removing {amount} of '{item}' from player inventory.");
+            // Capture the new count of the item in the player's inventory after removal
+            int newCount = EpicLootReflectionHelpers.CountPlayerItems(item);
+
+            // Calculate how many items were removed from the player's inventory
+            int removedFromPlayer = __state - newCount;
+
+            // Ensure we don't have a negative value
+            if (removedFromPlayer < 0)
+                removedFromPlayer = 0;
+
+            // Calculate the remaining amount to remove from containers
+            int remainingToRemove = amount - removedFromPlayer;
+            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Removed {removedFromPlayer} of '{item}' from player inventory. Remaining to remove: {remainingToRemove}");
+            // If there's still an amount left to remove, proceed to remove it from containers
+            // We can assume the HasItem check has already been done and that there are enough items in the containers
+            if (remainingToRemove > 0)
+            {
+                EpicLootReflectionHelpers.RemoveContainerItems(item, remainingToRemove);
+            }
+        }
+
+        [HarmonyPatch("EpicLoot_UnityLib.InventoryManagement, EpicLoot-UnityLib", "RemoveExactItem"), HarmonyPrefix]
+        private static void RemoveExactItemPrefix(ItemDrop.ItemData item, int amount, ref int __state)
+        {
+            // Capture the initial count of the item in the player's inventory
+            __state = EpicLootReflectionHelpers.CountPlayerItems(item);
+            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Initial count of '{item}' in player inventory: {__state}");
+        }
+
+        [HarmonyPatch("EpicLoot_UnityLib.InventoryManagement, EpicLoot-UnityLib", "RemoveExactItem"), HarmonyPostfix]
+        private static void RemoveExactItem(ItemDrop.ItemData item, int amount, int __state)
+        {
+            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Removing {amount} of '{item}' from player inventory.");
+            // Capture the new count of the item in the player's inventory after removal
+            int newCount = EpicLootReflectionHelpers.CountPlayerItems(item);
+
+            // Calculate how many items were removed from the player's inventory
+            int removedFromPlayer = __state - newCount;
+
+            // Ensure we don't have a negative value
+            if (removedFromPlayer < 0)
+                removedFromPlayer = 0;
+
+            // Calculate the remaining amount to remove from containers
+            int remainingToRemove = amount - removedFromPlayer;
+            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Removed {removedFromPlayer} of '{item}' from player inventory. Remaining to remove: {remainingToRemove}");
+            // If there's still an amount left to remove, proceed to remove it from containers
+            // We can assume the HasItem check has already been done and that there are enough items in the containers
+            if (remainingToRemove > 0)
+            {
+                EpicLootReflectionHelpers.RemoveSpecificContainerItem(item, remainingToRemove);
+            }
+        }
+
 
         /*[HarmonyPatch("EpicLoot_UnityLib.InventoryManagement, EpicLoot-UnityLib", "GetInventory"), HarmonyPostfix]
         private static void GetEnchantableItemsPostfixPatch(ref Inventory __result)
         {
             EpicLootReflectionHelpers.AppendContainerItemsToInventory(ref __result);
-        }#1#
+        }*/
     }
 
     public class EpicLootReflectionHelpers
@@ -103,26 +117,20 @@ public static class EpicLoot
         {
             try
             {
-                // Create a list to hold combined items from the player and containers
-                List<ItemDrop.ItemData> combinedItems = new List<ItemDrop.ItemData>(playerInventory);
+                List<ItemDrop.ItemData> combinedItems = [..playerInventory];
 
-                // Iterate over all containers and collect items
+
                 foreach (Container container in Boxes.Containers)
                 {
-                    Inventory containerInventory = container.GetInventory(); // Assumes Container has GetInventory
+                    Inventory containerInventory = container.GetInventory();
 
-                    if (containerInventory != null)
+                    if (containerInventory == null) continue;
+                    foreach (ItemDrop.ItemData item in containerInventory.GetAllItems())
                     {
-                        // Add each item in container to the combined list
-                        foreach (ItemDrop.ItemData item in containerInventory.GetAllItems())
-                        {
-                            combinedItems.Add(item);
-                        }
+                        combinedItems.Add(item);
                     }
                 }
 
-                // Temporarily replace player inventory items with the combined list
-                // If Inventory class has a method like SetItems, use that; otherwise, reassign to m_inventory
                 playerInventory = combinedItems;
             }
             catch (Exception ex)
@@ -131,30 +139,215 @@ public static class EpicLoot
             }
         }
 
+        public static void DoesContainerHaveItem(ItemDrop.ItemData item, ref bool result)
+        {
+            try
+            {
+                foreach (Container container in Boxes.Containers)
+                {
+                    Inventory containerInventory = container.GetInventory();
+
+                    if (containerInventory == null || (Boxes.CheckAndDecrement(containerInventory.CountItems(item.m_shared.m_name)) + CountPlayerItems(item.m_shared.m_name)) < item.m_stack) continue;
+                    result = true;
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogWarning($"Error checking container items: {ex}");
+            }
+        }
+
+        public static int CountPlayerItems(string itemName)
+        {
+            try
+            {
+                if (Player.m_localPlayer != null)
+                {
+                    Inventory playerInventory = Player.m_localPlayer.GetInventory();
+                    return playerInventory.CountItems(itemName);
+                }
+
+                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogWarning("Player.m_localPlayer is null.");
+                return 0;
+            }
+            catch (Exception ex)
+            {
+                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogWarning($"Error counting player items: {ex}");
+                return 0;
+            }
+        }
+
+        public static int CountPlayerItems(ItemDrop.ItemData item)
+        {
+            try
+            {
+                if (Player.m_localPlayer != null)
+                {
+                    Inventory playerInventory = Player.m_localPlayer.GetInventory();
+                    string? name = item.m_shared.m_name;
+                    int num = 0;
+                    foreach (ItemDrop.ItemData itemData in playerInventory.m_inventory)
+                    {
+                        if ((name == null || itemData.m_shared.m_name == name) && (itemData.m_worldLevel >= Game.m_worldLevel))
+                        {
+                            if (itemData == item)
+                                num += itemData.m_stack;
+                        }
+                    }
+
+                    return num;
+                }
+
+                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogWarning("Player.m_localPlayer is null.");
+                return 0;
+            }
+            catch (Exception ex)
+            {
+                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogWarning($"Error counting player items: {ex}");
+                return 0;
+            }
+        }
+
+
+        public static int CountContainerItems(string itemName)
+        {
+            int count = 0;
+            try
+            {
+                foreach (Container container in Boxes.Containers)
+                {
+                    Inventory containerInventory = container.GetInventory();
+
+                    if (containerInventory != null)
+                    {
+                        count += Boxes.CheckAndDecrement(containerInventory.CountItems(itemName));
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogWarning($"Error counting container items: {ex}");
+            }
+
+            return count;
+        }
+
+        public static void RemoveContainerItems(string itemName, int amount)
+        {
+            try
+            {
+                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Starting to remove {amount} of '{itemName}' from containers.");
+                foreach (Container container in Boxes.Containers)
+                {
+                    Inventory containerInventory = container.GetInventory();
+
+                    if (containerInventory == null) continue;
+                    List<ItemDrop.ItemData> items = containerInventory.GetAllItems();
+
+                    List<ItemDrop.ItemData> matchingItems = items.FindAll(item => item.m_shared.m_name.Equals(itemName, StringComparison.OrdinalIgnoreCase));
+
+                    foreach (ItemDrop.ItemData? item in matchingItems)
+                    {
+                        if (amount <= 0)
+                            break;
+
+                        int removeAmount = Math.Min(item.m_stack, amount);
+                        bool success = containerInventory.RemoveItem(item, removeAmount);
+                        if (success)
+                        {
+                            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Removed {removeAmount} of '{itemName}' from container '{container.name}'. Remaining to remove: {amount - removeAmount}");
+                            amount -= removeAmount;
+                        }
+                        else
+                        {
+                            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogWarning($"Failed to remove {removeAmount} of '{itemName}' from container '{container.name}'.");
+                        }
+
+                        if (amount <= 0)
+                            break;
+                    }
+                }
+
+                if (amount > 0)
+                {
+                    AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogWarning($"Unable to remove the full amount of '{itemName}' from containers. {amount} remaining.");
+                }
+            }
+            catch (Exception ex)
+            {
+                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogWarning($"Error removing container items: {ex}");
+            }
+        }
+
+        public static void RemoveSpecificContainerItem(ItemDrop.ItemData item, int amount)
+        {
+            try
+            {
+                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Starting to remove {amount} of '{item.m_shared.m_name}' from containers.");
+                foreach (Container container in Boxes.Containers)
+                {
+                    Inventory containerInventory = container.GetInventory();
+
+                    if (containerInventory == null) continue;
+                    List<ItemDrop.ItemData> items = containerInventory.GetAllItems();
+
+                    List<ItemDrop.ItemData> matchingItems = items.FindAll(i => i == item);
+
+                    foreach (ItemDrop.ItemData? containerItem in matchingItems)
+                    {
+                        if (amount <= 0)
+                            break;
+
+                        int removeAmount = Math.Min(containerItem.m_stack, amount);
+                        bool success = containerInventory.RemoveItem(containerItem, removeAmount);
+                        if (success)
+                        {
+                            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Removed {removeAmount} of '{item.m_shared.m_name}' from container '{container.name}'. Remaining to remove: {amount - removeAmount}");
+                            amount -= removeAmount;
+                        }
+                        else
+                        {
+                            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogWarning($"Failed to remove {removeAmount} of '{item.m_shared.m_name}' from container '{container.name}'.");
+                        }
+
+                        if (amount <= 0)
+                            break;
+                    }
+                }
+
+                if (amount > 0)
+                {
+                    AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogWarning($"Unable to remove the full amount of '{item.m_shared.m_name}' from containers. {amount} remaining.");
+                }
+            }
+            catch (Exception ex)
+            {
+                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogWarning($"Error removing container items: {ex}");
+            }
+        }
+
+
         public static void AppendContainerItemsToInventory(ref Inventory playerInventory)
         {
             try
             {
                 // Create a list to hold combined items from the player and containers
-                List<ItemDrop.ItemData> combinedItems = new List<ItemDrop.ItemData>(playerInventory.GetAllItems());
+                List<ItemDrop.ItemData> combinedItems = [..playerInventory.GetAllItems()];
 
                 // Iterate over all containers and collect items
                 foreach (Container container in Boxes.Containers)
                 {
-                    Inventory containerInventory = container.GetInventory(); // Assumes Container has GetInventory
+                    Inventory containerInventory = container.GetInventory();
 
-                    if (containerInventory != null)
+                    if (containerInventory == null) continue;
+                    // Add each item in container to the combined list
+                    foreach (ItemDrop.ItemData item in containerInventory.GetAllItems())
                     {
-                        // Add each item in container to the combined list
-                        foreach (ItemDrop.ItemData item in containerInventory.GetAllItems())
-                        {
-                            combinedItems.Add(item);
-                        }
+                        combinedItems.Add(item);
                     }
                 }
 
-                // Temporarily replace player inventory items with the combined list
-                // If Inventory class has a method like SetItems, use that; otherwise, reassign to m_inventory
                 playerInventory.m_inventory = combinedItems;
             }
             catch (Exception ex)
@@ -163,4 +356,4 @@ public static class EpicLoot
             }
         }
     }
-}*/
+}

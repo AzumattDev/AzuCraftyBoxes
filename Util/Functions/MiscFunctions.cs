@@ -56,6 +56,7 @@ public class MiscFunctions
         foreach (IContainer c in nearbyContainers)
         {
             newTotalAmount = c.ProcessContainerInventory(reqName, newTotalAmount, totalRequirement);
+            newTotalAmount = Boxes.CheckAndDecrement(newTotalAmount);
             if (newTotalAmount >= totalRequirement)
             {
                 break;

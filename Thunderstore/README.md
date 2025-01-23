@@ -16,6 +16,11 @@ AzuCraftyBoxes is a Valheim mod that allows players to access and use resources 
 
 **This mod uses a file watcher. If the configuration file is not changed with BepInEx Configuration manager, but changed in the file directly on the server, upon file save, it will sync the changes to all clients.**
 
+# Compatibility
+Compatible with all mods that add new containers, such as RockerKitten's/OdinPlus mods, and any other mods that add new containers. As long as they use the base-game container system, they should work with this mod.
+
+Compatible with Epic Loot's custom Enchanting Table.
+
 
 <details>
 <summary><b>Configuration Options</b></summary>
@@ -39,6 +44,10 @@ Mod Enabled [Synced with Server]
 Container Range [Synced with Server]
 * The maximum range from which to pull items from.
     * Default Value: 20
+
+Leave One Item [Synced with Server]
+* If on, leaves one item in the chest when pulling from it, so that you are able to pull from it again and store items more easily with other mods. (Such as AzuAutoStore or QuickStackStore). If off, it will pull all items from the chest.
+    * Default Value: On
 
 ResourceCostString [Not Synced with Server]
 * String used to show required and available resources. {0} is replaced by how much is available, and {1} is replaced by how much is required. Set to nothing to leave it as default.

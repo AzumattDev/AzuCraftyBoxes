@@ -254,14 +254,15 @@ public class Boxes
     }
 
 
-    /*internal static int CheckAndDecrement(int amount)
+    internal static int CheckAndDecrement(int amount)
     {
-        if (amount <= 1) return amount;
+        if (amount <= 0) return amount;
         if (AzuCraftyBoxesPlugin.leaveOne.Value == AzuCraftyBoxesPlugin.Toggle.On)
         {
             return amount - 1;
         }
 
         return amount;
-    }*/
+
+    }
 }

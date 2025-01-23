@@ -127,6 +127,7 @@ static class InventoryGuiSetupRequirementPatch
                     if (Boxes.CanItemBePulled(containerPrefabName, itemPrefabName))
                     {
                         container.ContainsItem(sharedName, 1, out int result);
+                        result = Boxes.CheckAndDecrement(result);
                         invAmount += result;
                     }
                 }

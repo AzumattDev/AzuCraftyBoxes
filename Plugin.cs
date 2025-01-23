@@ -1,5 +1,5 @@
 ﻿using System.IO;
-//using AzuCraftyBoxes.Compatibility.EpicLoot;
+using AzuCraftyBoxes.Compatibility.EpicLoot;
 using AzuCraftyBoxes.IContainers;
 using AzuCraftyBoxes.Util.Functions;
 
@@ -13,7 +13,7 @@ namespace AzuCraftyBoxes
     public class AzuCraftyBoxesPlugin : BaseUnityPlugin
     {
         internal const string ModName = "AzuCraftyBoxes";
-        internal const string ModVersion = "1.5.7";
+        internal const string ModVersion = "1.5.8";
         internal const string Author = "Azumatt";
         private const string ModGUID = $"{Author}.{ModName}";
         private static string ConfigFileName = $"{ModGUID}.cfg";
@@ -52,7 +52,7 @@ namespace AzuCraftyBoxes
             ModEnabled = config("1 - General", "Mod Enabled", Toggle.On, "If off, everything in the mod will not run. This is useful if you want to disable the mod without uninstalling it.");
             debugLogsEnabled = config("1 - General", "Output Debug Logs", Toggle.Off, "If on, the debug logs will be displayed in the BepInEx console window when BepInEx debugging is enabled.");
             mRange = config("2 - CraftyBoxes", "Container Range", 20f, "The maximum range from which to pull items from.");
-            //leaveOne = config("2 - CraftyBoxes", "Leave One Item", Toggle.On, "Leave one item in the chest when pulling from it, so that you are able to pull from it again and store items more easily with other mods. Additionally,");
+            leaveOne = config("2 - CraftyBoxes", "Leave One Item", Toggle.On, "* If on, leaves one item in the chest when pulling from it, so that you are able to pull from it again and store items more easily with other mods. (Such as AzuAutoStore or QuickStackStore). If off, it will pull all items from the chest.");
             resourceString = TextEntryConfig("2 - CraftyBoxes", "ResourceCostString", "{0}/{1}", "String used to show required and available resources. {0} is replaced by how much is available, and {1} is replaced by how much is required. Set to nothing to leave it as default.", false);
             flashColor = config("2 - CraftyBoxes", "FlashColor", Color.yellow, "Resource amounts will flash to this colour when coming from containers", false);
             unFlashColor = config("2 - CraftyBoxes", "UnFlashColor", Color.white, "Resource amounts will flash from this colour when coming from containers (set both colors to the same color for no flashing)", false);
@@ -116,8 +116,8 @@ namespace AzuCraftyBoxes
                 BackpacksIsLoaded = true;
             }
 
-            /*if (!Chainloader.PluginInfos.TryGetValue(EpicLoot.elGuid, out PluginInfo? epicLootInfo)) return;
-            EpicLoot.Init(epicLootInfo);*/
+            if (!Chainloader.PluginInfos.TryGetValue(EpicLoot.ElGuid, out PluginInfo? epicLootInfo)) return;
+            EpicLoot.Init(epicLootInfo);
         }
 
         private void LateUpdate()
@@ -227,7 +227,7 @@ namespace AzuCraftyBoxes
         private static ConfigEntry<Toggle> _serverConfigLocked = null!;
         internal static ConfigEntry<Toggle> ModEnabled = null!;
         internal static ConfigEntry<Toggle> debugLogsEnabled = null!;
-        //internal static ConfigEntry<Toggle> leaveOne = null!;
+        internal static ConfigEntry<Toggle> leaveOne = null!;
         public static ConfigEntry<Color> flashColor = null!;
         public static ConfigEntry<Color> unFlashColor = null!;
         public static ConfigEntry<Color> canbuildDisplayColor = null!;
