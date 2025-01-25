@@ -8,12 +8,13 @@ namespace AzuCraftyBoxes
     [BepInPlugin(ModGUID, ModName, ModVersion)]
     [BepInDependency("kg.ItemDrawers", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency("org.bepinex.plugins.backpacks", BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency("org.bepinex.plugins.jewelcrafting", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInIncompatibility("aedenthorn.CraftFromContainers")]
     [BepInIncompatibility("CFCMod")]
     public class AzuCraftyBoxesPlugin : BaseUnityPlugin
     {
         internal const string ModName = "AzuCraftyBoxes";
-        internal const string ModVersion = "1.5.8";
+        internal const string ModVersion = "1.5.9";
         internal const string Author = "Azumatt";
         private const string ModGUID = $"{Author}.{ModName}";
         private static string ConfigFileName = $"{ModGUID}.cfg";
@@ -114,6 +115,11 @@ namespace AzuCraftyBoxes
             if (Chainloader.PluginInfos.ContainsKey("org.bepinex.plugins.backpacks"))
             {
                 BackpacksIsLoaded = true;
+            }
+
+            if (Jewelcrafting.API.IsLoaded())
+            {
+                GemBagOpenInventory.Init();
             }
 
             if (!Chainloader.PluginInfos.TryGetValue(EpicLoot.ElGuid, out PluginInfo? epicLootInfo)) return;

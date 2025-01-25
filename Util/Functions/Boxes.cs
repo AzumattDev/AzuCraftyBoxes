@@ -3,6 +3,7 @@ using System.Diagnostics;
 using AzuCraftyBoxes.IContainers;
 using Backpacks;
 using ItemDataManager;
+using static AzuCraftyBoxes.Patches.CacheCurrentCraftingStationPrefabName;
 
 namespace AzuCraftyBoxes.Util.Functions;
 
@@ -59,6 +60,7 @@ public class Boxes
         if (Player.m_localPlayer == null) return nearbyContainers;
         IEnumerable<IContainer> kgDrawers = APIs.ItemDrawers_API.AllDrawersInRange(gameObject.transform.position, rangeToUse).Select(kgDrawer.Create);
         IEnumerable<IContainer> backpacksEnumerable = new List<IContainer>();
+        IEnumerable<IContainer> gemBagsEnumerable = new List<IContainer>();
         List<IContainer> backpackList = [];
         if (AzuCraftyBoxesPlugin.BackpacksIsLoaded)
         {
@@ -78,9 +80,28 @@ public class Boxes
             }*/
         }
 
+        List<IContainer> gemBagList = [];
+        if (Jewelcrafting.API.IsLoaded())
+        {
+            // All items in player inventory named "JC_Gem_Bag"
+            foreach (ItemDrop.ItemData? gemBagItem in Player.m_localPlayer.GetInventory().GetAllItems().Where(x => x?.m_dropPrefab?.name == GemBagContainer.GemBagPrefabName))
+            {
+                // Typically, the Jewelcrafting bag data is stored in `gemBagItem.Data()`
+                // We'll fetch the "SocketBag"/"InventoryBag" object via reflection
+                object bagObject = GemBagContainer.FindJewelcraftingBagObject(gemBagItem);
+                if (bagObject == null) continue;
+                // Wrap the unknown object in reflection-based container
+                GemBagContainer gemBagContainer = new GemBagContainer(bagObject);
+                if (gemBagList.Contains(gemBagContainer)) continue;
+                gemBagList.Add(gemBagContainer);
+            }
+
+            gemBagsEnumerable = gemBagList;
+        }
+
 
         if (Vector3.Distance(gameObject.transform.position, AzuCraftyBoxesPlugin.lastPosition) < 0.5f)
-            return AzuCraftyBoxesPlugin.cachedContainerList.Concat(kgDrawers).Concat(backpacksEnumerable).ToList();
+            return AzuCraftyBoxesPlugin.cachedContainerList.Concat(kgDrawers).Concat(backpacksEnumerable).Concat(gemBagsEnumerable).ToList();
 
         foreach (Container container in Containers)
         {
@@ -101,7 +122,7 @@ public class Boxes
 
         AzuCraftyBoxesPlugin.lastPosition = gameObject.transform.position;
         AzuCraftyBoxesPlugin.cachedContainerList = nearbyContainers;
-        return nearbyContainers.Concat(kgDrawers).Concat(backpacksEnumerable).ToList();
+        return nearbyContainers.Concat(kgDrawers).Concat(backpacksEnumerable).Concat(gemBagsEnumerable).ToList();
     }
 
     public static void AddContainerIfNotExists(string containerName)
@@ -138,9 +159,97 @@ public class Boxes
         return AzuCraftyBoxesPlugin.yamlData.Keys.Where(key => key != "groups").ToList();
     }
 
+    private static bool PassesIncludeExcludeChecks(Dictionary<string, List<string>> data, string prefab)
+    {
+        // 1. Grab "includeOverride" list
+        List<string> includeOverrideList = data.TryGetValue("includeOverride", out List<string> includeValues) ? includeValues : new List<string>();
+
+        // If the prefab is in 'includeOverride', allow immediately
+        if (includeOverrideList.Contains(prefab))
+        {
+            return true;
+        }
+
+        // 2. Grab "exclude" list
+        List<string> excludeList = data.TryGetValue("exclude", out List<string> excludeValues) ? excludeValues : new List<string>();
+
+        // If the prefab is in 'exclude', disallow
+        // or if part of an excluded group, disallow
+        foreach (string? excludedItem in excludeList)
+        {
+            if (prefab.Equals(excludedItem))
+            {
+                return false;
+            }
+
+            // Check group membership
+            if (GroupUtils.IsGroupDefined(excludedItem))
+            {
+                List<string> groupItems = GroupUtils.GetItemsInGroup(excludedItem);
+                if (groupItems.Contains(prefab))
+                {
+                    return false;
+                }
+            }
+        }
+
+        // 3. If we got here, no exclude matched and no includeOverride was needed
+        // By default, allow pulling
+        return true;
+    }
+
+    public static bool CanItemBePulled(string container, string prefab, string stationName = "")
+    {
+        if (AzuCraftyBoxesPlugin.yamlData == null)
+        {
+            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogError("yamlData is null. Make sure to call DeserializeYamlFile() before using CanItemBePulled.");
+            return false;
+        }
+
+        if (!string.IsNullOrWhiteSpace(CachedStationName))
+        {
+            stationName = CachedStationName;
+        }
+
+        // -----------------------------------------------------------------------
+        // 1) Check stationName first (if not empty)
+        // -----------------------------------------------------------------------
+        if (!string.IsNullOrWhiteSpace(stationName) && AzuCraftyBoxesPlugin.yamlData.TryGetValue(stationName, out Dictionary<string, List<string>>? stationData))
+        {
+            // Apply station include/exclude logic
+            bool stationPass = PassesIncludeExcludeChecks(stationData, prefab);
+
+            if (!stationPass)
+            {
+                // If the station explicitly excludes this item,
+                // we can return false immediately, no need to check container
+                return false;
+            }
+            // If station passed (i.e. not excluded), we still continue
+            // to container checks.
+            // (If you prefer station "includeOverride" to skip container checks,
+            // you can detect that here and return true. But that changes logic.)
+        }
+
+        // -----------------------------------------------------------------------
+        // 2) Now apply container filters
+        // -----------------------------------------------------------------------
+        // If container is NOT in yaml, we allow by default
+        if (!AzuCraftyBoxesPlugin.yamlData.TryGetValue(container, out Dictionary<string, List<string>>? containerData))
+        {
+            // Container not found => allow pulling
+            return true;
+        }
+
+        // Check container include/exclude logic
+        bool containerPass = PassesIncludeExcludeChecks(containerData, prefab);
+        return containerPass;
+    }
+
+
     // Check if a prefab is excluded from a container
 
-    public static bool CanItemBePulled(string container, string prefab)
+    /*public static bool CanItemBePulled(string container, string prefab, string stationName = "")
     {
         if (AzuCraftyBoxesPlugin.yamlData == null)
         {
@@ -180,7 +289,7 @@ public class Boxes
         }
 
         return true;
-    }
+    }*/
 
 
     internal static bool IsPrefabExcluded(string prefab, List<object> exclusionList)
@@ -263,6 +372,5 @@ public class Boxes
         }
 
         return amount;
-
     }
 }

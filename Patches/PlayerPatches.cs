@@ -3,6 +3,17 @@ using AzuCraftyBoxes.Util.Functions;
 
 namespace AzuCraftyBoxes.Patches;
 
+[HarmonyPatch(typeof(Player), nameof(Player.SetCraftingStation))]
+static class CacheCurrentCraftingStationPrefabName
+{
+    public static string CachedStationName = string.Empty;
+
+    static void Postfix(Player __instance, CraftingStation station)
+    {
+        CachedStationName = station ? Utils.GetPrefabName(station.gameObject) : string.Empty;
+    }
+}
+
 [HarmonyPatch(typeof(Player), nameof(Player.UpdateKnownRecipesList))]
 static class UpdateKnownRecipesListPatch
 {
@@ -58,7 +69,8 @@ static class PlayerHaveRequirementsPatch
                     {
                         if (requirement.m_resItem?.m_itemData?.m_dropPrefab == null)
                             continue;
-                        if (Boxes.CanItemBePulled(container.GetPrefabName(), itemPrefabName))
+                        var containerPrefabName = container.GetPrefabName();
+                        if (Boxes.CanItemBePulled(containerPrefabName, itemPrefabName))
                         {
                             container.ContainsItem(sharedName, quality, out int containerAmount);
                             availableAmount = Boxes.CheckAndDecrement(Math.Max(availableAmount, containerAmount));

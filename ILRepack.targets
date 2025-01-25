@@ -5,6 +5,7 @@
             <InputAssemblies Include="$(TargetPath)" />
             <InputAssemblies Include="$(OutputPath)Libs\ServerSync.dll" />
             <InputAssemblies Include="$(OutputPath)Libs\BackpacksAPI.dll" />
+            <InputAssemblies Include="$(OutputPath)Libs\JewelcraftingAPI.dll" />
             <InputAssemblies Include="$(OutputPath)Libs\ItemDataManager.dll" />
             <InputAssemblies Include="$(OutputPath)\YamlDotNet.dll" />
             <!-- Only use the line below if you choose to use the DLL and not the classes. If you choose the DLL, be sure to reference and 

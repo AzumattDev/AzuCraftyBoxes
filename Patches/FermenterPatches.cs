@@ -1,4 +1,4 @@
-﻿/*using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using AzuCraftyBoxes.IContainers;
@@ -10,23 +10,59 @@ namespace AzuCraftyBoxes.Patches;
 
 [HarmonyPatch(typeof(Fermenter), nameof(Fermenter.GetHoverText))]
 [HarmonyBefore("org.bepinex.plugins.conversionsizespeed")]
-static class SmelterUpdateHoverTextsPatch
+static class FermenterGetHoverTextPatch
 {
-    static void Postfix(Fermenter __instance)
+    static void Postfix(Fermenter __instance, ref string __result)
     {
         if (OverrideHoverTextFermenter.ShouldReturn(__instance))
         {
             return;
         }
 
-        if (__instance.m_addSwitch)
-        {
-            OverrideHoverTextFermenter.UpdateAddSwitchHoverText(__instance, ref __instance.m_addSwitch.m_hoverText);
-        }
+        OverrideHoverTextFermenter.UpdateAddSwitchHoverText(__instance, ref __result);
+    }
+}
 
-        if (__instance.m_tapSwitch)
+[HarmonyPatch(typeof(Fermenter), nameof(Fermenter.FindCookableItem))]
+static class SearchContainersAsWell
+{
+    static void Postfix(Fermenter __instance, Inventory inventory, ref ItemDrop.ItemData __result)
+    {
+        // If the inventory is equal to the player's inventory but the result is null, then search the containers
+        if (inventory == Player.m_localPlayer.GetInventory() && __result == null)
         {
-            OverrideHoverTextFermenter.UpdateTapSwitchHoverText(__instance, ref __instance.m_tapSwitch.m_hoverText);
+            List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(__instance, AzuCraftyBoxesPlugin.mRange.Value);
+
+            foreach (IContainer c in nearbyContainers)
+            {
+                if (c.GetInventory() == null) continue;
+                var containerInventory = c.GetInventory();
+                if (containerInventory == inventory)
+                {
+                    continue;
+                }
+
+                foreach (Fermenter.ItemConversion itemConversion in __instance.m_conversion)
+                {
+                    if (!c.ContainsItem(itemConversion.m_from.m_itemData.m_shared.m_name, 1, out int result)) continue;
+                    if (!Boxes.CanItemBePulled(c.GetPrefabName(), itemConversion.m_from.name))
+                    {
+                        continue;
+                    }
+
+                    ItemDrop.ItemData cookableItem = containerInventory.GetItem(itemConversion.m_from.m_itemData.m_shared.m_name);
+                    if (cookableItem != null)
+                    {
+                        __result = cookableItem;
+                        if (__instance.GetStatus() != Fermenter.Status.Empty || !__instance.IsItemAllowed(cookableItem) || !containerInventory.RemoveOneItem(cookableItem))
+                        {
+                            return;
+                        }
+
+                        __instance.m_nview.InvokeRPC("RPC_AddItem", cookableItem.m_dropPrefab.name);
+                    }
+                }
+            }
         }
     }
 }
@@ -54,37 +90,6 @@ public static class OverrideHoverTextFermenter
         return false;
     }
 
-    internal static void UpdateTapSwitchHoverText(Fermenter __instance, ref string result)
-    {
-        string? content = __instance.GetContent();
-        if (string.IsNullOrEmpty(content))
-            result += "";
-        else
-        {
-            Fermenter.ItemConversion itemConversion = __instance.GetItemConversion(content);
-            if (itemConversion != null)
-            {
-                string contentName = itemConversion.m_from.m_itemData.m_shared.m_name;
-                string contentPrefabName = Utils.GetPrefabName(itemConversion.m_from.name);
-                int inInv = GetItemCountInInventoryAndContainers(contentPrefabName, contentName, __instance);
-                int fuelAmount = __instance.GetStatus() switch
-                {
-                    Fermenter.Status.Empty or Fermenter.Status.Exposed => 0,
-                    Fermenter.Status.Fermenting => 1,
-                    Fermenter.Status.Ready => 0,
-                    _ => 0
-                };
-
-                int amount = Math.Min(1 - Mathf.CeilToInt(fuelAmount), inInv);
-                if (amount <= 0) return;
-                if (Boxes.CanItemBePulled(Utils.GetPrefabName(__instance.gameObject), Utils.GetPrefabName(itemConversion.m_from.m_itemData.m_dropPrefab)))
-                {
-                    result += Localization.instance.Localize($"\n[<b><color=yellow>{AzuCraftyBoxesPlugin.fillAllModKey.Value}</color> + <color=yellow>$KEY_Use</color></b>] $piece_Fermenter_add {contentName} {amount} from Inventory & Nearby Containers");
-                }
-            }
-        }
-    }
-
     internal static void UpdateAddSwitchHoverText(Fermenter __instance, ref string result)
     {
         bool free = __instance.GetStatus() == Fermenter.Status.Empty;
@@ -100,12 +105,10 @@ public static class OverrideHoverTextFermenter
             int inInv = GetItemCountInInventoryAndContainers(conversion.m_from.name, conversion.m_from.m_itemData.m_shared.m_name, __instance);
             if (!MiscFunctions.CheckItemDropIntegrity(conversion.m_from)) continue;
             if (MiscFunctions.GetItemPrefabFromGameObject(conversion.m_from, conversion.m_from.gameObject) == null) continue;
-            if (free && inInv > 0)
+            if (!free || inInv <= 0) continue;
+            if (Boxes.CanItemBePulled(Utils.GetPrefabName(__instance.gameObject), Utils.GetPrefabName(conversion.m_from.m_itemData.m_dropPrefab)))
             {
-                if (Boxes.CanItemBePulled(Utils.GetPrefabName(__instance.gameObject), Utils.GetPrefabName(conversion.m_from.m_itemData.m_dropPrefab)))
-                {
-                    items.Add($"{conversion.m_from.m_itemData.m_shared.m_name}");
-                }
+                items.Add($"{conversion.m_from.m_itemData.m_shared.m_name}");
             }
         }
 
@@ -131,4 +134,4 @@ public static class OverrideHoverTextFermenter
 
         return inInv;
     }
-}*/
+}

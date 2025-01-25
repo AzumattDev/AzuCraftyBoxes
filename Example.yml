@@ -252,3 +252,33 @@ piece_jackoturnip:
 
 piece_walltorch:
   exclude: []
+
+# The station configurations below are checked before containers. Meaning, if it's blocked in one of the stations, it doesn't matter if it's included in the container.
+# Including something here also overrides container includes/excludes.
+
+# Epic Loot Table
+piece_enchantingtable:
+  exclude: []
+
+
+# Vanilla Crafting Stations
+piece_workbench:
+  exclude: []
+
+piece_cauldron:
+  exclude: []
+
+piece_preptable:
+  exclude: []
+
+piece_stonecutter:
+  exclude: []
+
+piece_artisanstation:
+  exclude: []
+
+forge:
+  exclude: []
+
+blackforge:
+  exclude: []
