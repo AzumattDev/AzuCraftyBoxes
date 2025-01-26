@@ -80,7 +80,7 @@ public class Boxes
             }*/
         }
 
-        List<IContainer> gemBagList = [];
+        /*List<IContainer> gemBagList = [];
         if (Jewelcrafting.API.IsLoaded())
         {
             // All items in player inventory named "JC_Gem_Bag"
@@ -97,7 +97,7 @@ public class Boxes
             }
 
             gemBagsEnumerable = gemBagList;
-        }
+        }*/
 
 
         if (Vector3.Distance(gameObject.transform.position, AzuCraftyBoxesPlugin.lastPosition) < 0.5f)

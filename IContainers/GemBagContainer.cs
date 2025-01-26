@@ -1,4 +1,4 @@
-﻿using ItemDataManager;
+﻿/*using ItemDataManager;
 
 namespace AzuCraftyBoxes.IContainers;
 
@@ -108,12 +108,17 @@ public class GemBagContainer : IContainer
         {
             try
             {
-                Save();
+                Save(cInventory);
             }
             catch
             {
                 AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogWarning("[GemBagContainer] Failed to save bag after processing items.");
             }
+        }
+        else
+        {
+            cInventory.Save(new ZPackage());
+            cInventory.Changed();
         }
 
         return totalAmount;
@@ -156,12 +161,17 @@ public class GemBagContainer : IContainer
         {
             try
             {
-                Save();
+                Save(cInventory);
             }
             catch
             {
                 AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogWarning("[GemBagContainer] Failed to save bag after removing items.");
             }
+        }
+        else
+        {
+            cInventory.Save(new ZPackage());
+            cInventory.Changed();
         }
     }
 
@@ -192,13 +202,24 @@ public class GemBagContainer : IContainer
         {
             try
             {
-                Save();
+                Save(cInventory);
             }
             catch
             {
                 AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogWarning("[GemBagContainer] Failed to save bag after removing items.");
             }
         }
+        else
+        {
+            cInventory.Save(new ZPackage());
+            cInventory.Changed();
+        }
+    }
+
+    public void Save(Inventory inv)
+    {
+        Save();
+        _saveInventory.Invoke(_bagObject, [inv]);
     }
 
     public void Save()
@@ -231,7 +252,7 @@ public class GemBagContainer : IContainer
     }
 
     public Inventory? GetInventory() => GetInventory(out _);
-    
+
     public Inventory? GetInventory(out bool isOpenBag)
     {
         isOpenBag = true;
@@ -265,7 +286,7 @@ public class GemBagContainer : IContainer
         // Otherwise no recognized bag
         return null;
     }
-    
+
     private static Inventory? GetOpenInventory() => Type.GetType("Jewelcrafting.GemStones+AddFakeSocketsContainer, Jewelcrafting")?.GetField("openInventory", BindingFlags.Public | BindingFlags.Static)?.GetValue(null) as Inventory;
     private static ItemDrop.ItemData? GetOpenEquipment() => Type.GetType("Jewelcrafting.GemStones+AddFakeSocketsContainer, Jewelcrafting")?.GetField("openEquipment", BindingFlags.Public | BindingFlags.Static)?.GetValue(null) as ItemDrop.ItemData;
-}
+}*/
