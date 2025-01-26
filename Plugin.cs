@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Text.RegularExpressions;
 using AzuCraftyBoxes.Compatibility.EpicLoot;
 using AzuCraftyBoxes.IContainers;
 using AzuCraftyBoxes.Util.Functions;
@@ -115,11 +116,6 @@ namespace AzuCraftyBoxes
             if (Chainloader.PluginInfos.ContainsKey("org.bepinex.plugins.backpacks"))
             {
                 BackpacksIsLoaded = true;
-            }
-
-            if (Jewelcrafting.API.IsLoaded())
-            {
-                GemBagOpenInventory.Init();
             }
 
             if (!Chainloader.PluginInfos.TryGetValue(EpicLoot.ElGuid, out PluginInfo? epicLootInfo)) return;

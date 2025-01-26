@@ -91,7 +91,7 @@ public class Boxes
                 object bagObject = GemBagContainer.FindJewelcraftingBagObject(gemBagItem);
                 if (bagObject == null) continue;
                 // Wrap the unknown object in reflection-based container
-                GemBagContainer gemBagContainer = new GemBagContainer(bagObject);
+                GemBagContainer gemBagContainer = new GemBagContainer(gemBagItem, bagObject);
                 if (gemBagList.Contains(gemBagContainer)) continue;
                 gemBagList.Add(gemBagContainer);
             }
