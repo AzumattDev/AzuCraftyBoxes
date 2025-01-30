@@ -388,6 +388,9 @@ forge:
 
 blackforge:
   exclude: []
+
+piece_magetable:
+  exclude: []
 ```
 
 

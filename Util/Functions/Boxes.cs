@@ -373,4 +373,18 @@ public class Boxes
 
         return amount;
     }
+
+    public class LaterConsumption(string name, int amount, int quality, IContainer sourceContainer, ItemDrop.ItemData requiredItem)
+    {
+        public string Name { get; set; } = name;
+        public int Amount { get; set; } = amount;
+        public int Quality { get; set; } = quality;
+        public IContainer SourceContainer { get; set; } = sourceContainer;
+        public ItemDrop.ItemData RequiredItem { get; set; } = requiredItem;
+    }
+}
+
+public static class ConsumptionManager
+{
+    public static ConcurrentBag<Boxes.LaterConsumption> PendingConsumptions { get; } = [];
 }

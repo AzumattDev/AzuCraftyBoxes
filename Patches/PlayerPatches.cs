@@ -335,6 +335,7 @@ static class ConsumeResourcesPatch
             if (AzuCraftyBoxesPlugin.ModEnabled.Value == AzuCraftyBoxesPlugin.Toggle.Off || !MiscFunctions.AllowByKey())
                 return true;
 
+
             Inventory pInventory = __instance.GetInventory();
             List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(__instance, AzuCraftyBoxesPlugin.mRange.Value);
             MiscFunctions.ProcessRequirements(requirements, qualityLevel, pInventory, nearbyContainers, itemQuality, multiplier);
@@ -345,6 +346,103 @@ static class ConsumeResourcesPatch
         }
 
         return false;
+    }
+}
+
+[HarmonyPatch(typeof(Player), nameof(Player.GetFirstRequiredItem))]
+static class CheckNearbyForOneIngredientItems
+{
+    static void Postfix(Player __instance, Inventory inventory, Recipe recipe, int qualityLevel, ref int amount, ref int extraAmount, int craftMultiplier, ref ItemDrop.ItemData __result)
+    {
+        if (__result != null)
+        {
+            return;
+        }
+
+
+        List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(__instance, AzuCraftyBoxesPlugin.mRange.Value);
+        if (nearbyContainers == null || nearbyContainers.Count == 0)
+        {
+            return;
+        }
+
+        foreach (Piece.Requirement resource in recipe.m_resources)
+        {
+            if (!resource.m_resItem)
+                continue;
+
+            string reqName = resource.m_resItem.m_itemData.m_shared.m_name;
+            int requiredAmount = resource.GetAmount(qualityLevel) * craftMultiplier;
+
+
+            int availableAmount = 0;
+            IContainer sourceContainer = null;
+
+            foreach (IContainer? container in nearbyContainers)
+            {
+                int containerAmount = container.ItemCount(reqName);
+                if (containerAmount <= 0)
+                    continue;
+
+                availableAmount += containerAmount;
+
+                if (availableAmount < requiredAmount) continue;
+                sourceContainer = container;
+                break;
+            }
+
+            if (availableAmount < requiredAmount || sourceContainer == null) continue;
+            if (sourceContainer.GetInventory() == null)
+            {
+                return;
+            }
+
+            ItemDrop.ItemData containerItem = sourceContainer.GetInventory().GetItem(reqName);
+            if (containerItem == null) continue;
+            __result = containerItem;
+            amount = requiredAmount;
+            extraAmount = resource.m_extraAmountOnlyOneIngredient;
+
+            if (__result == null) return;
+            Boxes.LaterConsumption consumption = new(name: reqName, amount: requiredAmount, quality: containerItem.m_quality, sourceContainer: sourceContainer, requiredItem: containerItem);
+            if (ConsumptionManager.PendingConsumptions.IsEmpty)
+            {
+                ConsumptionManager.PendingConsumptions.Add(consumption);
+            }
+
+            return;
+        }
+    }
+}
+
+[HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.DoCrafting))]
+static class ConsumeLaterConsumptionItemsInventoryGuiDoCraftingPatch
+{
+    static void Postfix(InventoryGui __instance)
+    {
+        foreach (Boxes.LaterConsumption? consumption in ConsumptionManager.PendingConsumptions.ToList())
+        {
+            if (consumption.SourceContainer == null)
+            {
+                continue;
+            }
+
+            Inventory containerInventory = consumption.SourceContainer.GetInventory();
+            if (containerInventory == null)
+            {
+                continue;
+            }
+
+            containerInventory.RemoveItem(consumption.Name, consumption.Amount, consumption.Quality);
+
+
+            ConsumptionManager.PendingConsumptions.TryTake(out _);
+        }
+
+        while (!ConsumptionManager.PendingConsumptions.IsEmpty)
+        {
+            ConsumptionManager.PendingConsumptions.TryTake(out _);
+        }
     }
 }
 
