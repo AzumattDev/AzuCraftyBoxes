@@ -10,7 +10,7 @@ static class CookingStationOnAddFuelSwitchPatch
     {
         AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(CookingStationOnAddFuelSwitchPatch) Looking for fuel");
 
-        if (AzuCraftyBoxesPlugin.ModEnabled.Value == AzuCraftyBoxesPlugin.Toggle.Off || !MiscFunctions.AllowByKey() || item != null ||
+        if (MiscFunctions.ShouldPrevent() || item != null ||
             __instance.GetFuel() > __instance.m_maxFuel - 1 ||
             (user.GetInventory().HaveItem(__instance.m_fuelItem.m_itemData.m_shared.m_name) && Boxes.CanItemBePulled(Utils.GetPrefabName(__instance.gameObject), __instance.m_fuelItem.name)))
             return true;
@@ -57,7 +57,7 @@ static class CookingStationFindCookableItemPatch
     {
         AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(CookingStationFindCookableItemPatch) Looking for cookable");
 
-        if (AzuCraftyBoxesPlugin.ModEnabled.Value == AzuCraftyBoxesPlugin.Toggle.Off || !MiscFunctions.AllowByKey() || __result != null ||
+        if (MiscFunctions.ShouldPrevent() || __result != null ||
             (__instance.m_requireFire && !__instance.IsFireLit() || __instance.GetFreeSlot() == -1))
             return;
 

@@ -14,7 +14,7 @@ public class HUDPatches
     [HarmonyPriority(Priority.Last)]
     private static void Postfix(Hud __instance, Piece piece, TMP_Text ___m_buildSelection)
     {
-        if (AzuCraftyBoxesPlugin.ModEnabled.Value == AzuCraftyBoxesPlugin.Toggle.Off || piece == null || piece.m_name == "$piece_repair")
+        if (MiscFunctions.ShouldPrevent() || piece == null || piece.m_name == "$piece_repair")
             return;
 
         float currentTime = Time.time;
@@ -43,7 +43,7 @@ public class HUDPatches
 #if DEBUG
                 AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"Found {playerItemCount} {itemName} in player inventory and {containerItemCount} in containers, returning {(resource.m_amount > 0 ? (playerItemCount + containerItemCount) / resource.m_amount : "∞")}");
 #endif
-                
+
                 return resource.m_amount > 0 ? (playerItemCount + containerItemCount) / resource.m_amount : int.MaxValue;
             }).Concat(new[] { int.MaxValue }).Min();
     }

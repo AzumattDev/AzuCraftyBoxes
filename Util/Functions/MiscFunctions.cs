@@ -4,13 +4,31 @@ namespace AzuCraftyBoxes.Util.Functions;
 
 public class MiscFunctions
 {
-    public static MethodInfo? GetCurrentCraftAmountMethod; 
-    internal static bool AllowByKey()
+    internal static bool AllowPullingLogic()
     {
-        /*if (AzuCraftyBoxesPlugin.preventModKey.Value.IsPressed())
-            return AzuCraftyBoxesPlugin.switchPrevent.Value;
-        return !AzuCraftyBoxesPlugin.switchPrevent.Value;*/
-        return true;
+        Player? player = Player.m_localPlayer;
+        if (player == null) return true; // Default to allowing pulling if no player is found
+
+        if (!player.m_customData.TryGetValue("AzuCraftyBoxesPreventPulling", out string value) || !int.TryParse(value, out int result))
+        {
+            // Initialize custom data if not set or invalid value present
+            player.m_customData["AzuCraftyBoxesPreventPulling"] = "0";
+            result = 0;
+        }
+
+        if (AzuCraftyBoxesPlugin.preventPullingLogic.Value.IsKeyDown() && player.TakeInput())
+        {
+            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable("Toggle Prevent Pulling to " + (result == 0 ? "On" : "Off"));
+            result = result == 0 ? 1 : 0;
+            player.m_customData["AzuCraftyBoxesPreventPulling"] = result.ToString();
+        }
+
+        return result == 1;
+    }
+
+    internal static bool ShouldPrevent()
+    {
+        return AzuCraftyBoxesPlugin.ModEnabled.Value == AzuCraftyBoxesPlugin.Toggle.Off || !AllowPullingLogic();
     }
 
     /* Consume Resources */
@@ -39,7 +57,6 @@ public class MiscFunctions
     }
 
 
-
     private static bool IsValidRequirement(Piece.Requirement requirement)
     {
         return requirement.m_resItem && requirement.m_resItem.m_itemData is { m_shared: not null };
@@ -55,16 +72,28 @@ public class MiscFunctions
         int newTotalAmount = totalAmount;
         foreach (IContainer c in nearbyContainers)
         {
-            newTotalAmount = c.ProcessContainerInventory(reqName, newTotalAmount, totalRequirement);
-            newTotalAmount = Boxes.CheckAndDecrement(newTotalAmount);
+            int containerCount = c.ItemCount(reqName);
+            int allowedRemoval = Boxes.CheckAndDecrement(containerCount);
+
+            if (allowedRemoval <= 0)
+            {
+                continue;
+            }
+
+            int needed = totalRequirement - newTotalAmount;
+
+            int removalFromContainer = Mathf.Min(needed, allowedRemoval);
+            int effectiveRequirement = newTotalAmount + removalFromContainer;
+            newTotalAmount = c.ProcessContainerInventory(reqName, newTotalAmount, effectiveRequirement);
             if (newTotalAmount >= totalRequirement)
             {
                 break;
             }
         }
+
         return newTotalAmount;
     }
-    
+
 
     public static string GetPrefabName(string name)
     {
@@ -82,7 +111,7 @@ public class MiscFunctions
 
     internal static bool CheckItemDropIntegrity(ItemDrop itemDropComp)
     {
-        if(itemDropComp.m_itemData == null) return false;
+        if (itemDropComp.m_itemData == null) return false;
         return itemDropComp.m_itemData.m_shared != null;
     }
 
@@ -201,7 +230,7 @@ public class MiscFunctions
                         {
                             groupName = "Woods";
                         }
-                        
+
                         if (sharedData.m_name == "$item_elderbark")
                         {
                             groupName = "Woods";

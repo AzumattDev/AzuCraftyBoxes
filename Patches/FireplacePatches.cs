@@ -12,8 +12,7 @@ static class FireplaceInteractPatch
         bool pullAll = Input.GetKey(AzuCraftyBoxesPlugin.fillAllModKey.Value.MainKey); // Used to be fillAllModKey.Value.IsPressed(); something is wrong with KeyboardShortcuts always returning false
         Inventory inventory = user.GetInventory();
 
-        if (!MiscFunctions.AllowByKey() || hold || inventory == null ||
-            (inventory.HaveItem(__instance.m_fuelItem.m_itemData.m_shared.m_name) && !pullAll))
+        if (MiscFunctions.ShouldPrevent() || hold || inventory == null || (inventory.HaveItem(__instance.m_fuelItem.m_itemData.m_shared.m_name) && !pullAll))
             return true;
 
         if (!___m_nview.HasOwner())
@@ -84,6 +83,11 @@ static class FireplaceGetHoverTextPatch
 {
     static void Postfix(Fireplace __instance, ref string __result)
     {
+        if (MiscFunctions.ShouldPrevent())
+        {
+            return;
+        }
+
         if (AzuCraftyBoxesPlugin.fillAllModKey.Value.MainKey is KeyCode.None)
         {
             return;
@@ -104,7 +108,7 @@ static class FireplaceGetHoverTextPatch
         {
             return;
         }
-        
+
         int inInv = Player.m_localPlayer?.m_inventory.CountItems(__instance.m_fuelItem.m_itemData.m_shared.m_name) ?? 0;
         List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(__instance, AzuCraftyBoxesPlugin.mRange.Value);
         int inContainers = 0;

@@ -22,6 +22,11 @@ namespace AzuCraftyBoxes.Patches
     {
         public static bool ShouldReturn(ShieldGenerator __instance)
         {
+            if (MiscFunctions.ShouldPrevent())
+            {
+                return true;
+            }
+
             if (AzuCraftyBoxesPlugin.fillAllModKey.Value.MainKey == KeyCode.None)
             {
                 return true;
@@ -87,8 +92,7 @@ namespace AzuCraftyBoxes.Patches
         {
             bool pullAll = AzuCraftyBoxesPlugin.fillAllModKey.Value.IsKeyHeld();
             Inventory inventory = user.GetInventory();
-            if (AzuCraftyBoxesPlugin.ModEnabled.Value == AzuCraftyBoxesPlugin.Toggle.Off
-                || (!MiscFunctions.AllowByKey() && !pullAll)
+            if (MiscFunctions.ShouldPrevent()
                 || item != null
                 || inventory == null)
                 return true;

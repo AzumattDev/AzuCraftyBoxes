@@ -10,9 +10,9 @@ static class Turret_UseItem_Patch
     {
         bool pullAll = Input.GetKey(AzuCraftyBoxesPlugin.fillAllModKey.Value.MainKey);
         Inventory inventory = user.GetInventory();
-        if (!MiscFunctions.AllowByKey() || item != null || user is not Player)
+        if (MiscFunctions.ShouldPrevent() || item != null || user is not Player)
         {
-            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"Not allowed {!MiscFunctions.AllowByKey()} {item is null} {user is Player}");
+            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"Not allowed {!MiscFunctions.AllowPullingLogic()} {item is null} {user is Player}");
             return;
         }
 
@@ -93,6 +93,11 @@ static class TurretGetHoverTextPatch
 {
     static void Postfix(Turret __instance, ref string __result)
     {
+        if (MiscFunctions.ShouldPrevent())
+        {
+            return;
+        }
+
         if (AzuCraftyBoxesPlugin.fillAllModKey.Value.MainKey is KeyCode.None)
         {
             return;

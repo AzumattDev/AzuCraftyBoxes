@@ -15,7 +15,7 @@ namespace AzuCraftyBoxes
     public class AzuCraftyBoxesPlugin : BaseUnityPlugin
     {
         internal const string ModName = "AzuCraftyBoxes";
-        internal const string ModVersion = "1.5.10";
+        internal const string ModVersion = "1.5.11";
         internal const string Author = "Azumatt";
         private const string ModGUID = $"{Author}.{ModName}";
         private static string ConfigFileName = $"{ModGUID}.cfg";
@@ -54,8 +54,8 @@ namespace AzuCraftyBoxes
             ModEnabled = config("1 - General", "Mod Enabled", Toggle.On, "If off, everything in the mod will not run. This is useful if you want to disable the mod without uninstalling it.");
             debugLogsEnabled = config("1 - General", "Output Debug Logs", Toggle.Off, "If on, the debug logs will be displayed in the BepInEx console window when BepInEx debugging is enabled.");
             mRange = config("2 - CraftyBoxes", "Container Range", 20f, "The maximum range from which to pull items from.");
-            leaveOne = config("2 - CraftyBoxes", "Leave One Item", Toggle.On, "* If on, leaves one item in the chest when pulling from it, so that you are able to pull from it again and store items more easily with other mods. (Such as AzuAutoStore or QuickStackStore). If off, it will pull all items from the chest.");
-            resourceString = TextEntryConfig("2 - CraftyBoxes", "ResourceCostString", "{0}/{1}", "String used to show required and available resources. {0} is replaced by how much is available, and {1} is replaced by how much is required. Set to nothing to leave it as default.", false);
+            leaveOne = config("2 - CraftyBoxes", "Leave One Item", Toggle.On, new ConfigDescription("* If on, leaves one item in the chest when pulling from it, so that you are able to pull from it again and store items more easily with other mods. (Such as AzuAutoStore or QuickStackStore). If off, it will pull all items from the chest.", null, new ConfigurationManagerAttributes() {Order = 2}));
+            resourceString = TextEntryConfig("2 - CraftyBoxes", "ResourceCostString", "{0}/{1}", new ConfigDescription("String used to show required and available resources. {0} is replaced by how much is available, and {1} is replaced by how much is required. Set to nothing to leave it as default.", null, new ConfigurationManagerAttributes() {Order = 1}), false);
             flashColor = config("2 - CraftyBoxes", "FlashColor", Color.yellow, "Resource amounts will flash to this colour when coming from containers", false);
             unFlashColor = config("2 - CraftyBoxes", "UnFlashColor", Color.white, "Resource amounts will flash from this colour when coming from containers (set both colors to the same color for no flashing)", false);
             canbuildDisplayColor = config("2 - CraftyBoxes", "Can Build Color", Color.green, "The color of the build panel's count of pieces you can build", false);
@@ -63,6 +63,7 @@ namespace AzuCraftyBoxes
             //pulledMessage = TextEntryConfig("2 - CraftyBoxes", "PulledMessage", "Pulled items to inventory", "Message to show after pulling items to player inventory", false);
             //pullItemsKey = config("3 - Keys", "PullItemsKey", new KeyboardShortcut(KeyCode.LeftControl), new ConfigDescription("Holding down this key while crafting or building will pull resources into your inventory instead of building. Use https://docs.unity3d.com/Manual/ConventionalGameInput.html", new AcceptableShortcuts()), false);
             fillAllModKey = config("3 - Keys", "FillAllModKey", new KeyboardShortcut(KeyCode.LeftShift), new ConfigDescription("Modifier key to pull all available fuel or ore when down. Use https://docs.unity3d.com/Manual/ConventionalGameInput.html", new AcceptableShortcuts()), false);
+            preventPullingLogic = config("3 - Keys", "Prevent Pulling Logic", new KeyboardShortcut(KeyCode.P), new ConfigDescription("Key to prevent pulling logic from running. Use https://docs.unity3d.com/Manual/ConventionalGameInput.html", new AcceptableShortcuts()), false);
 
             if (!File.Exists(yamlPath))
             {
@@ -97,21 +98,6 @@ namespace AzuCraftyBoxes
         private void Start()
         {
             AutoDoc();
-
-            // Get Azumatt.AzuAntiArthriticCrafting from the chainloader if possible
-            Chainloader.PluginInfos.TryGetValue("Azumatt.AzuAntiArthriticCrafting", out PluginInfo antiArthriticCraftingPlugin);
-            if (antiArthriticCraftingPlugin != null)
-            {
-                AzuCraftyBoxesLogger.LogInfo("AzuAntiArthriticCrafting found, enabling compatibility");
-                // Get the AzuAntiArthriticCrafting.Patches.HaveRequirementItemsTranspiler.GetCurrentCraftAmount method
-                var aaaCraftingAssembly = antiArthriticCraftingPlugin.Instance.GetType().Assembly;
-                MethodInfo getCurrentCraftAmountMethod = aaaCraftingAssembly.GetType("AzuAntiArthriticCrafting.Patches.HaveRequirementItemsTranspiler").GetMethod("GetCurrentCraftAmount");
-                if (getCurrentCraftAmountMethod != null)
-                {
-                    // Add the method to the AzuCraftyBoxes.Util.Functions.MiscFunctions.GetCurrentCraftAmountMethod
-                    MiscFunctions.GetCurrentCraftAmountMethod = getCurrentCraftAmountMethod;
-                }
-            }
 
             if (Chainloader.PluginInfos.ContainsKey("org.bepinex.plugins.backpacks"))
             {
@@ -238,6 +224,7 @@ namespace AzuCraftyBoxes
         public static ConfigEntry<string> pulledMessage = null!;
         public static ConfigEntry<KeyboardShortcut> pullItemsKey = null!;
         public static ConfigEntry<KeyboardShortcut> fillAllModKey = null!;
+        public static ConfigEntry<KeyboardShortcut> preventPullingLogic = null!;
         public static ConfigEntry<float> mRange = null!;
 
         private ConfigEntry<T> config<T>(string group, string name, T value, ConfigDescription description, bool synchronizedSetting = true)
@@ -262,6 +249,14 @@ namespace AzuCraftyBoxes
                 CustomDrawer = TextAreaDrawer,
             };
             return config(group, name, value, new ConfigDescription(desc, null, attributes), synchronizedSetting);
+        }
+        internal ConfigEntry<T> TextEntryConfig<T>(string group, string name, T value, ConfigDescription description, bool synchronizedSetting = true)
+        {
+            ConfigurationManagerAttributes attributes = new()
+            {
+                CustomDrawer = TextAreaDrawer,
+            };
+            return config(group, name, value, new ConfigDescription(description.Description, null, attributes), synchronizedSetting);
         }
 
         internal static void TextAreaDrawer(ConfigEntryBase entry)

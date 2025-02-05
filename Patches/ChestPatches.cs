@@ -8,6 +8,11 @@ internal static class ContainerAwakePatch
 {
     private static void Postfix(Container __instance)
     {
+        if (MiscFunctions.ShouldPrevent())
+        {
+            return;
+        }
+
         if (__instance.GetInventory() == null || !__instance.m_nview.IsValid() || __instance.m_nview.GetZDO().GetLong("creator".GetStableHashCode()) == 0L)
             return;
 
@@ -52,6 +57,11 @@ static class ContainerLoadPatch
 {
     static void Postfix(Container __instance)
     {
+        if (MiscFunctions.ShouldPrevent())
+        {
+            return;
+        }
+
         if (__instance.GetInventory() == null || !__instance.m_nview.IsValid() || __instance.m_nview.GetZDO().GetLong("creator".GetStableHashCode()) == 0L)
             return;
 
@@ -89,6 +99,11 @@ internal static class ContainerOnDestroyedPatch
 {
     private static void Postfix(Container __instance)
     {
+        if (MiscFunctions.ShouldPrevent())
+        {
+            return;
+        }
+
         if (__instance.GetInventory() == null || !__instance.m_nview.IsValid() || __instance.m_nview.GetZDO().GetLong("creator".GetStableHashCode()) == 0L)
             return;
 
@@ -101,6 +116,11 @@ static class WearNTearOnDestroyPatch
 {
     static void Prefix(WearNTear __instance)
     {
+        if (MiscFunctions.ShouldPrevent())
+        {
+            return;
+        }
+
         Container[]? container = __instance.GetComponentsInChildren<Container>();
         Container[]? parentContainer = __instance.GetComponentsInParent<Container>();
         if (container.Length > 0)
@@ -126,11 +146,16 @@ public static class PlayerUpdateTeleportPatchCleanupContainers
 {
     public static void Prefix(float dt)
     {
+        if (MiscFunctions.ShouldPrevent())
+        {
+            return;
+        }
+
         if (!(Player.m_localPlayer != null) || !Player.m_localPlayer.m_teleporting)
             return;
         foreach (Container container in Boxes.Containers.ToList().Where(container => (!(container != null) || !(container.transform != null)
-                         ? 0
-                         : (container.GetInventory() != null ? 1 : 0)) == 0).Where(container => container != null))
+                     ? 0
+                     : (container.GetInventory() != null ? 1 : 0)) == 0).Where(container => container != null))
         {
             Boxes.RemoveContainer(container);
         }

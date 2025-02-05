@@ -36,7 +36,7 @@ static class PlayerHaveRequirementsPatch
     {
         try
         {
-            if (AzuCraftyBoxesPlugin.ModEnabled.Value == AzuCraftyBoxesPlugin.Toggle.Off || __result || discover || !MiscFunctions.AllowByKey())
+            if (MiscFunctions.ShouldPrevent() || __result || discover)
                 return;
 
             List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(__instance, AzuCraftyBoxesPlugin.mRange.Value);
@@ -113,6 +113,11 @@ static class PlayerHaveRequirementsPatchRBoolInt
 {
     static void Postfix(Player __instance, Recipe recipe, bool discover, int qualityLevel, int amount, ref bool __result)
     {
+        if (MiscFunctions.ShouldPrevent())
+        {
+            return;
+        }
+
         if (discover)
         {
             if (recipe.m_craftingStation && !__instance.KnowStationLevel(recipe.m_craftingStation.m_name, recipe.m_minStationLevel))
@@ -210,7 +215,7 @@ static class HaveRequirementsPatch2
     {
         try
         {
-            if (AzuCraftyBoxesPlugin.ModEnabled.Value == AzuCraftyBoxesPlugin.Toggle.Off || __result || AzuCraftyBoxesPlugin.skip || __instance?.transform?.position == null || !MiscFunctions.AllowByKey())
+            if (MiscFunctions.ShouldPrevent() || __result || AzuCraftyBoxesPlugin.skip || __instance?.transform?.position == null)
                 return;
             if (piece == null)
                 return;
@@ -332,9 +337,10 @@ static class ConsumeResourcesPatch
     {
         try
         {
-            if (AzuCraftyBoxesPlugin.ModEnabled.Value == AzuCraftyBoxesPlugin.Toggle.Off || !MiscFunctions.AllowByKey())
+            if (MiscFunctions.ShouldPrevent())
+            {
                 return true;
-
+            }
 
             Inventory pInventory = __instance.GetInventory();
             List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(__instance, AzuCraftyBoxesPlugin.mRange.Value);
@@ -354,6 +360,11 @@ static class CheckNearbyForOneIngredientItems
 {
     static void Postfix(Player __instance, Inventory inventory, Recipe recipe, int qualityLevel, ref int amount, ref int extraAmount, int craftMultiplier, ref ItemDrop.ItemData __result)
     {
+        if (MiscFunctions.ShouldPrevent())
+        {
+            return;
+        }
+
         if (__result != null)
         {
             return;
@@ -420,6 +431,11 @@ static class ConsumeLaterConsumptionItemsInventoryGuiDoCraftingPatch
 {
     static void Postfix(InventoryGui __instance)
     {
+        if (MiscFunctions.ShouldPrevent())
+        {
+            return;
+        }
+
         foreach (Boxes.LaterConsumption? consumption in ConsumptionManager.PendingConsumptions.ToList())
         {
             if (consumption.SourceContainer == null)

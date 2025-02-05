@@ -28,6 +28,11 @@ static class SearchContainersAsWell
 {
     static void Postfix(Fermenter __instance, Inventory inventory, ref ItemDrop.ItemData __result)
     {
+        if (MiscFunctions.ShouldPrevent())
+        {
+            return;
+        }
+
         // If the inventory is equal to the player's inventory but the result is null, then search the containers
         if (inventory == Player.m_localPlayer.GetInventory() && __result == null)
         {
@@ -71,6 +76,11 @@ public static class OverrideHoverTextFermenter
 {
     public static bool ShouldReturn(Fermenter __instance)
     {
+        if (MiscFunctions.ShouldPrevent())
+        {
+            return true;
+        }
+
         if (AzuCraftyBoxesPlugin.fillAllModKey.Value.MainKey is KeyCode.None)
         {
             return true;

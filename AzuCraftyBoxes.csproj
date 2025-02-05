@@ -151,7 +151,6 @@
         <Compile Include="Patches\InventoryGui.cs" />
         <Compile Include="Patches\PlayerPatches.cs" />
         <Compile Include="Patches\PredefinedGroups.cs" />
-        <Compile Include="Patches\RecipePatch.cs" />
         <Compile Include="Patches\ShieldGeneratorPatches.cs" />
         <Compile Include="Patches\SmelterPatches.cs" />
         <Compile Include="Patches\TurretPatches.cs" />

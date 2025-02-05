@@ -59,6 +59,11 @@ public static class OverrideHoverText
 {
     public static bool ShouldReturn(Smelter __instance)
     {
+        if (MiscFunctions.ShouldPrevent())
+        {
+            return true;
+        }
+
         if (AzuCraftyBoxesPlugin.fillAllModKey.Value.MainKey is KeyCode.None)
         {
             return true;
@@ -146,15 +151,14 @@ public static class OverrideHoverText
 [HarmonyPatch(typeof(Smelter), nameof(Smelter.OnAddOre))]
 static class SmelterOnAddOrePatch
 {
-    static bool Prefix(Smelter __instance, Humanoid user, ItemDrop.ItemData item, ZNetView ___m_nview,
-        out KeyValuePair<ItemDrop.ItemData?, int> __state)
+    static bool Prefix(Smelter __instance, Humanoid user, ItemDrop.ItemData item, ZNetView ___m_nview, out KeyValuePair<ItemDrop.ItemData?, int> __state)
     {
         int ore = __instance.GetQueueSize();
         __state = new KeyValuePair<ItemDrop.ItemData?, int>(item, ore);
         /*bool pullAll = Input.GetKey(AzuCraftyBoxesPlugin.fillAllModKey.Value.MainKey);*/
         // Used to be fillAllModKey.Value.isPressed(); something is wrong with KeyboardShortcuts always returning false
         bool pullAll = AzuCraftyBoxesPlugin.fillAllModKey.Value.IsKeyHeld();
-        if (AzuCraftyBoxesPlugin.ModEnabled.Value == AzuCraftyBoxesPlugin.Toggle.Off || (!MiscFunctions.AllowByKey() && !pullAll) || item != null || __instance.GetQueueSize() >= __instance.m_maxOre)
+        if (MiscFunctions.ShouldPrevent() || item != null || __instance.GetQueueSize() >= __instance.m_maxOre)
             return true;
 
         Inventory inventory = user.GetInventory();
@@ -310,9 +314,7 @@ static class SmelterOnAddFuelPatch
         // Used to be fillAllModKey.Value.IsPressed(); something is wrong with KeyboardShortcuts always returning false
         bool pullAll = AzuCraftyBoxesPlugin.fillAllModKey.Value.IsKeyHeld();
         Inventory inventory = user.GetInventory();
-        if (AzuCraftyBoxesPlugin.ModEnabled.Value == AzuCraftyBoxesPlugin.Toggle.Off ||
-            (!MiscFunctions.AllowByKey() && !pullAll) || item != null ||
-            inventory == null ||
+        if (MiscFunctions.ShouldPrevent() || item != null || inventory == null ||
             ((inventory.HaveItem(__instance.m_fuelItem.m_itemData.m_shared.m_name) && !pullAll) && Boxes.CanItemBePulled(Utils.GetPrefabName(__instance.gameObject), __instance.m_fuelItem.name)))
             return true;
 
