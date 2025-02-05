@@ -9,18 +9,11 @@ public class MiscFunctions
         Player? player = Player.m_localPlayer;
         if (player == null) return true; // Default to allowing pulling if no player is found
 
-        if (!player.m_customData.TryGetValue("AzuCraftyBoxesPreventPulling", out string value) || !int.TryParse(value, out int result))
+        if (!player.m_customData.TryGetValue(AzuCraftyBoxesPlugin.PreventPullingLogicKey, out string value) || !int.TryParse(value, out int result))
         {
             // Initialize custom data if not set or invalid value present
-            player.m_customData["AzuCraftyBoxesPreventPulling"] = "0";
-            result = 0;
-        }
-
-        if (AzuCraftyBoxesPlugin.preventPullingLogic.Value.IsKeyDown() && player.TakeInput())
-        {
-            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable("Toggle Prevent Pulling to " + (result == 0 ? "On" : "Off"));
-            result = result == 0 ? 1 : 0;
-            player.m_customData["AzuCraftyBoxesPreventPulling"] = result.ToString();
+            player.m_customData[AzuCraftyBoxesPlugin.PreventPullingLogicKey] = "1";
+            result = 1;
         }
 
         return result == 1;

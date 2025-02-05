@@ -15,7 +15,7 @@ namespace AzuCraftyBoxes
     public class AzuCraftyBoxesPlugin : BaseUnityPlugin
     {
         internal const string ModName = "AzuCraftyBoxes";
-        internal const string ModVersion = "1.5.11";
+        internal const string ModVersion = "1.6.0";
         internal const string Author = "Azumatt";
         private const string ModGUID = $"{Author}.{ModName}";
         private static string ConfigFileName = $"{ModGUID}.cfg";
@@ -33,6 +33,7 @@ namespace AzuCraftyBoxes
         internal static readonly string yamlPath = Paths.ConfigPath + Path.DirectorySeparatorChar + yamlFileName;
         internal static readonly CustomSyncedValue<string> CraftyContainerData = new(ConfigSync, "craftyboxesData", "");
         internal static readonly CustomSyncedValue<string> CraftyContainerGroupsData = new(ConfigSync, "craftyboxesGroupsData", "");
+        internal const string PreventPullingLogicKey = "ACB_PreventPulling";
 
         //
         internal static Dictionary<string, Dictionary<string, List<string>>> yamlData = null!;
@@ -54,8 +55,8 @@ namespace AzuCraftyBoxes
             ModEnabled = config("1 - General", "Mod Enabled", Toggle.On, "If off, everything in the mod will not run. This is useful if you want to disable the mod without uninstalling it.");
             debugLogsEnabled = config("1 - General", "Output Debug Logs", Toggle.Off, "If on, the debug logs will be displayed in the BepInEx console window when BepInEx debugging is enabled.");
             mRange = config("2 - CraftyBoxes", "Container Range", 20f, "The maximum range from which to pull items from.");
-            leaveOne = config("2 - CraftyBoxes", "Leave One Item", Toggle.On, new ConfigDescription("* If on, leaves one item in the chest when pulling from it, so that you are able to pull from it again and store items more easily with other mods. (Such as AzuAutoStore or QuickStackStore). If off, it will pull all items from the chest.", null, new ConfigurationManagerAttributes() {Order = 2}));
-            resourceString = TextEntryConfig("2 - CraftyBoxes", "ResourceCostString", "{0}/{1}", new ConfigDescription("String used to show required and available resources. {0} is replaced by how much is available, and {1} is replaced by how much is required. Set to nothing to leave it as default.", null, new ConfigurationManagerAttributes() {Order = 1}), false);
+            leaveOne = config("2 - CraftyBoxes", "Leave One Item", Toggle.On, new ConfigDescription("* If on, leaves one item in the chest when pulling from it, so that you are able to pull from it again and store items more easily with other mods. (Such as AzuAutoStore or QuickStackStore). If off, it will pull all items from the chest.", null, new ConfigurationManagerAttributes() { Order = 2 }));
+            resourceString = TextEntryConfig("2 - CraftyBoxes", "ResourceCostString", "{0}/{1}", new ConfigDescription("String used to show required and available resources. {0} is replaced by how much is available, and {1} is replaced by how much is required. Set to nothing to leave it as default.", null, new ConfigurationManagerAttributes() { Order = 1 }), false);
             flashColor = config("2 - CraftyBoxes", "FlashColor", Color.yellow, "Resource amounts will flash to this colour when coming from containers", false);
             unFlashColor = config("2 - CraftyBoxes", "UnFlashColor", Color.white, "Resource amounts will flash from this colour when coming from containers (set both colors to the same color for no flashing)", false);
             canbuildDisplayColor = config("2 - CraftyBoxes", "Can Build Color", Color.green, "The color of the build panel's count of pieces you can build", false);
@@ -106,6 +107,26 @@ namespace AzuCraftyBoxes
 
             if (!Chainloader.PluginInfos.TryGetValue(EpicLoot.ElGuid, out PluginInfo? epicLootInfo)) return;
             EpicLoot.Init(epicLootInfo);
+        }
+
+        private void Update()
+        {
+            Player? player = Player.m_localPlayer;
+            if (player == null) return;
+
+            if (!player.m_customData.TryGetValue(AzuCraftyBoxesPlugin.PreventPullingLogicKey, out string value) || !int.TryParse(value, out int result))
+            {
+                // Initialize custom data if not set or invalid value present
+                player.m_customData[AzuCraftyBoxesPlugin.PreventPullingLogicKey] = "1";
+                result = 1;
+            }
+
+            if (preventPullingLogic.Value.IsKeyDown() && player.TakeInput())
+            {
+                AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable("Toggle Prevent Pulling to " + (result == 0 ? "Off" : "On"));
+                result = result == 0 ? 1 : 0;
+                player.m_customData[AzuCraftyBoxesPlugin.PreventPullingLogicKey] = result.ToString();
+            }
         }
 
         private void LateUpdate()
@@ -250,6 +271,7 @@ namespace AzuCraftyBoxes
             };
             return config(group, name, value, new ConfigDescription(desc, null, attributes), synchronizedSetting);
         }
+
         internal ConfigEntry<T> TextEntryConfig<T>(string group, string name, T value, ConfigDescription description, bool synchronizedSetting = true)
         {
             ConfigurationManagerAttributes attributes = new()
