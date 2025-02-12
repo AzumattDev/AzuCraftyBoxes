@@ -15,7 +15,7 @@ namespace AzuCraftyBoxes
     public class AzuCraftyBoxesPlugin : BaseUnityPlugin
     {
         internal const string ModName = "AzuCraftyBoxes";
-        internal const string ModVersion = "1.6.0";
+        internal const string ModVersion = "1.6.1";
         internal const string Author = "Azumatt";
         private const string ModGUID = $"{Author}.{ModName}";
         private static string ConfigFileName = $"{ModGUID}.cfg";
@@ -54,6 +54,7 @@ namespace AzuCraftyBoxes
 
             ModEnabled = config("1 - General", "Mod Enabled", Toggle.On, "If off, everything in the mod will not run. This is useful if you want to disable the mod without uninstalling it.");
             debugLogsEnabled = config("1 - General", "Output Debug Logs", Toggle.Off, "If on, the debug logs will be displayed in the BepInEx console window when BepInEx debugging is enabled.");
+            preventPullingLogicMessage = config("1 - General", "Prevent Pulling Message", Toggle.On, "If on, a message will be displayed above the player's head when the prevention pulling logic is toggled using the keybind.");
             mRange = config("2 - CraftyBoxes", "Container Range", 20f, "The maximum range from which to pull items from.");
             leaveOne = config("2 - CraftyBoxes", "Leave One Item", Toggle.On, new ConfigDescription("* If on, leaves one item in the chest when pulling from it, so that you are able to pull from it again and store items more easily with other mods. (Such as AzuAutoStore or QuickStackStore). If off, it will pull all items from the chest.", null, new ConfigurationManagerAttributes() { Order = 2 }));
             resourceString = TextEntryConfig("2 - CraftyBoxes", "ResourceCostString", "{0}/{1}", new ConfigDescription("String used to show required and available resources. {0} is replaced by how much is available, and {1} is replaced by how much is required. Set to nothing to leave it as default.", null, new ConfigurationManagerAttributes() { Order = 1 }), false);
@@ -123,7 +124,20 @@ namespace AzuCraftyBoxes
 
             if (preventPullingLogic.Value.IsKeyDown() && player.TakeInput())
             {
-                AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable("Toggle Prevent Pulling to " + (result == 0 ? "Off" : "On"));
+                string message = "Prevent Pulling: " + (result == 0 ? "Off" : "On");
+                AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable(message);
+                if (preventPullingLogicMessage.Value == Toggle.On)
+                {
+                    Chat.instance.AddInworldText(
+                        player.gameObject,
+                        player.GetPlayerID(),
+                        player.GetHeadPoint(),
+                        Talker.Type.Normal,
+                        UserInfo.GetLocalUser(),
+                        Localization.instance.Localize("<color=orange>" + message + "</color>")
+                    );
+                }
+
                 result = result == 0 ? 1 : 0;
                 player.m_customData[AzuCraftyBoxesPlugin.PreventPullingLogicKey] = result.ToString();
             }
@@ -246,6 +260,7 @@ namespace AzuCraftyBoxes
         public static ConfigEntry<KeyboardShortcut> pullItemsKey = null!;
         public static ConfigEntry<KeyboardShortcut> fillAllModKey = null!;
         public static ConfigEntry<KeyboardShortcut> preventPullingLogic = null!;
+        public static ConfigEntry<Toggle> preventPullingLogicMessage = null!;
         public static ConfigEntry<float> mRange = null!;
 
         private ConfigEntry<T> config<T>(string group, string name, T value, ConfigDescription description, bool synchronizedSetting = true)

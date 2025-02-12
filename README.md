@@ -27,7 +27,7 @@ Compatible with Epic Loot's custom Enchanting Table.
 
 ### General
 
-> Configuration File Name: `Azumatt.AzuCraftyBoxes.cfg`
+> Configuration File Name: `Azumatt.AzuCraftyBoxes.cfg` found in the `BepInEx/config` folder.
 
 `1 - General`
 
@@ -37,6 +37,14 @@ Lock Configuration [Synced with Server]
 
 Mod Enabled [Synced with Server]
 * If off, everything in the mod will not run. This is useful if you want to disable the mod without uninstalling it.
+    * Default Value: On
+
+Output Debug Logs [Synced with Server]
+* If on, the debug logs will be displayed in the BepInEx console window when BepInEx debugging is enabled.
+    * Default Value: Off
+
+Prevent Pulling Message [Synced with Server]
+* If on, a message will be displayed above the player's head when the prevention pulling logic is toggled using the keybind.
     * Default Value: On
 
 `2 - CraftyBoxes`
@@ -61,11 +69,23 @@ UnFlashColor [Not Synced with Server]
 * Resource amounts will flash from this colour when coming from containers (set both colors to the same color for no flashing)
     * Default Value: FFFFFFFF
 
+Can Build Color [Not Synced with Server]
+* The color of the build panel's count of pieces you can build
+    * Default Value: 00FF00FF
+
+Cannot Build Color [Not Synced with Server]
+* The color of the build panel's count if you cannot build something
+    * Default Value: FF0000FF
+
 `3 - Keys`
 
 FillAllModKey [Not Synced with Server]
 * Modifier key to pull all available fuel or ore when down. Use https://docs.unity3d.com/Manual/ConventionalGameInput.html
     * Default Value: LeftShift
+
+Prevent Pulling Logic [Not Synced with Server]
+* Key to prevent pulling logic from running. Use https://docs.unity3d.com/Manual/ConventionalGameInput.html
+    * Default Value: P
 
 </details>
 
@@ -102,6 +122,8 @@ FillAllModKey [Not Synced with Server]
 
 
 <details><summary><b>Example YAML</b></summary>
+
+> Configuration File Name: `Azumatt.AzuCraftyBoxes.yml` found in the `BepInEx/config` folder.
 
 ```yml
 # Below you can find example groups. Groups are used to exclude or includeOverride quickly. They are reusable lists! 
