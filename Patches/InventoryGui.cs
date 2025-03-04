@@ -15,99 +15,95 @@ static class InventoryGuiCollectRequirements
     }
 }
 
+// This patch updates the requirement UI element based on aggregated counts
 [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.SetupRequirement))]
 static class InventoryGuiSetupRequirementPatch
 {
     static void Postfix(InventoryGui __instance, Transform elementRoot, Piece.Requirement req, Player player, bool craft, int quality, int craftMultiplier = 1)
     {
-        if (MiscFunctions.ShouldPrevent())
+        if (MiscFunctions.ShouldPrevent() || req == null || req.m_resItem == null || req.m_resItem.m_itemData == null || req.m_resItem.m_itemData.m_shared == null)
         {
             return;
         }
 
-        if (req == null)
-        {
-            return;
-        }
-
-        if (req.m_resItem == null)
-        {
-            return;
-        }
-
-        if (req.m_resItem.m_itemData == null)
-        {
-            return;
-        }
-
-        if (req.m_resItem.m_itemData.m_shared == null)
-        {
-            return;
-        }
-
+        // Make sure the dropPrefab is set correctly.
         req.m_resItem.m_itemData.m_dropPrefab = req.m_resItem.gameObject;
         if (req.m_resItem.m_itemData.m_dropPrefab == null)
-        {
             return;
-        }
 
+        // Use the canonical key (prefab name preferred, fallback to shared name)
+        string canonicalKey = ItemKeyHelper.GetCanonicalKey(req.m_resItem.m_itemData);
+        // Count player's inventory items using the shared name (or you could implement a similar canonical lookup for player inventory)
         int invAmount = player.GetInventory().CountItems(req.m_resItem.m_itemData.m_shared.m_name);
+
+        // Get the UI Text for the resource amount
         TextMeshProUGUI text = elementRoot.transform.Find("res_amount").GetComponent<TextMeshProUGUI>();
-        if (text == null) return;
-        if (!int.TryParse(text.text, out int amount))
-        {
-            amount = req.GetAmount(quality) * craftMultiplier;
-        }
-
-        if (amount <= 0)
-        {
+        if (text == null)
             return;
+        if (!int.TryParse(text.text, out int required))
+        {
+            required = req.GetAmount(quality) * craftMultiplier;
         }
 
-        if (invAmount < amount)
+        if (required <= 0)
+            return;
+
+        // If the player’s own inventory count is less than required, check nearby containers.
+        if (invAmount < required)
         {
             List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(Player.m_localPlayer, AzuCraftyBoxesPlugin.mRange.Value);
+            // (Optional) Make sure we have an item prefab to validate config rules.
             GameObject itemPrefab = ObjectDB.instance.GetItemPrefab(req.m_resItem.GetPrefabName(req.m_resItem.gameObject.name));
             if (itemPrefab == null)
-            {
                 return;
-            }
-
+            // Ensure the dropPrefab is set from the prefab if needed.
             req.m_resItem.m_itemData.m_dropPrefab = itemPrefab;
-            foreach (IContainer? container in nearbyContainers)
+
+            // For each container, try to get the aggregated count using the cache if possible.
+            foreach (IContainer container in nearbyContainers)
             {
                 try
                 {
-                    string containerPrefabName = container.GetPrefabName();
-                    if (req.m_resItem.m_itemData.m_dropPrefab == null)
-                        continue;
-                    string itemPrefabName = req.m_resItem.name;
-                    string sharedName = req.m_resItem.m_itemData.m_shared.m_name;
-
-                    if (Boxes.CanItemBePulled(containerPrefabName, itemPrefabName))
+                    if (Boxes.CanItemBePulled(container.GetPrefabName(), canonicalKey))
                     {
-                        container.ContainsItem(sharedName, 1, out int result);
-                        result = Boxes.CheckAndDecrement(result);
-                        invAmount += result;
+                        int containerCount = 0;
+                        // Check if the container is a vanilla container (i.e. of type Container) and registered in our cache manager.
+                        if (container is Container vanillaContainer && ContainerInventoryCacheManager.Instance != null)
+                        {
+                            containerCount = ContainerInventoryCacheManager.Instance.GetAggregatedItemCount(vanillaContainer, canonicalKey);
+                        }
+                        else
+                        {
+                            // Fallback: use the container's ContainsItem API (using the shared name)
+                            container.ContainsItem(req.m_resItem.m_itemData.m_shared.m_name, 1, out int result);
+                            containerCount = result;
+                        }
+
+                        // Apply any decrement logic (like leaving one item behind)
+                        containerCount = Boxes.CheckAndDecrement(containerCount);
+                        invAmount += containerCount;
                     }
                 }
-                catch (System.Exception e)
+                catch (Exception ex)
                 {
-                    // ignored
+                    // Optionally log exceptions.
+                    AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"Error aggregating container: {ex.Message}");
                 }
             }
 
-            if (invAmount >= amount)
+            // If aggregated count now meets required amount, update the text color and record the requirement.
+            if (invAmount >= required)
             {
-                text.color = ((Mathf.Sin(Time.time * 10f) > 0f)
+                text.color = (Mathf.Sin(Time.time * 10f) > 0f)
                     ? AzuCraftyBoxesPlugin.flashColor.Value
-                    : AzuCraftyBoxesPlugin.unFlashColor.Value);
-                InventoryGuiCollectRequirements.actualAmounts[req] = amount;
+                    : AzuCraftyBoxesPlugin.unFlashColor.Value;
+                InventoryGuiCollectRequirements.actualAmounts[req] = required;
             }
         }
 
+        // Finally, update the UI text with either a formatted resource string or the required number.
         text.text = AzuCraftyBoxesPlugin.resourceString.Value.Trim().Length > 0
-            ? string.Format(AzuCraftyBoxesPlugin.resourceString.Value, invAmount, amount)
-            : amount.ToString();
+            ? string.Format(AzuCraftyBoxesPlugin.resourceString.Value, invAmount, required)
+            : required.ToString();
     }
 }

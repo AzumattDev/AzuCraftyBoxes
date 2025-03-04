@@ -137,11 +137,13 @@
         <Compile Include="Compatibility\ModCompat.cs" />
         <Compile Include="Compatibility\WardIsLove\WardIsLovePlugin.cs" />
         <Compile Include="Compatibility\WardIsLove\WardMonoscript.cs" />
+        <Compile Include="ContainerInventoryCacheManager.cs" />
         <Compile Include="IContainers\BackpackContainer.cs" />
         <Compile Include="IContainers\IContainer.cs" />
         <Compile Include="IContainers\GemBagContainer.cs" />
         <Compile Include="IContainers\kgDrawers.cs" />
         <Compile Include="IContainers\VanillaContainer.cs" />
+        <Compile Include="ItemKeyHelper.cs" />
         <Compile Include="Patches\ChestPatches.cs" />
         <Compile Include="Patches\CookingStationPatches.cs" />
         <Compile Include="Patches\CraftFromStacks.cs" />

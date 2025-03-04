@@ -3,28 +3,6 @@ using AzuCraftyBoxes.Util.Functions;
 
 namespace AzuCraftyBoxes.Patches;
 
-/*[HarmonyPatch(typeof(Smelter),nameof(Smelter.UpdateHoverTexts))]
-[HarmonyBefore("org.bepinex.plugins.conversionsizespeed")]
-static class SmelterUpdateHoverTextsPatch
-{
-    static void Postfix(Smelter __instance)
-    {
-        if(OverrideHoverText.ShouldReturn(__instance))
-        {
-            return;
-        }
-        if (__instance.m_addOreSwitch)
-        {
-            OverrideHoverText.UpdateAddOreSwitchHoverText(__instance, ref __instance.m_addOreSwitch.m_hoverText);
-        }
-
-        if(__instance.m_addWoodSwitch)
-        {
-            OverrideHoverText.UpdateAddWoodSwitchHoverText(__instance, ref __instance.m_addWoodSwitch.m_hoverText);
-        }
-    }
-}*/
-
 [HarmonyPatch(typeof(Smelter), nameof(Smelter.OnHoverAddOre))]
 [HarmonyBefore("org.bepinex.plugins.conversionsizespeed")]
 static class SmelterOnHoverAddOrePatch
@@ -60,61 +38,88 @@ public static class OverrideHoverText
     public static bool ShouldReturn(Smelter __instance)
     {
         if (MiscFunctions.ShouldPrevent())
-        {
             return true;
-        }
-
-        if (AzuCraftyBoxesPlugin.fillAllModKey.Value.MainKey is KeyCode.None)
-        {
+        if (AzuCraftyBoxesPlugin.fillAllModKey.Value.MainKey == KeyCode.None)
             return true;
-        }
-
-        if (Player.m_localPlayer is null)
-        {
+        if (Player.m_localPlayer == null)
             return true;
-        }
-
-        // Check if the player is looking at an object
-        if (!Player.m_localPlayer.m_hovering || Player.m_localPlayer.m_hovering.GetComponentInParent<Smelter>() != __instance)
-        {
-            return true;
-        }
-
-        return false;
+        // Only proceed if the player is actually hovering over this smelter.
+        return !Player.m_localPlayer.m_hovering ||
+               Player.m_localPlayer.m_hovering.GetComponentInParent<Smelter>() != __instance;
     }
 
+    /// <summary>
+    /// For fuel: Count the total amount of fuel available (player + containers), then update the hover text.
+    /// </summary>
     internal static void UpdateAddWoodSwitchHoverText(Smelter __instance, ref string result)
     {
-        int inInv = GetItemCountInInventoryAndContainers(__instance.m_fuelItem.name, __instance.m_fuelItem.m_itemData.m_shared.m_name, __instance);
-        int amount = Math.Min(__instance.m_maxFuel - Mathf.CeilToInt(__instance.GetFuel()), inInv);
+        // Compute canonical key for the fuel item.
+        string canonicalKey = ItemKeyHelper.GetCanonicalKey(__instance.m_fuelItem.m_itemData);
+        string sharedName = __instance.m_fuelItem.m_itemData.m_shared.m_name;
+
+        // Get count from player's inventory.
+        int inInv = Player.m_localPlayer?.m_inventory.CountItems(sharedName) ?? 0;
+        int inContainers = 0;
+
+        // Get nearby containers.
+        List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(__instance, AzuCraftyBoxesPlugin.mRange.Value);
+        foreach (IContainer container in nearbyContainers)
+        {
+            int count = 0;
+            if (container is Container vanilla && ContainerInventoryCacheManager.Instance != null)
+            {
+                count = ContainerInventoryCacheManager.Instance.GetAggregatedItemCount(vanilla, canonicalKey);
+            }
+            else
+            {
+                container.ContainsItem(sharedName, 1, out int res);
+                count = res;
+            }
+
+            inContainers += count;
+        }
+
+        // Determine how much fuel is needed.
+        int fuelNeeded = Mathf.Min(__instance.m_maxFuel - Mathf.CeilToInt(__instance.GetFuel()), inInv + inContainers);
+        // Ensure the fuel item's dropPrefab is set.
         __instance.m_fuelItem.m_itemData.m_dropPrefab = __instance.m_fuelItem.gameObject;
-        if (amount > 0)
+        if (fuelNeeded > 0)
         {
             if (Boxes.CanItemBePulled(Utils.GetPrefabName(__instance.gameObject), Utils.GetPrefabName(__instance.m_fuelItem.m_itemData.m_dropPrefab)))
             {
-                result += Localization.instance.Localize($"\n[<b><color=yellow>{AzuCraftyBoxesPlugin.fillAllModKey.Value}</color> + <color=yellow>$KEY_Use</color></b>] $piece_smelter_add {__instance.m_fuelItem.m_itemData.m_shared.m_name} {amount} from Inventory & Nearby Containers");
+                result += Localization.instance.Localize(
+                    $"\n[<b><color=yellow>{AzuCraftyBoxesPlugin.fillAllModKey.Value}</color> + <color=yellow>$KEY_Use</color></b>] $piece_smelter_add {sharedName} {fuelNeeded} from Inventory & Nearby Containers");
             }
         }
     }
 
+    /// <summary>
+    /// For ore: Iterate over the smelter's conversions, aggregate available ore counts, and update hover text.
+    /// </summary>
     internal static void UpdateAddOreSwitchHoverText(Smelter __instance, ref string result)
     {
         int free = __instance.m_maxOre - __instance.GetQueueSize();
-        List<string> items = new();
+        List<string> items = new List<string>();
+        if (free <= 0)
+            return;
 
+        // Process each ore conversion.
         foreach (Smelter.ItemConversion conversion in __instance.m_conversion)
         {
             if (free <= 0)
-            {
                 break;
-            }
 
+            // Use canonical key for the ore item.
+            string canonicalKey = ItemKeyHelper.GetCanonicalKey(conversion.m_from.m_itemData);
             int inInv = GetItemCountInInventoryAndContainers(conversion.m_from.name, conversion.m_from.m_itemData.m_shared.m_name, __instance);
-            int count = Math.Min(free, inInv);
+            int count = Mathf.Min(free, inInv);
             free -= count;
-            if (!MiscFunctions.CheckItemDropIntegrity(conversion.m_from)) continue;
+            if (!MiscFunctions.CheckItemDropIntegrity(conversion.m_from))
+                continue;
+            // Ensure dropPrefab is set.
             conversion.m_from.m_itemData.m_dropPrefab = conversion.m_from.gameObject;
-            if (MiscFunctions.GetItemPrefabFromGameObject(conversion.m_from, conversion.m_from.gameObject) == null) continue;
+            if (MiscFunctions.GetItemPrefabFromGameObject(conversion.m_from, conversion.m_from.gameObject) == null)
+                continue;
             if (count > 0)
             {
                 if (Boxes.CanItemBePulled(Utils.GetPrefabName(__instance.gameObject), Utils.GetPrefabName(conversion.m_from.m_itemData.m_dropPrefab)))
@@ -124,23 +129,40 @@ public static class OverrideHoverText
             }
         }
 
-        if (items.Count > 0)
+        if (items.Any())
         {
-            result += Localization.instance.Localize($"\n[<b><color=yellow>{AzuCraftyBoxesPlugin.fillAllModKey.Value}</color> + <color=yellow>$KEY_Use</color></b>] {__instance.m_addOreTooltip} {string.Join(", ", items)} from Inventory & Nearby Containers");
+            result += Localization.instance.Localize(
+                $"\n[<b><color=yellow>{AzuCraftyBoxesPlugin.fillAllModKey.Value}</color> + <color=yellow>$KEY_Use</color></b>] {__instance.m_addOreTooltip} {string.Join(", ", items)} from Inventory & Nearby Containers");
         }
     }
 
+    /// <summary>
+    /// Aggregates item counts from both the player's inventory and nearby containers.
+    /// Uses the canonical key for vanilla containers (via the cache manager) and falls back to IContainer.ContainsItem.
+    /// </summary>
     private static int GetItemCountInInventoryAndContainers(string prefabName, string itemName, Smelter smelterInstance)
     {
         int inInv = Player.m_localPlayer?.m_inventory.CountItems(itemName) ?? 0;
         List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(smelterInstance, AzuCraftyBoxesPlugin.mRange.Value);
-
-        foreach (IContainer c in nearbyContainers)
+        foreach (IContainer container in nearbyContainers)
         {
-            if (Boxes.CanItemBePulled(prefabName, c.GetPrefabName()))
+            if (Boxes.CanItemBePulled(prefabName, container.GetPrefabName()))
             {
-                c.ContainsItem(itemName, 1, out int result);
-                inInv += result;
+                int count = 0;
+                // If vanilla container, try to use the cache.
+                if (container is Container vanilla && ContainerInventoryCacheManager.Instance != null)
+                {
+                    // Use the canonical key from itemName.
+                    string canonicalKey = itemName.ToLowerInvariant(); // Or use a helper if you can get full ItemDrop.ItemData here.
+                    count = ContainerInventoryCacheManager.Instance.GetAggregatedItemCount(vanilla, canonicalKey);
+                }
+                else
+                {
+                    container.ContainsItem(itemName, 1, out int res);
+                    count = res;
+                }
+
+                inInv += count;
             }
         }
 
@@ -153,108 +175,106 @@ static class SmelterOnAddOrePatch
 {
     static bool Prefix(Smelter __instance, Humanoid user, ItemDrop.ItemData item, ZNetView ___m_nview, out KeyValuePair<ItemDrop.ItemData?, int> __state)
     {
-        int ore = __instance.GetQueueSize();
-        __state = new KeyValuePair<ItemDrop.ItemData?, int>(item, ore);
-        /*bool pullAll = Input.GetKey(AzuCraftyBoxesPlugin.fillAllModKey.Value.MainKey);*/
-        // Used to be fillAllModKey.Value.isPressed(); something is wrong with KeyboardShortcuts always returning false
+        int initialOre = __instance.GetQueueSize();
+        __state = new KeyValuePair<ItemDrop.ItemData?, int>(item, initialOre);
         bool pullAll = AzuCraftyBoxesPlugin.fillAllModKey.Value.IsKeyHeld();
         if (MiscFunctions.ShouldPrevent() || item != null || __instance.GetQueueSize() >= __instance.m_maxOre)
             return true;
 
         Inventory inventory = user.GetInventory();
-
-
-        if (__instance.m_conversion.Any(itemConversion =>
+        // If player's inventory already has a cookable item for any conversion and pullAll is false, use vanilla logic.
+        if (__instance.m_conversion.Any(conv =>
             {
-                string itemName = itemConversion?.m_from?.m_itemData?.m_shared?.m_name;
-                return itemName != null && inventory.HaveItem(itemName) && !pullAll && Boxes.CanItemBePulled(Utils.GetPrefabName(__instance.gameObject), itemConversion.m_from.name);
+                string itemName = conv?.m_from?.m_itemData?.m_shared?.m_name;
+                return itemName != null && inventory.HaveItem(itemName) && !pullAll &&
+                       Boxes.CanItemBePulled(Utils.GetPrefabName(__instance.gameObject), conv.m_from.name);
             }))
         {
             return true;
         }
 
-
-        Dictionary<string, int> added = new();
-
+        Dictionary<string, int> added = new Dictionary<string, int>();
         List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(user, AzuCraftyBoxesPlugin.mRange.Value);
-        foreach (Smelter.ItemConversion itemConversion in __instance.m_conversion)
+
+        // Process each conversion for ore.
+        foreach (Smelter.ItemConversion conv in __instance.m_conversion)
         {
             if (__instance.GetQueueSize() >= __instance.m_maxOre || (added.Any() && !pullAll))
                 break;
 
-            string name = itemConversion.m_from.m_itemData.m_shared.m_name;
-            string prefabName = itemConversion.m_from.name;
-            if (pullAll && inventory.HaveItem(name))
+            string sharedName = conv.m_from.m_itemData.m_shared.m_name;
+            // Compute the canonical key for this ore item.
+            string canonicalKey = ItemKeyHelper.GetCanonicalKey(conv.m_from.m_itemData);
+            string convPrefabName = conv.m_from.name;
+
+            // Try pulling from player's inventory first.
+            if (pullAll && inventory.HaveItem(sharedName))
             {
-                ItemDrop.ItemData newItem = inventory.GetItem(name);
-                if (newItem == null) continue;
-                try
+                ItemDrop.ItemData newItem = inventory.GetItem(sharedName);
+                if (newItem != null)
                 {
-                    GameObject itemPrefab = ObjectDB.instance.GetItemPrefab(__instance.m_fuelItem.GetPrefabName(itemConversion.m_from.gameObject.name));
+                    try
+                    {
+                        // Set dropPrefab using the fuelItem method from the smelter.
+                        GameObject itemPrefab = ObjectDB.instance.GetItemPrefab(__instance.m_fuelItem.GetPrefabName(conv.m_from.gameObject.name));
+                        newItem.m_dropPrefab = itemPrefab;
+                    }
+                    catch (Exception e)
+                    {
+                        // Log if necessary.
+                    }
 
-                    newItem.m_dropPrefab = itemPrefab;
+                    if (newItem.m_dropPrefab != null && Boxes.CanItemBePulled(Utils.GetPrefabName(__instance.gameObject), Utils.GetPrefabName(newItem.m_dropPrefab)))
+                    {
+                        int neededOre = __instance.m_maxOre - __instance.GetQueueSize();
+                        int availableInInv = inventory.CountItems(sharedName);
+                        int amount = pullAll ? Mathf.Min(neededOre, availableInInv) : 1;
+                        if (!added.ContainsKey(sharedName))
+                            added[sharedName] = 0;
+                        added[sharedName] += amount;
+                        inventory.RemoveItem(sharedName, amount);
+                        for (int i = 0; i < amount; i++)
+                        {
+                            ___m_nview.InvokeRPC("RPC_AddOre", newItem.m_dropPrefab.name);
+                        }
+
+                        user.Message(MessageHud.MessageType.TopLeft, $"$msg_added {amount} {sharedName}");
+                        if (__instance.GetQueueSize() >= __instance.m_maxOre)
+                            break;
+                    }
                 }
-                catch (Exception e)
-                {
-                    // AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogError(e);
-                }
-
-                if (newItem.m_dropPrefab == null) continue;
-                string itemPrefabName = Utils.GetPrefabName(newItem.m_dropPrefab);
-                if (!Boxes.CanItemBePulled(Utils.GetPrefabName(__instance.gameObject), itemPrefabName))
-                {
-                    AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(SmelterOnAddOrePatch) debug log 1:  Container at {user.transform.position} has {newItem.m_stack} {newItem.m_dropPrefab.name} but it's forbidden by config");
-                    continue;
-                }
-
-                int amount = pullAll
-                    ? Mathf.Min(__instance.m_maxOre - __instance.GetQueueSize(), inventory.CountItems(name))
-                    : 1;
-                if (!added.ContainsKey(name))
-                    added[name] = 0;
-                added[name] += amount;
-
-                inventory.RemoveItem(itemConversion.m_from.m_itemData.m_shared.m_name, amount);
-                //typeof(Inventory).GetMethod("Changed", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(inventory, new object[] { });
-
-                for (int i = 0; i < amount; ++i)
-                    ___m_nview.InvokeRPC("RPC_AddOre", newItem.m_dropPrefab.name);
-
-                user.Message(MessageHud.MessageType.TopLeft, $"$msg_added {amount} {name}");
-                if (__instance.GetQueueSize() >= __instance.m_maxOre)
-                    break;
             }
 
-            if (Boxes.CanItemBePulled(Utils.GetPrefabName(__instance.gameObject), prefabName))
+            // Then, attempt pulling from nearby containers.
+            if (Boxes.CanItemBePulled(Utils.GetPrefabName(__instance.gameObject), convPrefabName))
             {
                 foreach (IContainer c in nearbyContainers)
                 {
-                    if (!c.ContainsItem(name, 1, out int result)) continue;
-                    if (!Boxes.CanItemBePulled(c.GetPrefabName(), prefabName))
+                    if (!c.ContainsItem(sharedName, 1, out int result))
+                        continue;
+                    if (!Boxes.CanItemBePulled(c.GetPrefabName(), convPrefabName))
                     {
-                        AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(SmelterOnAddOrePatch) Container at {c.GetPosition()} has {result} {prefabName} but it's forbidden by config");
+                        AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable(
+                            $"(SmelterOnAddOrePatch) Container at {c.GetPosition()} has {result} {convPrefabName} but it's forbidden by config");
                         continue;
                     }
 
                     int amount = pullAll ? Mathf.Min(__instance.m_maxOre - __instance.GetQueueSize(), result) : 1;
-
-                    if (!added.ContainsKey(name))
-                        added[name] = 0;
-                    added[name] += amount;
+                    if (!added.ContainsKey(sharedName))
+                        added[sharedName] = 0;
+                    added[sharedName] += amount;
                     AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"Pull ALL is {pullAll}");
-                    AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(SmelterOnAddOrePatch) Container at {c.GetPosition()} has {result} {prefabName}, taking {amount}");
-
-                    c.RemoveItem(name, amount);
+                    AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable(
+                        $"(SmelterOnAddOrePatch) Container at {c.GetPosition()} has {result} {convPrefabName}, taking {amount}");
+                    c.RemoveItem(sharedName, amount);
                     c.Save();
+                    for (int i = 0; i < amount; i++)
+                    {
+                        ___m_nview.InvokeRPC("RPC_AddOre", convPrefabName);
+                    }
 
-                    for (int i = 0; i < amount; ++i)
-                        ___m_nview.InvokeRPC("RPC_AddOre", prefabName);
-
-                    user.Message(MessageHud.MessageType.TopLeft, $"$msg_added {amount} {name}");
-
-
-                    if (__instance.GetQueueSize() >= __instance.m_maxOre ||
-                        !pullAll)
+                    user.Message(MessageHud.MessageType.TopLeft, $"$msg_added {amount} {sharedName}");
+                    if (__instance.GetQueueSize() >= __instance.m_maxOre || !pullAll)
                         break;
                 }
             }
@@ -265,14 +285,13 @@ static class SmelterOnAddOrePatch
         else
         {
             List<string> outAdded = added.Select(kvp => $"$msg_added {kvp.Value} {kvp.Key}").ToList();
-
             user.Message(MessageHud.MessageType.Center, string.Join("\n", outAdded));
         }
 
         return false;
     }
 
-    public static void Postfix(Smelter __instance, Switch sw, Humanoid user, KeyValuePair<ItemDrop.ItemData?, int> __state, bool __result)
+    static void Postfix(Smelter __instance, Switch sw, Humanoid user, KeyValuePair<ItemDrop.ItemData?, int> __state, bool __result)
     {
         if (AzuCraftyBoxesPlugin.fillAllModKey.Value.IsKeyHeld() && __result && __state.Key is null)
         {
@@ -308,18 +327,15 @@ static class SmelterOnAddFuelPatch
 {
     static bool Prefix(Smelter __instance, ref bool __result, ZNetView ___m_nview, Humanoid user, ItemDrop.ItemData item)
     {
-        /*bool pullAll =
-            Input.GetKey(AzuCraftyBoxesPlugin.fillAllModKey.Value
-                .MainKey);*/
-        // Used to be fillAllModKey.Value.IsPressed(); something is wrong with KeyboardShortcuts always returning false
         bool pullAll = AzuCraftyBoxesPlugin.fillAllModKey.Value.IsKeyHeld();
         Inventory inventory = user.GetInventory();
+        string sharedName = __instance.m_fuelItem.m_itemData.m_shared.m_name;
         if (MiscFunctions.ShouldPrevent() || item != null || inventory == null ||
-            ((inventory.HaveItem(__instance.m_fuelItem.m_itemData.m_shared.m_name) && !pullAll) && Boxes.CanItemBePulled(Utils.GetPrefabName(__instance.gameObject), __instance.m_fuelItem.name)))
+            ((inventory.HaveItem(sharedName) && !pullAll) &&
+             Boxes.CanItemBePulled(Utils.GetPrefabName(__instance.gameObject), __instance.m_fuelItem.name)))
             return true;
 
         __result = true;
-
         int added = 0;
 
         if (__instance.GetFuel() > __instance.m_maxFuel - 1)
@@ -329,57 +345,64 @@ static class SmelterOnAddFuelPatch
             return false;
         }
 
-        if (pullAll && inventory.HaveItem(__instance.m_fuelItem.m_itemData.m_shared.m_name))
+        // Process pulling from player's inventory first.
+        if (pullAll && inventory.HaveItem(sharedName))
         {
             if (Boxes.CanItemBePulled(Utils.GetPrefabName(__instance.gameObject), __instance.m_fuelItem.name))
             {
-                int amount = (int)Mathf.Min(__instance.m_maxFuel - __instance.GetFuel(), inventory.CountItems(__instance.m_fuelItem.m_itemData.m_shared.m_name));
-                inventory.RemoveItem(__instance.m_fuelItem.m_itemData.m_shared.m_name, amount);
-                //typeof(Inventory).GetMethod("Changed", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(inventory, new object[] { });
-                for (int i = 0; i < amount; ++i)
+                float neededFuel = __instance.m_maxFuel - __instance.GetFuel();
+                int amount = (int)Mathf.Min(neededFuel, inventory.CountItems(sharedName));
+                inventory.RemoveItem(sharedName, amount);
+                for (int i = 0; i < amount; i++)
+                {
                     ___m_nview.InvokeRPC("RPC_AddFuel");
+                }
 
                 added += amount;
-
-                user.Message(MessageHud.MessageType.TopLeft, Localization.instance.Localize("$msg_fireadding", __instance.m_fuelItem.m_itemData.m_shared.m_name));
-
+                user.Message(MessageHud.MessageType.TopLeft,
+                    Localization.instance.Localize("$msg_fireadding", sharedName));
                 __result = false;
             }
         }
 
+        // Then, process nearby containers.
         List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(__instance, AzuCraftyBoxesPlugin.mRange.Value);
         string fuelPrefabName = __instance.m_fuelItem.name;
-        string sharedName = __instance.m_fuelItem.m_itemData.m_shared.m_name;
+        // Compute canonical key for the fuel item.
+        string canonicalKey = ItemKeyHelper.GetCanonicalKey(__instance.m_fuelItem.m_itemData);
         if (Boxes.CanItemBePulled(Utils.GetPrefabName(__instance.gameObject), fuelPrefabName))
         {
             foreach (IContainer c in nearbyContainers)
             {
-                if (!c.ContainsItem(sharedName, 1, out int result)) continue;
+                if (!c.ContainsItem(sharedName, 1, out int result))
+                    continue;
                 if (!Boxes.CanItemBePulled(c.GetPrefabName(), fuelPrefabName))
                 {
-                    AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(SmelterOnAddFuelPatch) Container at {c.GetPosition()} has {result} {sharedName} but it's forbidden by config");
+                    AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable(
+                        $"(SmelterOnAddFuelPatch) Container at {c.GetPosition()} has {result} {sharedName} but it's forbidden by config");
                     continue;
                 }
 
-                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"Pull ALL is {pullAll}");
-                int amount = pullAll
-                    ? (int)Mathf.Min(__instance.m_maxFuel - __instance.GetFuel(), result)
-                    : 1;
+                int available = result;
+                if (c is Container vanilla && ContainerInventoryCacheManager.Instance != null)
+                {
+                    available = ContainerInventoryCacheManager.Instance.GetAggregatedItemCount(vanilla, canonicalKey);
+                }
 
-                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(SmelterOnAddFuelPatch) Container at {c.GetPosition()} has {result} {sharedName}, taking {amount}");
-
+                float neededFuel = __instance.m_maxFuel - __instance.GetFuel();
+                int amount = pullAll ? (int)Mathf.Min(neededFuel, available) : 1;
+                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable(
+                    $"(SmelterOnAddFuelPatch) Container at {c.GetPosition()} has {available} {sharedName}, taking {amount}");
                 c.RemoveItem(sharedName, amount);
                 c.Save();
-
-                for (int i = 0; i < amount; ++i)
+                for (int i = 0; i < amount; i++)
+                {
                     ___m_nview.InvokeRPC("RPC_AddFuel");
+                }
 
                 added += amount;
-
-                user.Message(MessageHud.MessageType.TopLeft, "$msg_added " + __instance.m_fuelItem.m_itemData.m_shared.m_name);
-
+                user.Message(MessageHud.MessageType.TopLeft, "$msg_added " + sharedName);
                 __result = false;
-
                 if (!pullAll || Mathf.CeilToInt(___m_nview.GetZDO().GetFloat(ZDOVars.s_fuel)) >= __instance.m_maxFuel)
                     return false;
             }
@@ -387,8 +410,7 @@ static class SmelterOnAddFuelPatch
 
         user.Message(MessageHud.MessageType.Center, added == 0
             ? "$msg_noprocessableitems"
-            : $"$msg_added {added} {__instance.m_fuelItem.m_itemData.m_shared.m_name}");
-
+            : $"$msg_added {added} {sharedName}");
         return __result;
     }
 }
