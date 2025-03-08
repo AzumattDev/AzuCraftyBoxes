@@ -28,13 +28,13 @@ internal static class ContainerAwakePatch
             }
 
             // Only add containers that the player should have access to
-            if (WardIsLovePlugin.IsLoaded() && WardIsLovePlugin.WardEnabled().Value && WardMonoscript.CheckAccess(__instance.transform.position, flash: false, wardCheck: true))
+            if (WardIsLovePlugin.IsLoaded() && WardIsLovePlugin.WardEnabled().Value &&
+                WardMonoscript.CheckAccess(__instance.transform.position, flash: false, wardCheck: true))
             {
                 long playerId = Game.instance.GetPlayerProfile().GetPlayerID();
                 if (__instance.CheckAccess(playerId))
                 {
                     Boxes.AddContainer(__instance);
-                    ContainerInventoryCacheManager.Instance.RegisterContainer(__instance);
                 }
             }
             else
@@ -42,10 +42,7 @@ internal static class ContainerAwakePatch
                 long playerId = Game.instance.GetPlayerProfile().GetPlayerID();
                 if (!__instance.CheckAccess(playerId)) return;
                 if (PrivateArea.CheckAccess(__instance.transform.position, flash: false, wardCheck: true))
-                {
                     Boxes.AddContainer(__instance);
-                    ContainerInventoryCacheManager.Instance.RegisterContainer(__instance);
-                }
             }
         }
         catch
@@ -85,7 +82,6 @@ static class ContainerLoadPatch
             if (__instance.CheckAccess(playerId))
             {
                 Boxes.AddContainer(__instance);
-                ContainerInventoryCacheManager.Instance.RegisterContainer(__instance);
             }
         }
         else
@@ -93,10 +89,7 @@ static class ContainerLoadPatch
             long playerId = Game.instance.GetPlayerProfile().GetPlayerID();
             if (!__instance.CheckAccess(playerId)) return;
             if (PrivateArea.CheckAccess(__instance.transform.position, flash: false, wardCheck: true))
-            {
                 Boxes.AddContainer(__instance);
-                ContainerInventoryCacheManager.Instance.RegisterContainer(__instance);
-            }
         }
     }
 }
@@ -115,7 +108,6 @@ internal static class ContainerOnDestroyedPatch
             return;
 
         Boxes.RemoveContainer(__instance);
-        ContainerInventoryCacheManager.Instance.UnregisterContainer(__instance);
     }
 }
 
@@ -136,7 +128,6 @@ static class WearNTearOnDestroyPatch
             foreach (Container c in container)
             {
                 Boxes.RemoveContainer(c);
-                ContainerInventoryCacheManager.Instance.UnregisterContainer(c);
             }
         }
 
@@ -145,7 +136,6 @@ static class WearNTearOnDestroyPatch
             foreach (Container c in parentContainer)
             {
                 Boxes.RemoveContainer(c);
-                ContainerInventoryCacheManager.Instance.UnregisterContainer(c);
             }
         }
     }
@@ -168,7 +158,6 @@ public static class PlayerUpdateTeleportPatchCleanupContainers
                      : (container.GetInventory() != null ? 1 : 0)) == 0).Where(container => container != null))
         {
             Boxes.RemoveContainer(container);
-            ContainerInventoryCacheManager.Instance.UnregisterContainer(container);
         }
     }
 }

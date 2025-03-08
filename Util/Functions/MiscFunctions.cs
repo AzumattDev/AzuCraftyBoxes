@@ -30,24 +30,17 @@ public class MiscFunctions
         foreach (Piece.Requirement requirement in requirements)
         {
             if (!IsValidRequirement(requirement)) continue;
-
             int totalRequirement = requirement.GetAmount(qualityLevel) * multiplier;
             if (totalRequirement <= 0) continue;
 
-            // Compute the canonical key for this requirement’s item.
-            string canonicalKey = ItemKeyHelper.GetCanonicalKey(requirement.m_resItem.m_itemData);
-            // For player's inventory we still use the shared name (as CountItems is defined that way).
             string reqName = requirement.m_resItem.m_itemData.m_shared.m_name;
             int totalAmount = pInventory.CountItems(reqName);
             LogResourceInfo(totalAmount, totalRequirement, reqName);
-
-            // Remove from player's inventory (vanilla logic)
             pInventory.RemoveItem(reqName, Math.Min(totalAmount, totalRequirement), itemQuality);
 
             if (totalAmount < totalRequirement)
             {
-                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(ConsumeResourcesPatch) Not enough {reqName} in player inventory, checking nearby containers");
-                int newTotalAmount = ConsumeResourcesFromContainers(canonicalKey, totalAmount, totalRequirement, nearbyContainers);
+                int newTotalAmount = ConsumeResourcesFromContainers(reqName, totalAmount, totalRequirement, nearbyContainers);
                 if (newTotalAmount >= totalRequirement)
                 {
                     AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(ConsumeResourcesPatch) Consumed enough {reqName}");
@@ -67,26 +60,28 @@ public class MiscFunctions
         AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(ConsumeResourcesPatch) Have {totalAmount}/{totalRequirement} {reqName} in player inventory");
     }
 
-    private static int ConsumeResourcesFromContainers(string canonicalKey, int totalAmount, int totalRequirement, List<IContainer> nearbyContainers)
+    private static int ConsumeResourcesFromContainers(string reqName, int totalAmount, int totalRequirement, List<IContainer> nearbyContainers)
     {
         int newTotalAmount = totalAmount;
         foreach (IContainer c in nearbyContainers)
         {
-            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(ConsumeResourcesPatch) Checking {c.GetPrefabName()} for {canonicalKey}");
-            // Here we pass the canonical key instead of the raw shared name.
-            int containerCount = c.ItemCount(canonicalKey);
+            int containerCount = c.ItemCount(reqName);
             int allowedRemoval = Boxes.CheckAndDecrement(containerCount);
-            if (allowedRemoval <= 0)
-                continue;
 
-            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(ConsumeResourcesPatch) Found {containerCount} {canonicalKey} in {c.GetPrefabName()}");
+            if (allowedRemoval <= 0)
+            {
+                continue;
+            }
+
             int needed = totalRequirement - newTotalAmount;
+
             int removalFromContainer = Mathf.Min(needed, allowedRemoval);
             int effectiveRequirement = newTotalAmount + removalFromContainer;
-            newTotalAmount = c.ProcessContainerInventory(canonicalKey, newTotalAmount, effectiveRequirement);
-            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(ConsumeResourcesPatch) Consumed {removalFromContainer} {canonicalKey} from {c.GetPrefabName()}");
+            newTotalAmount = c.ProcessContainerInventory(reqName, newTotalAmount, effectiveRequirement);
             if (newTotalAmount >= totalRequirement)
+            {
                 break;
+            }
         }
 
         return newTotalAmount;
