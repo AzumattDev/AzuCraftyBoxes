@@ -14,7 +14,6 @@ static class CacheCurrentCraftingStationPrefabName
     }
 }
 
-// Skip updating known recipes
 [HarmonyPatch(typeof(Player), nameof(Player.UpdateKnownRecipesList))]
 static class UpdateKnownRecipesListPatch
 {
@@ -47,61 +46,46 @@ static class PlayerHaveRequirementsPatch
             bool cando = false;
             foreach (Piece.Requirement requirement in piece.m_resources)
             {
-                if (requirement.m_resItem == null)
-                    continue;
-                if (!MiscFunctions.CheckItemDropIntegrity(requirement.m_resItem))
-                    continue;
+                if (!requirement.m_resItem) continue;
+                bool proceed = MiscFunctions.CheckItemDropIntegrity(requirement.m_resItem);
+                if (!proceed) continue;
 
                 int requiredAmount = requirement.GetAmount(qualityLevel) * amount;
                 int availableAmount = 0;
-
-                // Use our helper to get the canonical key (prefab preferred, fallback to shared name)
-                string canonicalKey = ItemKeyHelper.GetCanonicalKey(requirement.m_resItem.m_itemData);
-                // Ensure dropPrefab is set.
+                GameObject itemPrefab = MiscFunctions.GetItemPrefabFromGameObject(requirement.m_resItem, requirement.m_resItem.gameObject)!;
                 requirement.m_resItem.m_itemData.m_dropPrefab = requirement.m_resItem.gameObject;
-                GameObject itemPrefab = MiscFunctions.GetItemPrefabFromGameObject(requirement.m_resItem, requirement.m_resItem.gameObject);
                 if (itemPrefab == null)
                     continue;
 
-                // Loop over quality levels (as in your original code)
+                // Tally up the items by quality level
                 for (int quality = 1; quality <= requirement.m_resItem.m_itemData.m_shared.m_maxQuality; ++quality)
                 {
                     int invAmount = __instance.GetInventory().CountItems(requirement.m_resItem.m_itemData.m_shared.m_name, quality);
-                    availableAmount = Mathf.Max(availableAmount, invAmount);
+                    if (invAmount > availableAmount) availableAmount = invAmount;
 
                     string itemPrefabName = Utils.GetPrefabName(requirement.m_resItem.name);
                     string sharedName = requirement.m_resItem.m_itemData.m_shared.m_name;
-
                     foreach (IContainer container in nearbyContainers)
                     {
-                        // Skip if the container’s dropPrefab isn’t set.
-                        if (requirement.m_resItem.m_itemData.m_dropPrefab == null)
+                        if (requirement.m_resItem?.m_itemData?.m_dropPrefab == null)
                             continue;
-
-                        // Check config: can we pull this item from the container?
-                        if (Boxes.CanItemBePulled(container.GetPrefabName(), itemPrefabName))
+                        var containerPrefabName = container.GetPrefabName();
+                        if (Boxes.CanItemBePulled(containerPrefabName, itemPrefabName))
                         {
-                            int containerAmount = 0;
-                            if (container is Container vanillaContainer && ContainerInventoryCacheManager.Instance != null)
-                            {
-                                containerAmount = ContainerInventoryCacheManager.Instance.GetAggregatedItemCount(vanillaContainer, canonicalKey);
-                            }
-                            else
-                            {
-                                container.ContainsItem(sharedName, quality, out int result);
-                                containerAmount = result;
-                            }
-
-                            availableAmount = Boxes.CheckAndDecrement(Mathf.Max(availableAmount, containerAmount));
+                            container.ContainsItem(sharedName, quality, out int containerAmount);
+                            availableAmount = Boxes.CheckAndDecrement(Math.Max(availableAmount, containerAmount));
                         }
                     }
                 }
 
                 if (piece.m_requireOnlyOneIngredient)
                 {
-                    if (availableAmount >= requiredAmount && ___m_knownMaterial.Contains(requirement.m_resItem.m_itemData.m_shared.m_name))
+                    if (availableAmount >= requiredAmount)
                     {
-                        cando = true;
+                        if (__instance.m_knownMaterial.Contains(requirement.m_resItem.m_itemData.m_shared.m_name))
+                        {
+                            cando = true;
+                        }
                     }
                 }
                 else if (availableAmount < requiredAmount)
@@ -130,7 +114,10 @@ static class PlayerHaveRequirementsPatchRBoolInt
     static void Postfix(Player __instance, Recipe recipe, bool discover, int qualityLevel, int amount, ref bool __result)
     {
         if (MiscFunctions.ShouldPrevent())
+        {
             return;
+        }
+
         if (discover)
         {
             if (recipe.m_craftingStation && !__instance.KnowStationLevel(recipe.m_craftingStation.m_name, recipe.m_minStationLevel))
@@ -150,7 +137,7 @@ static class PlayerHaveRequirementsPatchRBoolInt
             return false;
         foreach (Piece.Requirement resource in piece.m_resources)
         {
-            if (resource.m_resItem != null)
+            if (resource.m_resItem)
             {
                 if (discover)
                 {
@@ -168,42 +155,48 @@ static class PlayerHaveRequirementsPatchRBoolInt
                 else
                 {
                     List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(p, AzuCraftyBoxesPlugin.mRange.Value);
-                    int reqAmount = resource.GetAmount(qualityLevel) * amountVanilla;
+                    int amount = resource.GetAmount(qualityLevel) * amountVanilla;
                     int num = p.m_inventory.CountItems(resource.m_resItem.m_itemData.m_shared.m_name);
-                    string canonicalKey = ItemKeyHelper.GetCanonicalKey(resource.m_resItem.m_itemData);
-                    string sharedName = resource.m_resItem.m_itemData.m_shared.m_name;
-                    string itemPrefabName = resource.m_resItem.name;
+
                     foreach (IContainer c in nearbyContainers)
                     {
                         resource.m_resItem.m_itemData.m_dropPrefab = resource.m_resItem.gameObject;
                         if (resource.m_resItem.m_itemData.m_dropPrefab == null)
                             continue;
-                        bool canItemBePulled = Boxes.CanItemBePulled(c.GetPrefabName(), itemPrefabName);
+                        string itemPrefabName = resource.m_resItem.name;
+                        string sharedName = resource.m_resItem.m_itemData.m_shared.m_name;
+                        bool canItemBePulled = false;
+                        if (c == null) continue;
+                        if (!string.IsNullOrWhiteSpace(c.GetPrefabName()))
+                        {
+                            canItemBePulled = Boxes.CanItemBePulled(c.GetPrefabName(), itemPrefabName);
+                        }
+
                         if (canItemBePulled)
                         {
-                            int containerAmount = 0;
-                            if (c is Container vanillaContainer && ContainerInventoryCacheManager.Instance != null)
-                            {
-                                containerAmount = ContainerInventoryCacheManager.Instance.GetAggregatedItemCount(vanillaContainer, canonicalKey);
-                            }
-                            else
+                            try
                             {
                                 c.ContainsItem(sharedName, 1, out int result);
-                                containerAmount = result;
+                                result = Boxes.CheckAndDecrement(result);
+                                num += result;
+                                if (num >= amount)
+                                {
+                                    break;
+                                }
                             }
-
-                            num += Boxes.CheckAndDecrement(containerAmount);
-                            if (num >= reqAmount)
-                                break;
+                            catch
+                            {
+// ignored
+                            }
                         }
                     }
 
                     if (piece.m_requireOnlyOneIngredient)
                     {
-                        if (num >= reqAmount)
+                        if (num >= amount)
                             return true;
                     }
-                    else if (num < reqAmount)
+                    else if (num < amount)
                         return false;
                 }
             }
@@ -227,26 +220,33 @@ static class HaveRequirementsPatch2
             if (piece == null)
                 return;
 
-            if (piece.m_craftingStation != null)
+            if (piece.m_craftingStation)
             {
                 if (mode is Player.RequirementMode.IsKnown or Player.RequirementMode.CanAlmostBuild)
                 {
                     if (!___m_knownStations.ContainsKey(piece.m_craftingStation.m_name))
+                    {
                         return;
+                    }
                 }
                 else if (!CraftingStation.HaveBuildStationInRange(piece.m_craftingStation.m_name, __instance.transform.position))
+                {
                     return;
+                }
             }
 
             if (piece.m_dlc.Length > 0 && !DLCMan.instance.IsDLCInstalled(piece.m_dlc))
+            {
                 return;
+            }
 
             List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(__instance, AzuCraftyBoxesPlugin.mRange.Value);
+
             foreach (Piece.Requirement requirement in piece.m_resources)
             {
                 if (requirement.m_resItem == null)
                     continue;
-                if (requirement.m_resItem != null && requirement.m_amount > 0)
+                if (requirement.m_resItem && requirement.m_amount > 0)
                 {
                     if (!MiscFunctions.CheckItemDropIntegrity(requirement.m_resItem))
                         continue;
@@ -264,14 +264,14 @@ static class HaveRequirementsPatch2
                         {
                             bool hasItem = false;
                             string sharedName = requirement.m_resItem.m_itemData.m_shared.m_name;
-                            string canonicalKey = ItemKeyHelper.GetCanonicalKey(requirement.m_resItem.m_itemData);
-                            string itemPrefabName = Utils.GetPrefabName(requirement.m_resItem.m_itemData.m_dropPrefab);
                             foreach (IContainer c in nearbyContainers)
                             {
                                 requirement.m_resItem.m_itemData.m_dropPrefab = requirement.m_resItem.gameObject;
                                 if (requirement.m_resItem.m_itemData.m_dropPrefab == null)
                                     continue;
-                                bool canItemBePulled = Boxes.CanItemBePulled(c.GetPrefabName(), canonicalKey);
+                                string itemPrefabName = Utils.GetPrefabName(requirement.m_resItem.m_itemData.m_dropPrefab);
+                                bool canItemBePulled = Boxes.CanItemBePulled(c.GetPrefabName(), itemPrefabName);
+
                                 if (canItemBePulled && c.ContainsItem(sharedName, 1, out _))
                                 {
                                     hasItem = true;
@@ -283,19 +283,18 @@ static class HaveRequirementsPatch2
                                 return;
                             break;
                         }
-                        case Player.RequirementMode.CanBuild
-                            when __instance.GetInventory().CountItems(requirement.m_resItem.m_itemData.m_shared.m_name) < requirement.m_amount:
+                        case Player.RequirementMode.CanBuild when __instance.GetInventory().CountItems(requirement.m_resItem.m_itemData.m_shared.m_name) < requirement.m_amount:
                         {
                             int hasItems = __instance.GetInventory().CountItems(requirement.m_resItem.m_itemData.m_shared.m_name);
-                            string canonicalKey = ItemKeyHelper.GetCanonicalKey(requirement.m_resItem.m_itemData);
-                            string sharedName = requirement.m_resItem.m_itemData.m_shared.m_name;
-                            string itemPrefabName = requirement.m_resItem.name;
                             foreach (IContainer c in nearbyContainers)
                             {
                                 requirement.m_resItem.m_itemData.m_dropPrefab = requirement.m_resItem.gameObject;
                                 if (requirement.m_resItem.m_itemData.m_dropPrefab == null)
                                     continue;
-                                bool canItemBePulled = Boxes.CanItemBePulled(c.GetPrefabName(), canonicalKey);
+                                string itemPrefabName = requirement.m_resItem.name;
+                                string sharedName = requirement.m_resItem.m_itemData.m_shared.m_name;
+                                bool canItemBePulled = Boxes.CanItemBePulled(c.GetPrefabName(), itemPrefabName);
+
                                 if (canItemBePulled)
                                 {
                                     try
@@ -310,7 +309,7 @@ static class HaveRequirementsPatch2
                                     }
                                     catch
                                     {
-                                        // ignored
+// ignored
                                     }
                                 }
                             }
@@ -339,7 +338,10 @@ static class ConsumeResourcesPatch
         try
         {
             if (MiscFunctions.ShouldPrevent())
+            {
                 return true;
+            }
+
             Inventory pInventory = __instance.GetInventory();
             List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(__instance, AzuCraftyBoxesPlugin.mRange.Value);
             MiscFunctions.ProcessRequirements(requirements, qualityLevel, pInventory, nearbyContainers, itemQuality, multiplier);
@@ -358,12 +360,22 @@ static class CheckNearbyForOneIngredientItems
 {
     static void Postfix(Player __instance, Inventory inventory, Recipe recipe, int qualityLevel, ref int amount, ref int extraAmount, int craftMultiplier, ref ItemDrop.ItemData __result)
     {
-        if (MiscFunctions.ShouldPrevent() || __result != null)
+        if (MiscFunctions.ShouldPrevent())
+        {
             return;
+        }
+
+        if (__result != null)
+        {
+            return;
+        }
+
 
         List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(__instance, AzuCraftyBoxesPlugin.mRange.Value);
         if (nearbyContainers == null || nearbyContainers.Count == 0)
+        {
             return;
+        }
 
         foreach (Piece.Requirement resource in recipe.m_resources)
         {
@@ -372,36 +384,38 @@ static class CheckNearbyForOneIngredientItems
 
             string reqName = resource.m_resItem.m_itemData.m_shared.m_name;
             int requiredAmount = resource.GetAmount(qualityLevel) * craftMultiplier;
+
+
             int availableAmount = 0;
             IContainer sourceContainer = null;
 
-            foreach (IContainer container in nearbyContainers)
+            foreach (IContainer? container in nearbyContainers)
             {
                 int containerAmount = container.ItemCount(reqName);
                 if (containerAmount <= 0)
                     continue;
+
                 availableAmount += containerAmount;
-                if (availableAmount >= requiredAmount)
-                {
-                    sourceContainer = container;
-                    break;
-                }
+
+                if (availableAmount < requiredAmount) continue;
+                sourceContainer = container;
+                break;
             }
 
             if (availableAmount < requiredAmount || sourceContainer == null) continue;
-            if (sourceContainer.GetInventory() == null) return;
+            if (sourceContainer.GetInventory() == null)
+            {
+                return;
+            }
+
             ItemDrop.ItemData containerItem = sourceContainer.GetInventory().GetItem(reqName);
             if (containerItem == null) continue;
             __result = containerItem;
             amount = requiredAmount;
             extraAmount = resource.m_extraAmountOnlyOneIngredient;
+
             if (__result == null) return;
-            Boxes.LaterConsumption consumption = new(
-                name: reqName,
-                amount: requiredAmount,
-                quality: containerItem.m_quality,
-                sourceContainer: sourceContainer,
-                requiredItem: containerItem);
+            Boxes.LaterConsumption consumption = new(name: reqName, amount: requiredAmount, quality: containerItem.m_quality, sourceContainer: sourceContainer, requiredItem: containerItem);
             if (ConsumptionManager.PendingConsumptions.IsEmpty)
             {
                 ConsumptionManager.PendingConsumptions.Add(consumption);
@@ -418,21 +432,33 @@ static class ConsumeLaterConsumptionItemsInventoryGuiDoCraftingPatch
     static void Postfix(InventoryGui __instance)
     {
         if (MiscFunctions.ShouldPrevent())
+        {
             return;
+        }
 
         foreach (Boxes.LaterConsumption? consumption in ConsumptionManager.PendingConsumptions.ToList())
         {
             if (consumption.SourceContainer == null)
+            {
                 continue;
+            }
+
             Inventory containerInventory = consumption.SourceContainer.GetInventory();
             if (containerInventory == null)
+            {
                 continue;
+            }
+
             containerInventory.RemoveItem(consumption.Name, consumption.Amount, consumption.Quality);
+
+
             ConsumptionManager.PendingConsumptions.TryTake(out _);
         }
 
         while (!ConsumptionManager.PendingConsumptions.IsEmpty)
+        {
             ConsumptionManager.PendingConsumptions.TryTake(out _);
+        }
     }
 }
 
