@@ -1,4 +1,5 @@
-﻿using AzuCraftyBoxes.IContainers;
+﻿using AzuCraftyBoxes.Compatibility.WardIsLove;
+using AzuCraftyBoxes.IContainers;
 using AzuCraftyBoxes.Util.Functions;
 
 namespace AzuCraftyBoxes.Compatibility.EpicLoot;
@@ -9,8 +10,6 @@ public static class EpicLoot
     public const string TablePrefabName = "piece_enchantingtable";
     public static PluginInfo? EpicLootPluginInfo { get; set; }
     public static Assembly? EpicLootAssembly { get; private set; }
-
-    public static bool UIVisible;
 
 
     public static void Init(PluginInfo? pluginInfo)
@@ -106,19 +105,6 @@ public static class EpicLoot
                 EpicLootReflectionHelpers.RemoveSpecificContainerItem(item, remainingToRemove);
             }
         }
-
-        [HarmonyPatch("EpicLoot_UnityLib.EnchantingTableUI, EpicLoot-UnityLib", "IsVisible"), HarmonyPostfix]
-        private static void GetEnchantableItemsPostfixPatch(ref bool __result)
-        {
-            UIVisible = __result;
-        }
-
-
-        /*[HarmonyPatch("EpicLoot_UnityLib.InventoryManagement, EpicLoot-UnityLib", "GetInventory"), HarmonyPostfix]
-        private static void GetEnchantableItemsPostfixPatch(ref Inventory __result)
-        {
-            EpicLootReflectionHelpers.AppendContainerItemsToInventory(ref __result);
-        }*/
     }
 
     public class EpicLootReflectionHelpers
@@ -127,8 +113,6 @@ public static class EpicLoot
         {
             try
             {
-                if (!UIVisible)
-                    return;
                 List<ItemDrop.ItemData> combinedItems = [..playerInventory];
                 List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(Player.m_localPlayer, AzuCraftyBoxesPlugin.mRange.Value);
 
@@ -158,8 +142,6 @@ public static class EpicLoot
         {
             try
             {
-                if (!UIVisible)
-                    return;
                 List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(Player.m_localPlayer, AzuCraftyBoxesPlugin.mRange.Value);
 
                 foreach (IContainer container in nearbyContainers)
@@ -184,8 +166,6 @@ public static class EpicLoot
         {
             try
             {
-                if (!UIVisible)
-                    return 0;
                 if (Player.m_localPlayer != null)
                 {
                     Inventory playerInventory = Player.m_localPlayer.GetInventory();
@@ -206,8 +186,6 @@ public static class EpicLoot
         {
             try
             {
-                if (!UIVisible)
-                    return 0;
                 if (Player.m_localPlayer != null)
                 {
                     Inventory playerInventory = Player.m_localPlayer.GetInventory();
@@ -241,8 +219,6 @@ public static class EpicLoot
             int count = 0;
             try
             {
-                if (!UIVisible)
-                    return count;
                 List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(Player.m_localPlayer, AzuCraftyBoxesPlugin.mRange.Value);
                 foreach (IContainer container in nearbyContainers)
                 {
@@ -266,9 +242,6 @@ public static class EpicLoot
         {
             try
             {
-                if (!UIVisible)
-                    return;
-
                 List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(Player.m_localPlayer, AzuCraftyBoxesPlugin.mRange.Value);
 
                 AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Starting to remove {amount} of '{itemName}' from containers.");
