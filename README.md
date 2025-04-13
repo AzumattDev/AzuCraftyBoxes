@@ -84,8 +84,8 @@ FillAllModKey [Not Synced with Server]
     * Default Value: LeftShift
 
 Prevent Pulling Logic [Not Synced with Server]
-* Key to prevent pulling logic from running. Use https://docs.unity3d.com/Manual/ConventionalGameInput.html
-    * Default Value: P
+* Key to prevent pulling from nearby containers. This prevents all pulling logic from running, essentially making the mod appear as if it's not installed. This is different from the Mod Enabled option because it allows toggling on the fly (specifically for you as the player)  Use https://docs.unity3d.com/Manual/ConventionalGameInput.html
+    * Default Value: LeftAlt + O
 
 </details>
 

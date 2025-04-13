@@ -19,11 +19,13 @@ static class UpdateKnownRecipesListPatch
 {
     static void Prefix()
     {
+        if (MiscFunctions.ShouldPrevent()) return;
         AzuCraftyBoxesPlugin.skip = true;
     }
 
     static void Postfix()
     {
+        if (MiscFunctions.ShouldPrevent()) return;
         AzuCraftyBoxesPlugin.skip = false;
     }
 }

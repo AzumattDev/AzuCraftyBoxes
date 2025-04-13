@@ -91,7 +91,7 @@ static class InventoryGuiSetupRequirementPatch
                         invAmount += result;
                     }
                 }
-                catch (System.Exception e)
+                catch (Exception e)
                 {
                     // ignored
                 }

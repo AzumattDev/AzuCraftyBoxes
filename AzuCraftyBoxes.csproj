@@ -138,8 +138,8 @@
         <Compile Include="Compatibility\WardIsLove\WardIsLovePlugin.cs" />
         <Compile Include="Compatibility\WardIsLove\WardMonoscript.cs" />
         <Compile Include="IContainers\BackpackContainer.cs" />
-        <Compile Include="IContainers\IContainer.cs" />
         <Compile Include="IContainers\GemBagContainer.cs" />
+        <Compile Include="IContainers\IContainer.cs" />
         <Compile Include="IContainers\kgDrawers.cs" />
         <Compile Include="IContainers\VanillaContainer.cs" />
         <Compile Include="Patches\ChestPatches.cs" />

@@ -80,24 +80,19 @@ public class Boxes
             }*/
         }
 
-        /*List<IContainer> gemBagList = [];
-        if (Jewelcrafting.API.IsLoaded())
+        List<IContainer> gemBagList = new List<IContainer>();
+        if (Jewelcrafting.API.IsLoaded()) // assuming you have a method to verify if Jewelcrafting features are loaded
         {
-            // All items in player inventory named "JC_Gem_Bag"
-            foreach (ItemDrop.ItemData? gemBagItem in Player.m_localPlayer.GetInventory().GetAllItems().Where(x => x?.m_dropPrefab?.name == GemBagContainer.GemBagPrefabName))
+            // Loop through player inventory items that are identified as gem bags.
+            foreach (ItemDrop.ItemData? gemBagItem in Player.m_localPlayer.GetInventory().GetAllItems().Where(x => x != null && Jewelcrafting.API.GetItemContainerInventory(x) is not null && Jewelcrafting.API.IsFreelyAccessibleInventory(x)))
             {
-                // Typically, the Jewelcrafting bag data is stored in `gemBagItem.Data()`
-                // We'll fetch the "SocketBag"/"InventoryBag" object via reflection
-                object bagObject = GemBagContainer.FindJewelcraftingBagObject(gemBagItem);
-                if (bagObject == null) continue;
-                // Wrap the unknown object in reflection-based container
-                GemBagContainer gemBagContainer = new GemBagContainer(gemBagItem, bagObject);
-                if (gemBagList.Contains(gemBagContainer)) continue;
-                gemBagList.Add(gemBagContainer);
+                GemBagContainer gemBagContainer = new GemBagContainer(gemBagItem!);
+                if (!gemBagList.Contains(gemBagContainer))
+                    gemBagList.Add(gemBagContainer);
             }
 
             gemBagsEnumerable = gemBagList;
-        }*/
+        }
 
 
         if (Vector3.Distance(gameObject.transform.position, AzuCraftyBoxesPlugin.lastPosition) < 0.5f)
