@@ -43,8 +43,16 @@ Output Debug Logs [Synced with Server]
 * If on, the debug logs will be displayed in the BepInEx console window when BepInEx debugging is enabled.
     * Default Value: Off
 
-Prevent Pulling Message [Synced with Server]
+Prevent Pulling Message [Not Synced with Server]
 * If on, a message will be displayed above the player's head when the prevention pulling logic is toggled using the keybind.
+    * Default Value: On
+
+Prevent Pulling Format [Not Synced with Server]
+* String format for the message displayed when the prevention pulling logic is toggled. {0} is replaced by the message, and {1} is replaced by the on/off status. Set to nothing to leave it as default.
+    * Default Value: <size=30><color=#ffffff>{0}</color></size>\n<size=25>{1}</size>
+
+Prevent Pulling Status [Not Synced with Server]
+* If on, the status effect will be displayed when you cannot pull from containers.
     * Default Value: On
 
 `2 - CraftyBoxes`
@@ -85,7 +93,7 @@ FillAllModKey [Not Synced with Server]
 
 Prevent Pulling Logic [Not Synced with Server]
 * Key to prevent pulling from nearby containers. This prevents all pulling logic from running, essentially making the mod appear as if it's not installed. This is different from the Mod Enabled option because it allows toggling on the fly (specifically for you as the player)  Use https://docs.unity3d.com/Manual/ConventionalGameInput.html
-    * Default Value: LeftAlt + O
+    * Default Value: O + LeftAlt
 
 </details>
 

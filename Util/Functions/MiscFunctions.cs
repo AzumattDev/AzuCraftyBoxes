@@ -1,4 +1,5 @@
-﻿using AzuCraftyBoxes.IContainers;
+﻿using AzuCraftyBoxes.Compatibility.WardIsLove;
+using AzuCraftyBoxes.IContainers;
 
 namespace AzuCraftyBoxes.Util.Functions;
 
@@ -21,7 +22,29 @@ public class MiscFunctions
 
     internal static bool ShouldPrevent()
     {
-        return AzuCraftyBoxesPlugin.ModEnabled.Value == AzuCraftyBoxesPlugin.Toggle.Off || !AllowPullingLogic();
+        return AzuCraftyBoxesPlugin.ModEnabled.Value.isOff() || !AllowPullingLogic();
+    }
+
+    internal static bool ShouldSkipContainer(Container container)
+    {
+        return ShouldPrevent() || container.GetInventory() == null || !container.m_nview.IsValid() || container.m_nview.GetZDO().GetLong("creator".GetStableHashCode()) == 0L;
+    }
+
+    internal static bool HasAccessToContainer(Container container)
+    {
+        long playerId = Game.instance.GetPlayerProfile().GetPlayerID();
+        bool hasAccess = false;
+        // Only add containers that the player should have access to
+        if (WardIsLovePlugin.IsLoaded() && WardIsLovePlugin.WardEnabled()!.Value && WardMonoscript.CheckAccess(container.transform.position, flash: false, wardCheck: true))
+        {
+            hasAccess = container.CheckAccess(playerId);
+        }
+        else
+        {
+            hasAccess = container.CheckAccess(playerId) && PrivateArea.CheckAccess(container.transform.position, flash: false, wardCheck: true);
+        }
+
+        return hasAccess;
     }
 
     /* Consume Resources */

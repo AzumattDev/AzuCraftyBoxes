@@ -25,24 +25,28 @@ public static class EpicLoot
         [HarmonyPatch("EpicLoot_UnityLib.InventoryManagement, EpicLoot-UnityLib", "GetAllItems"), HarmonyPostfix]
         private static void GetAllItemsPostfix(ref List<ItemDrop.ItemData> __result)
         {
+            if (MiscFunctions.ShouldPrevent()) return;
             EpicLootReflectionHelpers.AppendContainerItemsToInventory(ref __result);
         }
 
         [HarmonyPatch("EpicLoot_UnityLib.InventoryManagement, EpicLoot-UnityLib", "HasItem"), HarmonyPostfix]
         private static void HasItemPostfix(ItemDrop.ItemData item, ref bool __result)
         {
+            if (MiscFunctions.ShouldPrevent()) return;
             EpicLootReflectionHelpers.DoesContainerHaveItem(item, ref __result);
         }
 
         [HarmonyPatch("EpicLoot_UnityLib.InventoryManagement, EpicLoot-UnityLib", "CountItem", MethodType.Normal, [typeof(string)]), HarmonyPostfix]
         private static void CountItemPostfix(string item, ref int __result)
         {
+            if (MiscFunctions.ShouldPrevent()) return;
             __result += EpicLootReflectionHelpers.CountContainerItems(item);
         }
 
         [HarmonyPatch("EpicLoot_UnityLib.InventoryManagement, EpicLoot-UnityLib", "RemoveItem", MethodType.Normal, [typeof(string), typeof(int)]), HarmonyPrefix]
         private static void RemoveItemPrefix(string item, int amount, ref int __state)
         {
+            if (MiscFunctions.ShouldPrevent()) return;
             // Capture the initial count of the item in the player's inventory
             __state = EpicLootReflectionHelpers.CountPlayerItems(item);
             AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Initial count of '{item}' in player inventory: {__state}");
@@ -51,6 +55,7 @@ public static class EpicLoot
         [HarmonyPatch("EpicLoot_UnityLib.InventoryManagement, EpicLoot-UnityLib", "RemoveItem", MethodType.Normal, [typeof(string), typeof(int)]), HarmonyPostfix]
         private static void RemoveItemPostfix(string item, int amount, int __state)
         {
+            if (MiscFunctions.ShouldPrevent()) return;
             AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Removing {amount} of '{item}' from player inventory.");
             // Capture the new count of the item in the player's inventory after removal
             int newCount = EpicLootReflectionHelpers.CountPlayerItems(item);
@@ -76,6 +81,7 @@ public static class EpicLoot
         [HarmonyPatch("EpicLoot_UnityLib.InventoryManagement, EpicLoot-UnityLib", "RemoveExactItem"), HarmonyPrefix]
         private static void RemoveExactItemPrefix(ItemDrop.ItemData item, int amount, ref int __state)
         {
+            if (MiscFunctions.ShouldPrevent()) return;
             // Capture the initial count of the item in the player's inventory
             __state = EpicLootReflectionHelpers.CountPlayerItems(item);
             AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Initial count of '{item}' in player inventory: {__state}");
@@ -84,6 +90,7 @@ public static class EpicLoot
         [HarmonyPatch("EpicLoot_UnityLib.InventoryManagement, EpicLoot-UnityLib", "RemoveExactItem"), HarmonyPostfix]
         private static void RemoveExactItem(ItemDrop.ItemData item, int amount, int __state)
         {
+            if (MiscFunctions.ShouldPrevent()) return;
             AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Removing {amount} of '{item}' from player inventory.");
             // Capture the new count of the item in the player's inventory after removal
             int newCount = EpicLootReflectionHelpers.CountPlayerItems(item);

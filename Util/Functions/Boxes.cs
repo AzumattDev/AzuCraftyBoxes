@@ -58,6 +58,7 @@ public class Boxes
     {
         List<IContainer> nearbyContainers = [];
         if (Player.m_localPlayer == null) return nearbyContainers;
+        var playerAllItems = Player.m_localPlayer.GetInventory().GetAllItems();
         IEnumerable<IContainer> kgDrawers = APIs.ItemDrawers_API.AllDrawersInRange(gameObject.transform.position, rangeToUse).Select(kgDrawer.Create);
         IEnumerable<IContainer> backpacksEnumerable = new List<IContainer>();
         IEnumerable<IContainer> gemBagsEnumerable = new List<IContainer>();
@@ -65,7 +66,7 @@ public class Boxes
         if (AzuCraftyBoxesPlugin.BackpacksIsLoaded)
         {
             // Get all backpacks in the player inventory
-            foreach (ItemDrop.ItemData? allItem in Player.m_localPlayer.GetInventory().GetAllItems().Where(x => x?.Data("org.bepinex.plugins.backpacks")?.Get<ItemContainer>() != null))
+            foreach (ItemDrop.ItemData? allItem in playerAllItems.Where(x => x?.Data("org.bepinex.plugins.backpacks")?.Get<ItemContainer>() != null))
             {
                 BackpackContainer backpackContainer = BackpackContainer.Create(allItem?.Data("org.bepinex.plugins.backpacks")?.Get<ItemContainer>()!);
                 if (backpackList.Contains(backpackContainer)) continue;
@@ -84,7 +85,7 @@ public class Boxes
         if (Jewelcrafting.API.IsLoaded()) // assuming you have a method to verify if Jewelcrafting features are loaded
         {
             // Loop through player inventory items that are identified as gem bags.
-            foreach (ItemDrop.ItemData? gemBagItem in Player.m_localPlayer.GetInventory().GetAllItems().Where(x => x != null && Jewelcrafting.API.GetItemContainerInventory(x) is not null && Jewelcrafting.API.IsFreelyAccessibleInventory(x)))
+            foreach (ItemDrop.ItemData? gemBagItem in playerAllItems.Where(x => x != null && Jewelcrafting.API.GetItemContainerInventory(x) is not null && Jewelcrafting.API.IsFreelyAccessibleInventory(x)))
             {
                 GemBagContainer gemBagContainer = new GemBagContainer(gemBagItem!);
                 if (!gemBagList.Contains(gemBagContainer))
@@ -361,7 +362,7 @@ public class Boxes
     internal static int CheckAndDecrement(int amount)
     {
         if (amount <= 0) return amount;
-        if (AzuCraftyBoxesPlugin.leaveOne.Value == AzuCraftyBoxesPlugin.Toggle.On)
+        if (AzuCraftyBoxesPlugin.leaveOne.Value.isOn())
         {
             return amount - 1;
         }

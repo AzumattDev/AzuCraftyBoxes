@@ -1,5 +1,6 @@
 ﻿using AzuCraftyBoxes.Compatibility.WardIsLove;
 using AzuCraftyBoxes.Util.Functions;
+using static AzuCraftyBoxes.Util.Functions.MiscFunctions;
 
 namespace AzuCraftyBoxes.Patches;
 
@@ -8,41 +9,19 @@ internal static class ContainerAwakePatch
 {
     private static void Postfix(Container __instance)
     {
-        if (MiscFunctions.ShouldPrevent())
-        {
-            return;
-        }
-
-        if (__instance.GetInventory() == null || !__instance.m_nview.IsValid() || __instance.m_nview.GetZDO().GetLong("creator".GetStableHashCode()) == 0L)
-            return;
+        if (ShouldSkipContainer(__instance)) return;
 
         try
         {
-            //if (Player.m_localPlayer == null) return;
-            if (__instance.GetComponentInParent<Player>() != null)
+            var parentPlayer = __instance.GetComponentInParent<Player>();
+            if (parentPlayer != null && parentPlayer != Player.m_localPlayer)
             {
-                if (__instance.GetComponentInParent<Player>() != Player.m_localPlayer)
-                {
-                    return;
-                }
+                return;
             }
 
-            // Only add containers that the player should have access to
-            if (WardIsLovePlugin.IsLoaded() && WardIsLovePlugin.WardEnabled().Value &&
-                WardMonoscript.CheckAccess(__instance.transform.position, flash: false, wardCheck: true))
+            if (HasAccessToContainer(__instance))
             {
-                long playerId = Game.instance.GetPlayerProfile().GetPlayerID();
-                if (__instance.CheckAccess(playerId))
-                {
-                    Boxes.AddContainer(__instance);
-                }
-            }
-            else
-            {
-                long playerId = Game.instance.GetPlayerProfile().GetPlayerID();
-                if (!__instance.CheckAccess(playerId)) return;
-                if (PrivateArea.CheckAccess(__instance.transform.position, flash: false, wardCheck: true))
-                    Boxes.AddContainer(__instance);
+                Boxes.AddContainer(__instance);
             }
         }
         catch
@@ -57,39 +36,21 @@ static class ContainerLoadPatch
 {
     static void Postfix(Container __instance)
     {
-        if (MiscFunctions.ShouldPrevent())
+        if (ShouldSkipContainer(__instance)) return;
+
+        Player player = Player.m_localPlayer;
+        if (player == null) return;
+        var parentPlayer = __instance.GetComponentInParent<Player>();
+        if (parentPlayer != null && parentPlayer != player)
         {
             return;
         }
 
-        if (__instance.GetInventory() == null || !__instance.m_nview.IsValid() || __instance.m_nview.GetZDO().GetLong("creator".GetStableHashCode()) == 0L)
-            return;
+        if (player.m_isLoading || player.m_teleporting) return;
 
-        if (Player.m_localPlayer == null) return;
-        if (__instance.GetComponentInParent<Player>() != null)
+        if (HasAccessToContainer(__instance))
         {
-            if (__instance.GetComponentInParent<Player>() != Player.m_localPlayer)
-            {
-                return;
-            }
-        }
-
-        if (Player.m_localPlayer.m_isLoading || Player.m_localPlayer.m_teleporting) return;
-        // Only add containers that the player should have access to
-        if (WardIsLovePlugin.IsLoaded() && WardIsLovePlugin.WardEnabled()!.Value && WardMonoscript.CheckAccess(__instance.transform.position, flash: false, wardCheck: true))
-        {
-            long playerId = Game.instance.GetPlayerProfile().GetPlayerID();
-            if (__instance.CheckAccess(playerId))
-            {
-                Boxes.AddContainer(__instance);
-            }
-        }
-        else
-        {
-            long playerId = Game.instance.GetPlayerProfile().GetPlayerID();
-            if (!__instance.CheckAccess(playerId)) return;
-            if (PrivateArea.CheckAccess(__instance.transform.position, flash: false, wardCheck: true))
-                Boxes.AddContainer(__instance);
+            Boxes.AddContainer(__instance);
         }
     }
 }
@@ -99,13 +60,7 @@ internal static class ContainerOnDestroyedPatch
 {
     private static void Postfix(Container __instance)
     {
-        if (MiscFunctions.ShouldPrevent())
-        {
-            return;
-        }
-
-        if (__instance.GetInventory() == null || !__instance.m_nview.IsValid() || __instance.m_nview.GetZDO().GetLong("creator".GetStableHashCode()) == 0L)
-            return;
+        if (ShouldSkipContainer(__instance)) return;
 
         Boxes.RemoveContainer(__instance);
     }
@@ -116,10 +71,7 @@ static class WearNTearOnDestroyPatch
 {
     static void Prefix(WearNTear __instance)
     {
-        if (MiscFunctions.ShouldPrevent())
-        {
-            return;
-        }
+        if (ShouldPrevent()) return;
 
         Container[]? container = __instance.GetComponentsInChildren<Container>();
         Container[]? parentContainer = __instance.GetComponentsInParent<Container>();
@@ -146,10 +98,7 @@ public static class PlayerUpdateTeleportPatchCleanupContainers
 {
     public static void Prefix(float dt)
     {
-        if (MiscFunctions.ShouldPrevent())
-        {
-            return;
-        }
+        if (ShouldPrevent()) return;
 
         if (!(Player.m_localPlayer != null) || !Player.m_localPlayer.m_teleporting)
             return;
