@@ -129,6 +129,9 @@
         <Reference Include="UnityEngine.PhysicsModule">
             <HintPath>$(GamePath)\valheim_Data\Managed\UnityEngine.PhysicsModule.dll</HintPath>
         </Reference>
+        <Reference Include="UnityEngine.ImageConversionModule">
+            <HintPath>$(GamePath)\valheim_Data\Managed\UnityEngine.ImageConversionModule.dll</HintPath>
+        </Reference>
     </ItemGroup>
     <ItemGroup>
         <Compile Include="APIs\API.cs" />
@@ -138,19 +141,19 @@
         <Compile Include="Compatibility\WardIsLove\WardIsLovePlugin.cs" />
         <Compile Include="Compatibility\WardIsLove\WardMonoscript.cs" />
         <Compile Include="IContainers\BackpackContainer.cs" />
-        <Compile Include="IContainers\IContainer.cs" />
         <Compile Include="IContainers\GemBagContainer.cs" />
+        <Compile Include="IContainers\IContainer.cs" />
         <Compile Include="IContainers\kgDrawers.cs" />
         <Compile Include="IContainers\VanillaContainer.cs" />
         <Compile Include="Patches\ChestPatches.cs" />
         <Compile Include="Patches\CookingStationPatches.cs" />
-        <Compile Include="Patches\CraftFromStacks.cs" />
         <Compile Include="Patches\FermenterPatches.cs" />
         <Compile Include="Patches\FireplacePatches.cs" />
         <Compile Include="Patches\HUDPatches.cs" />
         <Compile Include="Patches\InventoryGui.cs" />
         <Compile Include="Patches\PlayerPatches.cs" />
         <Compile Include="Patches\PredefinedGroups.cs" />
+        <Compile Include="Patches\SE_ContainerPull.cs" />
         <Compile Include="Patches\ShieldGeneratorPatches.cs" />
         <Compile Include="Patches\SmelterPatches.cs" />
         <Compile Include="Patches\TurretPatches.cs" />
@@ -169,6 +172,7 @@
         <Content Include="environment.props" />
         <EmbeddedResource Include="Example.yml" />
         <Content Include="ILRepack.targets" />
+        <EmbeddedResource Include="images\pullingicon.png" />
         <Content Include="Libs\BackpacksAPI.dll">
           <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>

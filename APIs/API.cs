@@ -21,27 +21,27 @@ public class API
 
     public static Type GetIContainerType()
     {
-        return typeof(IContainers.IContainer);
+        return typeof(IContainer);
     }
 
     public static Type GetVanillaContainerType()
     {
-        return typeof(IContainers.VanillaContainer);
+        return typeof(VanillaContainer);
     }
 
     public static Type GetKgDrawerType()
     {
-        return typeof(IContainers.kgDrawer);
+        return typeof(kgDrawer);
     }
 
     public static Type GetItemDrawersAPIType()
     {
-        return typeof(APIs.ItemDrawers_API);
+        return typeof(ItemDrawers_API);
     }
 
     public static Type GetBoxesUtilFunctionsType()
     {
-        return typeof(Util.Functions.Boxes);
+        return typeof(Boxes);
     }
 
     public static IContainer CreateContainer(string type, params object[] args)

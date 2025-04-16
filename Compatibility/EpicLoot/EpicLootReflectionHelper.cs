@@ -1,4 +1,5 @@
-﻿using AzuCraftyBoxes.IContainers;
+﻿using AzuCraftyBoxes.Compatibility.WardIsLove;
+using AzuCraftyBoxes.IContainers;
 using AzuCraftyBoxes.Util.Functions;
 
 namespace AzuCraftyBoxes.Compatibility.EpicLoot;
@@ -9,8 +10,6 @@ public static class EpicLoot
     public const string TablePrefabName = "piece_enchantingtable";
     public static PluginInfo? EpicLootPluginInfo { get; set; }
     public static Assembly? EpicLootAssembly { get; private set; }
-
-    public static bool UIVisible;
 
 
     public static void Init(PluginInfo? pluginInfo)
@@ -26,24 +25,28 @@ public static class EpicLoot
         [HarmonyPatch("EpicLoot_UnityLib.InventoryManagement, EpicLoot-UnityLib", "GetAllItems"), HarmonyPostfix]
         private static void GetAllItemsPostfix(ref List<ItemDrop.ItemData> __result)
         {
+            if (MiscFunctions.ShouldPrevent()) return;
             EpicLootReflectionHelpers.AppendContainerItemsToInventory(ref __result);
         }
 
         [HarmonyPatch("EpicLoot_UnityLib.InventoryManagement, EpicLoot-UnityLib", "HasItem"), HarmonyPostfix]
         private static void HasItemPostfix(ItemDrop.ItemData item, ref bool __result)
         {
+            if (MiscFunctions.ShouldPrevent()) return;
             EpicLootReflectionHelpers.DoesContainerHaveItem(item, ref __result);
         }
 
         [HarmonyPatch("EpicLoot_UnityLib.InventoryManagement, EpicLoot-UnityLib", "CountItem", MethodType.Normal, [typeof(string)]), HarmonyPostfix]
         private static void CountItemPostfix(string item, ref int __result)
         {
+            if (MiscFunctions.ShouldPrevent()) return;
             __result += EpicLootReflectionHelpers.CountContainerItems(item);
         }
 
         [HarmonyPatch("EpicLoot_UnityLib.InventoryManagement, EpicLoot-UnityLib", "RemoveItem", MethodType.Normal, [typeof(string), typeof(int)]), HarmonyPrefix]
         private static void RemoveItemPrefix(string item, int amount, ref int __state)
         {
+            if (MiscFunctions.ShouldPrevent()) return;
             // Capture the initial count of the item in the player's inventory
             __state = EpicLootReflectionHelpers.CountPlayerItems(item);
             AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Initial count of '{item}' in player inventory: {__state}");
@@ -52,6 +55,7 @@ public static class EpicLoot
         [HarmonyPatch("EpicLoot_UnityLib.InventoryManagement, EpicLoot-UnityLib", "RemoveItem", MethodType.Normal, [typeof(string), typeof(int)]), HarmonyPostfix]
         private static void RemoveItemPostfix(string item, int amount, int __state)
         {
+            if (MiscFunctions.ShouldPrevent()) return;
             AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Removing {amount} of '{item}' from player inventory.");
             // Capture the new count of the item in the player's inventory after removal
             int newCount = EpicLootReflectionHelpers.CountPlayerItems(item);
@@ -77,6 +81,7 @@ public static class EpicLoot
         [HarmonyPatch("EpicLoot_UnityLib.InventoryManagement, EpicLoot-UnityLib", "RemoveExactItem"), HarmonyPrefix]
         private static void RemoveExactItemPrefix(ItemDrop.ItemData item, int amount, ref int __state)
         {
+            if (MiscFunctions.ShouldPrevent()) return;
             // Capture the initial count of the item in the player's inventory
             __state = EpicLootReflectionHelpers.CountPlayerItems(item);
             AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Initial count of '{item}' in player inventory: {__state}");
@@ -85,6 +90,7 @@ public static class EpicLoot
         [HarmonyPatch("EpicLoot_UnityLib.InventoryManagement, EpicLoot-UnityLib", "RemoveExactItem"), HarmonyPostfix]
         private static void RemoveExactItem(ItemDrop.ItemData item, int amount, int __state)
         {
+            if (MiscFunctions.ShouldPrevent()) return;
             AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Removing {amount} of '{item}' from player inventory.");
             // Capture the new count of the item in the player's inventory after removal
             int newCount = EpicLootReflectionHelpers.CountPlayerItems(item);
@@ -106,19 +112,6 @@ public static class EpicLoot
                 EpicLootReflectionHelpers.RemoveSpecificContainerItem(item, remainingToRemove);
             }
         }
-
-        [HarmonyPatch("EpicLoot_UnityLib.EnchantingTableUI, EpicLoot-UnityLib", "IsVisible"), HarmonyPostfix]
-        private static void GetEnchantableItemsPostfixPatch(ref bool __result)
-        {
-            UIVisible = __result;
-        }
-
-
-        /*[HarmonyPatch("EpicLoot_UnityLib.InventoryManagement, EpicLoot-UnityLib", "GetInventory"), HarmonyPostfix]
-        private static void GetEnchantableItemsPostfixPatch(ref Inventory __result)
-        {
-            EpicLootReflectionHelpers.AppendContainerItemsToInventory(ref __result);
-        }*/
     }
 
     public class EpicLootReflectionHelpers
@@ -127,8 +120,6 @@ public static class EpicLoot
         {
             try
             {
-                if (!UIVisible)
-                    return;
                 List<ItemDrop.ItemData> combinedItems = [..playerInventory];
                 List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(Player.m_localPlayer, AzuCraftyBoxesPlugin.mRange.Value);
 
@@ -158,8 +149,6 @@ public static class EpicLoot
         {
             try
             {
-                if (!UIVisible)
-                    return;
                 List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(Player.m_localPlayer, AzuCraftyBoxesPlugin.mRange.Value);
 
                 foreach (IContainer container in nearbyContainers)
@@ -184,8 +173,6 @@ public static class EpicLoot
         {
             try
             {
-                if (!UIVisible)
-                    return 0;
                 if (Player.m_localPlayer != null)
                 {
                     Inventory playerInventory = Player.m_localPlayer.GetInventory();
@@ -206,8 +193,6 @@ public static class EpicLoot
         {
             try
             {
-                if (!UIVisible)
-                    return 0;
                 if (Player.m_localPlayer != null)
                 {
                     Inventory playerInventory = Player.m_localPlayer.GetInventory();
@@ -241,8 +226,6 @@ public static class EpicLoot
             int count = 0;
             try
             {
-                if (!UIVisible)
-                    return count;
                 List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(Player.m_localPlayer, AzuCraftyBoxesPlugin.mRange.Value);
                 foreach (IContainer container in nearbyContainers)
                 {
@@ -266,9 +249,6 @@ public static class EpicLoot
         {
             try
             {
-                if (!UIVisible)
-                    return;
-
                 List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(Player.m_localPlayer, AzuCraftyBoxesPlugin.mRange.Value);
 
                 AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Starting to remove {amount} of '{itemName}' from containers.");
