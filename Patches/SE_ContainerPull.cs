@@ -76,8 +76,8 @@ public class SE_ContainerPull
             result = 1;
         }
 
-        bool isPreventing = result == 0;
-        if (isPreventing && AzuCraftyBoxesPlugin.preventPullingStatusEffectDisplay.Value.isOn())
+        bool isAllowed = result == 0;
+        if (!isAllowed && AzuCraftyBoxesPlugin.preventPullingStatusEffectDisplay.Value.isOn())
         {
             player.m_seman.AddStatusEffect(SE_ContainerPull.SE_ContainerPulling);
         }

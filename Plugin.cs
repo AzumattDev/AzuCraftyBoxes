@@ -16,7 +16,7 @@ namespace AzuCraftyBoxes
     public class AzuCraftyBoxesPlugin : BaseUnityPlugin
     {
         internal const string ModName = "AzuCraftyBoxes";
-        internal const string ModVersion = "1.8.2";
+        internal const string ModVersion = "1.8.3";
         internal const string Author = "Azumatt";
         private const string ModGUID = $"{Author}.{ModName}";
         private static string ConfigFileName = $"{ModGUID}.cfg";
@@ -150,8 +150,8 @@ namespace AzuCraftyBoxes
 
             if (preventPullingLogic.Value.IsKeyDown() && player.TakeInput())
             {
-                var isPreventing = result == 0;
-                var onOff = isPreventing ? "<color=red>No</color>" : "<color=green>Yes</color>";
+                var isAllowed = result == 0;
+                var onOff = isAllowed ? "<color=green>Yes</color>" : "<color=red>No</color>";
                 string message = $"Pull from containers?";
                 AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable(message);
                 if (preventPullingLogicMessage.Value.isOn())
@@ -166,7 +166,7 @@ namespace AzuCraftyBoxes
                     );
                 }
 
-                if (isPreventing && preventPullingStatusEffectDisplay.Value.isOn())
+                if (!isAllowed && preventPullingStatusEffectDisplay.Value.isOn())
                 {
                     player.m_seman.AddStatusEffect(SE_ContainerPull.SE_ContainerPulling);
                 }
@@ -175,7 +175,7 @@ namespace AzuCraftyBoxes
                     player.m_seman.RemoveStatusEffect(SE_ContainerPull.SE_ContainerPulling);
                 }
 
-                result = isPreventing ? 1 : 0;
+                result = isAllowed ? 1 : 0;
                 player.m_customData[PreventPullingLogicKey] = result.ToString();
             }
         }
