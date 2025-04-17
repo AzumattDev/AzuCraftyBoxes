@@ -164,6 +164,7 @@
         <Compile Include="Util\Functions\GroupUtils.cs" />
         <Compile Include="Util\Functions\MiscFunctions.cs" />
         <Compile Include="Util\GlobalUsings.cs" />
+        <Compile Include="Util\PlayerExtensions.cs" />
         <Compile Include="VersionHandshake.cs" />
     </ItemGroup>
     <ItemGroup>

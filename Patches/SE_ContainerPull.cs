@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using AzuCraftyBoxes.Util;
 
 namespace AzuCraftyBoxes.Patches;
 
@@ -19,6 +20,25 @@ static class ObjectDBAwakePatch
 
 [HarmonyPatch(typeof(Player), nameof(Player.SetLocalPlayer))]
 static class PlayerSetLocalPlayerPatch
+{
+    static void Postfix(Player __instance)
+    {
+        SE_ContainerPull.CheckAndSetStatusEffect(__instance);
+    }
+}
+
+[HarmonyPatch(typeof(Player), nameof(Player.OnSpawned))]
+static class PlayerOnSpawnedPatch
+{
+    static void Postfix(Player __instance, bool spawnValkyrie)
+    {
+        SE_ContainerPull.CheckAndSetStatusEffect(__instance);
+    }
+}
+
+// After a death and respawn, also re‑apply the saved state.
+[HarmonyPatch(typeof(Player), nameof(Player.OnRespawn))]
+static class PlayerOnRespawnPatch
 {
     static void Postfix(Player __instance)
     {
@@ -63,27 +83,10 @@ public class SE_ContainerPull
         Texture2D texture = LoadTexture(name);
         return texture != null ? Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), Vector2.zero) : null!;
     }
-    
+
     public static void CheckAndSetStatusEffect(Player instance = null)
     {
-        Player? player = Player.m_localPlayer;
-        if (player == null || (player != null && instance != Player.m_localPlayer)) return;
-
-        if (!player.m_customData.TryGetValue(AzuCraftyBoxesPlugin.PreventPullingLogicKey, out string value) || !int.TryParse(value, out int result))
-        {
-            // Initialize custom data if not set or invalid value present
-            player.m_customData[AzuCraftyBoxesPlugin.PreventPullingLogicKey] = "1";
-            result = 1;
-        }
-
-        bool isAllowed = result == 0;
-        if (!isAllowed && AzuCraftyBoxesPlugin.preventPullingStatusEffectDisplay.Value.isOn())
-        {
-            player.m_seman.AddStatusEffect(SE_ContainerPull.SE_ContainerPulling);
-        }
-        else
-        {
-            player.m_seman.RemoveStatusEffect(SE_ContainerPull.SE_ContainerPulling);
-        }
+        if (instance == Player.m_localPlayer)
+            instance.ApplyPullingStatusEffect();
     }
 }

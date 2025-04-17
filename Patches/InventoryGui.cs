@@ -54,6 +54,9 @@ static class InventoryGuiSetupRequirementPatch
         int invAmount = player.GetInventory().CountItems(req.m_resItem.m_itemData.m_shared.m_name);
         TextMeshProUGUI text = elementRoot.transform.Find("res_amount").GetComponent<TextMeshProUGUI>();
         if (text == null) return;
+        text.enableAutoSizing = true;
+        text.fontSizeMin = 10;
+        text.fontSizeMax = 16f;
         if (!int.TryParse(text.text, out int amount))
         {
             amount = req.GetAmount(quality) * craftMultiplier;
@@ -106,8 +109,20 @@ static class InventoryGuiSetupRequirementPatch
             }
         }
 
+
+        var amountString = FormatThousands(invAmount);
         text.text = AzuCraftyBoxesPlugin.resourceString.Value.Trim().Length > 0
-            ? string.Format(AzuCraftyBoxesPlugin.resourceString.Value, invAmount, amount)
+            ? string.Format(AzuCraftyBoxesPlugin.resourceString.Value, amountString, amount)
             : amount.ToString();
+    }
+
+    public static string FormatThousands(int number)
+    {
+        return number switch
+        {
+            < 1000 => number.ToString(),
+            < 1000000 => (number / 1000.0).ToString("0.#") + "K",
+            _ => (number / 1000000.0).ToString("0.#") + "M"
+        };
     }
 }
