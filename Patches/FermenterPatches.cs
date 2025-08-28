@@ -50,6 +50,8 @@ static class SearchContainersAsWell
                 foreach (Fermenter.ItemConversion itemConversion in __instance.m_conversion)
                 {
                     if (!c.ContainsItem(itemConversion.m_from.m_itemData.m_shared.m_name, 1, out int result)) continue;
+                    result = Boxes.CheckAndDecrement(result);
+                    if(result <= 0) continue;
                     if (!Boxes.CanItemBePulled(c.GetPrefabName(), itemConversion.m_from.name))
                     {
                         continue;
@@ -138,6 +140,7 @@ public static class OverrideHoverTextFermenter
             if (Boxes.CanItemBePulled(prefabName, c.GetPrefabName()))
             {
                 c.ContainsItem(itemName, 1, out int result);
+                result = Boxes.CheckAndDecrement(result);
                 inInv += result;
             }
         }

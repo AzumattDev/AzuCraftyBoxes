@@ -7,6 +7,12 @@ public static class YamlUtils
 {
     internal static void ReadYaml(string yamlInput)
     {
+        if (string.IsNullOrWhiteSpace(yamlInput))
+        {
+            AzuCraftyBoxesPlugin.yamlData = new Dictionary<string, Dictionary<string, List<string>>>();
+            return;
+        }
+
         IDeserializer deserializer = new DeserializerBuilder().Build();
         AzuCraftyBoxesPlugin.yamlData = deserializer.Deserialize<Dictionary<string, Dictionary<string, List<string>>>>(yamlInput);
         AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"yamlData:\n{yamlInput}");
@@ -22,6 +28,7 @@ public static class YamlUtils
             }
         }
     }
+
     public static void WriteYaml(string filePath)
     {
         ISerializer serializer = new SerializerBuilder().Build();

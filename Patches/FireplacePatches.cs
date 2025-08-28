@@ -48,6 +48,8 @@ static class FireplaceInteractPatch
             foreach (IContainer c in nearbyContainers)
             {
                 if (!c.ContainsItem(sharedName, 1, out int result) || !(Mathf.CeilToInt(___m_nview.GetZDO().GetFloat(ZDOVars.s_fuel)) < __instance.m_maxFuel)) continue;
+                result = Boxes.CheckAndDecrement(result);
+                if(result <= 0) continue;
                 if (!Boxes.CanItemBePulled(c.GetPrefabName(), fuelPrefabName))
                 {
                     AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(FireplaceInteractPatch) Container at {c.GetPosition()} has {result} {fuelPrefabName} but it's forbidden by config");
@@ -119,6 +121,7 @@ static class FireplaceGetHoverTextPatch
             /*AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable("Found " + newItem + " of " +
                                                                __instance.m_fuelItem.m_itemData.m_shared.m_name +
                                                                " in " + c.name + "");*/
+            result = Boxes.CheckAndDecrement(result);
             if (Boxes.CanItemBePulled(c.GetPrefabName(), fuelPrefabName)) ;
             {
                 inContainers += result;

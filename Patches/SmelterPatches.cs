@@ -3,28 +3,6 @@ using AzuCraftyBoxes.Util.Functions;
 
 namespace AzuCraftyBoxes.Patches;
 
-/*[HarmonyPatch(typeof(Smelter),nameof(Smelter.UpdateHoverTexts))]
-[HarmonyBefore("org.bepinex.plugins.conversionsizespeed")]
-static class SmelterUpdateHoverTextsPatch
-{
-    static void Postfix(Smelter __instance)
-    {
-        if(OverrideHoverText.ShouldReturn(__instance))
-        {
-            return;
-        }
-        if (__instance.m_addOreSwitch)
-        {
-            OverrideHoverText.UpdateAddOreSwitchHoverText(__instance, ref __instance.m_addOreSwitch.m_hoverText);
-        }
-
-        if(__instance.m_addWoodSwitch)
-        {
-            OverrideHoverText.UpdateAddWoodSwitchHoverText(__instance, ref __instance.m_addWoodSwitch.m_hoverText);
-        }
-    }
-}*/
-
 [HarmonyPatch(typeof(Smelter), nameof(Smelter.OnHoverAddOre))]
 [HarmonyBefore("org.bepinex.plugins.conversionsizespeed")]
 static class SmelterOnHoverAddOrePatch
@@ -140,6 +118,7 @@ public static class OverrideHoverText
             if (Boxes.CanItemBePulled(prefabName, c.GetPrefabName()))
             {
                 c.ContainsItem(itemName, 1, out int result);
+                result = Boxes.CheckAndDecrement(result);
                 inInv += result;
             }
         }
@@ -230,6 +209,8 @@ static class SmelterOnAddOrePatch
                 foreach (IContainer c in nearbyContainers)
                 {
                     if (!c.ContainsItem(name, 1, out int result)) continue;
+                    result = Boxes.CheckAndDecrement(result);
+                    if(result <= 0) continue;
                     if (!Boxes.CanItemBePulled(c.GetPrefabName(), prefabName))
                     {
                         AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(SmelterOnAddOrePatch) Container at {c.GetPosition()} has {result} {prefabName} but it's forbidden by config");
@@ -355,6 +336,8 @@ static class SmelterOnAddFuelPatch
             foreach (IContainer c in nearbyContainers)
             {
                 if (!c.ContainsItem(sharedName, 1, out int result)) continue;
+                result = Boxes.CheckAndDecrement(result);
+                if(result <= 0) continue;
                 if (!Boxes.CanItemBePulled(c.GetPrefabName(), fuelPrefabName))
                 {
                     AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(SmelterOnAddFuelPatch) Container at {c.GetPosition()} has {result} {sharedName} but it's forbidden by config");

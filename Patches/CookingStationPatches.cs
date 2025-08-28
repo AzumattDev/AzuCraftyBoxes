@@ -30,6 +30,8 @@ static class CookingStationOnAddFuelSwitchPatch
         foreach (IContainer c in nearbyContainers)
         {
             if (!c.ContainsItem(sharedName, 1, out int result)) continue;
+            result = Boxes.CheckAndDecrement(result);
+            if(result <= 0) return true;
             if (!Boxes.CanItemBePulled(c.GetPrefabName(), fuelPrefabName))
             {
                 AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(CookingStationOnAddFuelSwitchPatch) Container at {c.GetPosition()} has {result} {fuelPrefabName} but it's forbidden by config");
@@ -79,6 +81,8 @@ static class CookingStationFindCookableItemPatch
             foreach (IContainer c in nearbyContainers)
             {
                 if (!c.ContainsItem(sharedName, 1, out int result)) continue;
+                result = Boxes.CheckAndDecrement(result);
+                if(result <= 0) continue;
                 if (!Boxes.CanItemBePulled(c.GetPrefabName(), fromPrefabName))
                 {
                     AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(CookingStationFindCookableItemPatch) Container at {c.GetPosition()} has {result} {fromPrefabName} but it's forbidden by config");

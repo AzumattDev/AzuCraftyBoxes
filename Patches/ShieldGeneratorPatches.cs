@@ -57,6 +57,7 @@ namespace AzuCraftyBoxes.Patches
                     if (Boxes.CanItemBePulled(Utils.GetPrefabName(__instance.gameObject), fuelItem.name))
                     {
                         c.ContainsItem(sharedName, 1, out int resultCount);
+                        resultCount = Boxes.CheckAndDecrement(resultCount);
                         inContainers += resultCount;
                     }
                 }
@@ -134,6 +135,8 @@ namespace AzuCraftyBoxes.Patches
                     foreach (IContainer c in nearbyContainers)
                     {
                         if (!c.ContainsItem(sharedName, 1, out int result)) continue;
+                        result = Boxes.CheckAndDecrement(result);
+                        if(result <= 0) continue;
                         if (!Boxes.CanItemBePulled(c.GetPrefabName(), fuelItem.name))
                         {
                             AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(ShieldGeneratorOnAddFuelPatch) Container at {c.GetPosition()} has {result} {sharedName} but it's forbidden by config");
