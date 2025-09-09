@@ -71,7 +71,7 @@ public class API
 
     public static List<IContainer> GetNearbyContainers<T>(T gameObject, float rangeToUse) where T : Component
     {
-        return Boxes.GetNearbyContainers(gameObject, rangeToUse);
+        return Boxes.QueryFrame.Get(gameObject, rangeToUse);
     }
 
     public static Dictionary<string, List<string>> GetExcludedPrefabsForAllContainers()

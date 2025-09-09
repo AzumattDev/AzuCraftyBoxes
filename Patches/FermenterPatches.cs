@@ -36,7 +36,7 @@ static class SearchContainersAsWell
         // If the inventory is equal to the player's inventory but the result is null, then search the containers
         if (inventory == Player.m_localPlayer.GetInventory() && __result == null)
         {
-            List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(__instance, AzuCraftyBoxesPlugin.mRange.Value);
+            List<IContainer> nearbyContainers = Boxes.QueryFrame.Get(__instance, AzuCraftyBoxesPlugin.mRange.Value);
 
             foreach (IContainer c in nearbyContainers)
             {
@@ -50,6 +50,8 @@ static class SearchContainersAsWell
                 foreach (Fermenter.ItemConversion itemConversion in __instance.m_conversion)
                 {
                     if (!c.ContainsItem(itemConversion.m_from.m_itemData.m_shared.m_name, 1, out int result)) continue;
+                    result = Boxes.CheckAndDecrement(result);
+                    if(result <= 0) continue;
                     if (!Boxes.CanItemBePulled(c.GetPrefabName(), itemConversion.m_from.name))
                     {
                         continue;
@@ -131,13 +133,14 @@ public static class OverrideHoverTextFermenter
     private static int GetItemCountInInventoryAndContainers(string prefabName, string itemName, Fermenter FermenterInstance)
     {
         int inInv = Player.m_localPlayer?.m_inventory.CountItems(itemName) ?? 0;
-        List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(FermenterInstance, AzuCraftyBoxesPlugin.mRange.Value);
+        List<IContainer> nearbyContainers = Boxes.QueryFrame.Get(FermenterInstance, AzuCraftyBoxesPlugin.mRange.Value);
 
         foreach (IContainer c in nearbyContainers)
         {
             if (Boxes.CanItemBePulled(prefabName, c.GetPrefabName()))
             {
                 c.ContainsItem(itemName, 1, out int result);
+                result = Boxes.CheckAndDecrement(result);
                 inInv += result;
             }
         }

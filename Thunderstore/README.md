@@ -142,7 +142,7 @@ Prevent Pulling Logic [Not Synced with Server]
 # Item prefab name list: https://valheim-modding.github.io/Jotunn/data/objects/item-list.html
 
 # There are several predefined groups set up for you that are not listed. You can use these just like you would any group you create yourself.
-# These are the "All", "Food", "Potion", "Fish", "Swords", "Bows", "Crossbows", "Axes", "Clubs", "Knives", "Pickaxes", "Polearms", "Spears", "Equipment", "Boss Trophy", "Trophy", "Crops", "Seeds", "Ores", "Metals", and "Woods" groups.
+# These are the "All", "Food", "Potion", "Fish", "Swords", "Bows", "Crossbows", "Axes", "Clubs", "Knives", "Pickaxes", "Polearms", "Spears", "Equipment", "Trinkets", "Boss Trophy", "Trophy", "Crops", "Seeds", "Ores", "Metals", and "Woods" groups.
 # The criteria for these groups are as follows:
 # groups:
 #   Food:

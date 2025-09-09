@@ -51,12 +51,13 @@ namespace AzuCraftyBoxes.Patches
                 int inInv = Player.m_localPlayer?.m_inventory.CountItems(sharedName) ?? 0;
                 int inContainers = 0;
 
-                List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(__instance, AzuCraftyBoxesPlugin.mRange.Value);
+                List<IContainer> nearbyContainers = Boxes.QueryFrame.Get(__instance, AzuCraftyBoxesPlugin.mRange.Value);
                 foreach (IContainer c in nearbyContainers)
                 {
                     if (Boxes.CanItemBePulled(Utils.GetPrefabName(__instance.gameObject), fuelItem.name))
                     {
                         c.ContainsItem(sharedName, 1, out int resultCount);
+                        resultCount = Boxes.CheckAndDecrement(resultCount);
                         inContainers += resultCount;
                     }
                 }
@@ -128,12 +129,14 @@ namespace AzuCraftyBoxes.Patches
                     }
                 }
 
-                List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(__instance, AzuCraftyBoxesPlugin.mRange.Value);
+                List<IContainer> nearbyContainers = Boxes.QueryFrame.Get(__instance, AzuCraftyBoxesPlugin.mRange.Value);
                 if (Boxes.CanItemBePulled(Utils.GetPrefabName(__instance.gameObject), fuelItem.name))
                 {
                     foreach (IContainer c in nearbyContainers)
                     {
                         if (!c.ContainsItem(sharedName, 1, out int result)) continue;
+                        result = Boxes.CheckAndDecrement(result);
+                        if(result <= 0) continue;
                         if (!Boxes.CanItemBePulled(c.GetPrefabName(), fuelItem.name))
                         {
                             AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(ShieldGeneratorOnAddFuelPatch) Container at {c.GetPosition()} has {result} {sharedName} but it's forbidden by config");

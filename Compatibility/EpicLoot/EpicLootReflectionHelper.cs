@@ -121,7 +121,7 @@ public static class EpicLoot
             try
             {
                 List<ItemDrop.ItemData> combinedItems = [..playerInventory];
-                List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(Player.m_localPlayer, AzuCraftyBoxesPlugin.mRange.Value);
+                List<IContainer> nearbyContainers = Boxes.QueryFrame.Get(Player.m_localPlayer, AzuCraftyBoxesPlugin.mRange.Value);
 
                 foreach (IContainer container in nearbyContainers)
                 {
@@ -149,7 +149,7 @@ public static class EpicLoot
         {
             try
             {
-                List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(Player.m_localPlayer, AzuCraftyBoxesPlugin.mRange.Value);
+                List<IContainer> nearbyContainers = Boxes.QueryFrame.Get(Player.m_localPlayer, AzuCraftyBoxesPlugin.mRange.Value);
 
                 foreach (IContainer container in nearbyContainers)
                 {
@@ -226,7 +226,7 @@ public static class EpicLoot
             int count = 0;
             try
             {
-                List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(Player.m_localPlayer, AzuCraftyBoxesPlugin.mRange.Value);
+                List<IContainer> nearbyContainers = Boxes.QueryFrame.Get(Player.m_localPlayer, AzuCraftyBoxesPlugin.mRange.Value);
                 foreach (IContainer container in nearbyContainers)
                 {
                     Inventory? containerInventory = container.GetInventory();
@@ -249,7 +249,7 @@ public static class EpicLoot
         {
             try
             {
-                List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(Player.m_localPlayer, AzuCraftyBoxesPlugin.mRange.Value);
+                List<IContainer> nearbyContainers = Boxes.QueryFrame.Get(Player.m_localPlayer, AzuCraftyBoxesPlugin.mRange.Value);
 
                 AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Starting to remove {amount} of '{itemName}' from containers.");
                 foreach (IContainer container in nearbyContainers)
@@ -349,7 +349,7 @@ public static class EpicLoot
                 // Create a list to hold combined items from the player and containers
                 List<ItemDrop.ItemData> combinedItems = [..playerInventory.GetAllItems()];
 
-                List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(Player.m_localPlayer, AzuCraftyBoxesPlugin.mRange.Value);
+                List<IContainer> nearbyContainers = Boxes.QueryFrame.Get(Player.m_localPlayer, AzuCraftyBoxesPlugin.mRange.Value);
 
                 // Iterate over all containers and collect items
                 foreach (IContainer container in nearbyContainers)

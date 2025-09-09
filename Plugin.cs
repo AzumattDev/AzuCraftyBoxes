@@ -3,6 +3,7 @@ using System.Text.RegularExpressions;
 using AzuCraftyBoxes.Compatibility.EpicLoot;
 using AzuCraftyBoxes.IContainers;
 using AzuCraftyBoxes.Patches;
+using AzuCraftyBoxes.Util;
 using AzuCraftyBoxes.Util.Functions;
 
 namespace AzuCraftyBoxes
@@ -16,7 +17,7 @@ namespace AzuCraftyBoxes
     public class AzuCraftyBoxesPlugin : BaseUnityPlugin
     {
         internal const string ModName = "AzuCraftyBoxes";
-        internal const string ModVersion = "1.8.3";
+        internal const string ModVersion = "1.8.5";
         internal const string Author = "Azumatt";
         private const string ModGUID = $"{Author}.{ModName}";
         private static string ConfigFileName = $"{ModGUID}.cfg";
@@ -70,7 +71,7 @@ namespace AzuCraftyBoxes
             preventPullingStatusEffectDisplay = config("1 - General", "Prevent Pulling Status", Toggle.On, "If on, the status effect will be displayed when you cannot pull from containers.", false);
             preventPullingStatusEffectDisplay.SettingChanged += (sender, args) =>
             {
-                if(Player.m_localPlayer != null) 
+                if (Player.m_localPlayer != null)
                     SE_ContainerPull.CheckAndSetStatusEffect(Player.m_localPlayer);
             };
             mRange = config("2 - CraftyBoxes", "Container Range", 20f, "The maximum range from which to pull items from.");
@@ -150,8 +151,10 @@ namespace AzuCraftyBoxes
 
             if (preventPullingLogic.Value.IsKeyDown() && player.TakeInput())
             {
-                var isAllowed = result == 0;
-                var onOff = isAllowed ? "<color=green>Yes</color>" : "<color=red>No</color>";
+                bool isAllowed = player.TogglePullingAllowed(); // now uses 1=allowed, 0=prevented
+                var onOff = isAllowed
+                    ? "<color=green>Yes</color>"
+                    : "<color=red>No</color>";
                 string message = $"Pull from containers?";
                 AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable(message);
                 if (preventPullingLogicMessage.Value.isOn())

@@ -24,12 +24,14 @@ static class CookingStationOnAddFuelSwitchPatch
             return true;
         }
 
-        List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(__instance, AzuCraftyBoxesPlugin.mRange.Value);
+        List<IContainer> nearbyContainers = Boxes.QueryFrame.Get(__instance, AzuCraftyBoxesPlugin.mRange.Value);
 
         string sharedName = __instance.m_fuelItem.m_itemData.m_shared.m_name;
         foreach (IContainer c in nearbyContainers)
         {
             if (!c.ContainsItem(sharedName, 1, out int result)) continue;
+            result = Boxes.CheckAndDecrement(result);
+            if(result <= 0) return true;
             if (!Boxes.CanItemBePulled(c.GetPrefabName(), fuelPrefabName))
             {
                 AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(CookingStationOnAddFuelSwitchPatch) Container at {c.GetPosition()} has {result} {fuelPrefabName} but it's forbidden by config");
@@ -63,7 +65,7 @@ static class CookingStationFindCookableItemPatch
 
         AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(CookingStationFindCookableItemPatch) Missing cookable in player inventory");
 
-        List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(__instance, AzuCraftyBoxesPlugin.mRange.Value);
+        List<IContainer> nearbyContainers = Boxes.QueryFrame.Get(__instance, AzuCraftyBoxesPlugin.mRange.Value);
 
         foreach (CookingStation.ItemConversion itemConversion in __instance.m_conversion)
         {
@@ -79,6 +81,8 @@ static class CookingStationFindCookableItemPatch
             foreach (IContainer c in nearbyContainers)
             {
                 if (!c.ContainsItem(sharedName, 1, out int result)) continue;
+                result = Boxes.CheckAndDecrement(result);
+                if(result <= 0) continue;
                 if (!Boxes.CanItemBePulled(c.GetPrefabName(), fromPrefabName))
                 {
                     AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(CookingStationFindCookableItemPatch) Container at {c.GetPosition()} has {result} {fromPrefabName} but it's forbidden by config");

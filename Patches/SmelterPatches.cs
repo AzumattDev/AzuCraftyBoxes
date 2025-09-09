@@ -3,28 +3,6 @@ using AzuCraftyBoxes.Util.Functions;
 
 namespace AzuCraftyBoxes.Patches;
 
-/*[HarmonyPatch(typeof(Smelter),nameof(Smelter.UpdateHoverTexts))]
-[HarmonyBefore("org.bepinex.plugins.conversionsizespeed")]
-static class SmelterUpdateHoverTextsPatch
-{
-    static void Postfix(Smelter __instance)
-    {
-        if(OverrideHoverText.ShouldReturn(__instance))
-        {
-            return;
-        }
-        if (__instance.m_addOreSwitch)
-        {
-            OverrideHoverText.UpdateAddOreSwitchHoverText(__instance, ref __instance.m_addOreSwitch.m_hoverText);
-        }
-
-        if(__instance.m_addWoodSwitch)
-        {
-            OverrideHoverText.UpdateAddWoodSwitchHoverText(__instance, ref __instance.m_addWoodSwitch.m_hoverText);
-        }
-    }
-}*/
-
 [HarmonyPatch(typeof(Smelter), nameof(Smelter.OnHoverAddOre))]
 [HarmonyBefore("org.bepinex.plugins.conversionsizespeed")]
 static class SmelterOnHoverAddOrePatch
@@ -133,13 +111,14 @@ public static class OverrideHoverText
     private static int GetItemCountInInventoryAndContainers(string prefabName, string itemName, Smelter smelterInstance)
     {
         int inInv = Player.m_localPlayer?.m_inventory.CountItems(itemName) ?? 0;
-        List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(smelterInstance, AzuCraftyBoxesPlugin.mRange.Value);
+        List<IContainer> nearbyContainers = Boxes.QueryFrame.Get(smelterInstance, AzuCraftyBoxesPlugin.mRange.Value);
 
         foreach (IContainer c in nearbyContainers)
         {
             if (Boxes.CanItemBePulled(prefabName, c.GetPrefabName()))
             {
                 c.ContainsItem(itemName, 1, out int result);
+                result = Boxes.CheckAndDecrement(result);
                 inInv += result;
             }
         }
@@ -176,7 +155,7 @@ static class SmelterOnAddOrePatch
 
         Dictionary<string, int> added = new();
 
-        List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(user, AzuCraftyBoxesPlugin.mRange.Value);
+        List<IContainer> nearbyContainers = Boxes.QueryFrame.Get(user, AzuCraftyBoxesPlugin.mRange.Value);
         foreach (Smelter.ItemConversion itemConversion in __instance.m_conversion)
         {
             if (__instance.GetQueueSize() >= __instance.m_maxOre || (added.Any() && !pullAll))
@@ -230,6 +209,8 @@ static class SmelterOnAddOrePatch
                 foreach (IContainer c in nearbyContainers)
                 {
                     if (!c.ContainsItem(name, 1, out int result)) continue;
+                    result = Boxes.CheckAndDecrement(result);
+                    if(result <= 0) continue;
                     if (!Boxes.CanItemBePulled(c.GetPrefabName(), prefabName))
                     {
                         AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(SmelterOnAddOrePatch) Container at {c.GetPosition()} has {result} {prefabName} but it's forbidden by config");
@@ -347,7 +328,7 @@ static class SmelterOnAddFuelPatch
             }
         }
 
-        List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(__instance, AzuCraftyBoxesPlugin.mRange.Value);
+        List<IContainer> nearbyContainers = Boxes.QueryFrame.Get(__instance, AzuCraftyBoxesPlugin.mRange.Value);
         string fuelPrefabName = __instance.m_fuelItem.name;
         string sharedName = __instance.m_fuelItem.m_itemData.m_shared.m_name;
         if (Boxes.CanItemBePulled(Utils.GetPrefabName(__instance.gameObject), fuelPrefabName))
@@ -355,6 +336,8 @@ static class SmelterOnAddFuelPatch
             foreach (IContainer c in nearbyContainers)
             {
                 if (!c.ContainsItem(sharedName, 1, out int result)) continue;
+                result = Boxes.CheckAndDecrement(result);
+                if(result <= 0) continue;
                 if (!Boxes.CanItemBePulled(c.GetPrefabName(), fuelPrefabName))
                 {
                     AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(SmelterOnAddFuelPatch) Container at {c.GetPosition()} has {result} {sharedName} but it's forbidden by config");

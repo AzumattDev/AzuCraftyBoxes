@@ -1,51 +1,59 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-    <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')"/>
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <!-- Keep your external props -->
     <Import Project="environment.props"/>
+
     <PropertyGroup>
-        <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-        <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-        <ProjectGuid>{4358610B-F3F4-4843-B7AF-98B7BC60DCDE}</ProjectGuid>
-        <OutputType>Library</OutputType>
-        <AppDesignerFolder>Properties</AppDesignerFolder>
-        <RootNamespace>AzuCraftyBoxes</RootNamespace>
+        <!-- Core identity -->
         <AssemblyName>AzuCraftyBoxes</AssemblyName>
-        <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
-        <FileAlignment>512</FileAlignment>
+        <RootNamespace>AzuCraftyBoxes</RootNamespace>
+
+        <!-- Target .NET Standard for cross-platform BepInEx/Mono -->
+        <TargetFramework>netstandard2.1</TargetFramework>
+
+        <!-- C# / compiler opts -->
         <LangVersion>preview</LangVersion>
         <Nullable>enable</Nullable>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <Deterministic>true</Deterministic>
+
+        <!-- We already have Properties/AssemblyInfo.cs -->
+        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+
+        <!-- Match your existing bin layout -->
+        <OutputType>Library</OutputType>
+        <AppendTargetFrameworkToOutputPath>true</AppendTargetFrameworkToOutputPath>
+        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     </PropertyGroup>
-    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+
+    <!-- Config-specific settings (mirrors your old file) -->
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
         <PlatformTarget>AnyCPU</PlatformTarget>
         <DebugSymbols>true</DebugSymbols>
         <DebugType>full</DebugType>
         <Optimize>false</Optimize>
         <OutputPath>bin\Debug\</OutputPath>
         <DefineConstants>DEBUG;TRACE</DefineConstants>
-        <ErrorReport>prompt</ErrorReport>
         <WarningLevel>4</WarningLevel>
-        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     </PropertyGroup>
-    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
         <PlatformTarget>AnyCPU</PlatformTarget>
         <DebugType>pdbonly</DebugType>
         <Optimize>true</Optimize>
         <OutputPath>bin\Release\</OutputPath>
         <DefineConstants>Release;TRACE</DefineConstants>
-        <ErrorReport>prompt</ErrorReport>
         <WarningLevel>4</WarningLevel>
-        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     </PropertyGroup>
-    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'EpicLootTesting|AnyCPU' ">
+
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'EpicLootTesting|AnyCPU'">
         <PlatformTarget>AnyCPU</PlatformTarget>
         <DebugSymbols>true</DebugSymbols>
         <DebugType>full</DebugType>
         <Optimize>false</Optimize>
         <OutputPath>bin\EpicLootTesting\</OutputPath>
         <DefineConstants>EpicLootTesting;TRACE</DefineConstants>
-        <ErrorReport>prompt</ErrorReport>
         <WarningLevel>4</WarningLevel>
-        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     </PropertyGroup>
     <Choose>
         <When Condition="($(OS) == 'Unix' OR $(OS) == 'OSX') AND $(GamePath) == ''">
@@ -87,24 +95,21 @@
             <HintPath>$(PublicizedAssembliesPath)\assembly_valheim_publicized.dll</HintPath>
         </Reference>
         <Reference Include="Backpacks">
-          <HintPath>Libs\BackpacksAPI.dll</HintPath>
+            <HintPath>Libs\BackpacksAPI.dll</HintPath>
         </Reference>
         <Reference Include="BepInEx">
             <HintPath>$(BepInExPath)\core\BepInEx.dll</HintPath>
         </Reference>
         <Reference Include="ItemDataManager">
-          <HintPath>Libs\ItemDataManager.dll</HintPath>
+            <HintPath>Libs\ItemDataManager.dll</HintPath>
         </Reference>
         <Reference Include="Jewelcrafting">
-          <HintPath>Libs\JewelcraftingAPI.dll</HintPath>
+            <HintPath>Libs\JewelcraftingAPI.dll</HintPath>
         </Reference>
         <Reference Include="ServerSync">
             <HintPath>Libs\ServerSync.dll</HintPath>
         </Reference>
-        <Reference Include="System"/>
-        <Reference Include="System.Core"/>
-        <Reference Include="System.Data"/>
-        <Reference Include="System.Xml"/>
+
         <Reference Include="UnityEngine">
             <HintPath>$(CorlibPath)\UnityEngine.dll</HintPath>
         </Reference>
@@ -133,106 +138,77 @@
             <HintPath>$(GamePath)\valheim_Data\Managed\UnityEngine.ImageConversionModule.dll</HintPath>
         </Reference>
     </ItemGroup>
+
+
+    <!-- Content/resources -->
     <ItemGroup>
-        <Compile Include="APIs\API.cs" />
-        <Compile Include="APIs\kg_ItemDrawersAPI.cs" />
-        <Compile Include="Compatibility\EpicLoot\EpicLootReflectionHelper.cs" />
-        <Compile Include="Compatibility\ModCompat.cs" />
-        <Compile Include="Compatibility\WardIsLove\WardIsLovePlugin.cs" />
-        <Compile Include="Compatibility\WardIsLove\WardMonoscript.cs" />
-        <Compile Include="IContainers\BackpackContainer.cs" />
-        <Compile Include="IContainers\GemBagContainer.cs" />
-        <Compile Include="IContainers\IContainer.cs" />
-        <Compile Include="IContainers\kgDrawers.cs" />
-        <Compile Include="IContainers\VanillaContainer.cs" />
-        <Compile Include="Patches\ChestPatches.cs" />
-        <Compile Include="Patches\CookingStationPatches.cs" />
-        <Compile Include="Patches\FermenterPatches.cs" />
-        <Compile Include="Patches\FireplacePatches.cs" />
-        <Compile Include="Patches\HUDPatches.cs" />
-        <Compile Include="Patches\InventoryGui.cs" />
-        <Compile Include="Patches\PlayerPatches.cs" />
-        <Compile Include="Patches\PredefinedGroups.cs" />
-        <Compile Include="Patches\SE_ContainerPull.cs" />
-        <Compile Include="Patches\ShieldGeneratorPatches.cs" />
-        <Compile Include="Patches\SmelterPatches.cs" />
-        <Compile Include="Patches\TurretPatches.cs" />
-        <Compile Include="Plugin.cs" />
-        <Compile Include="Properties\AssemblyInfo.cs" />
-        <Compile Include="Util\Functions\Boxes.cs" />
-        <Compile Include="Util\Functions\ForTheYams.cs" />
-        <Compile Include="Util\Functions\GroupUtils.cs" />
-        <Compile Include="Util\Functions\MiscFunctions.cs" />
-        <Compile Include="Util\GlobalUsings.cs" />
-        <Compile Include="VersionHandshake.cs" />
-    </ItemGroup>
-    <ItemGroup>
-        <Content Include=".github\workflows\publish-mod.yml" />
-        <Content Include=".gitignore" />
-        <Content Include="environment.props" />
-        <EmbeddedResource Include="Example.yml" />
-        <Content Include="ILRepack.targets" />
-        <EmbeddedResource Include="images\pullingicon.png" />
+        <Content Include=".github\workflows\publish-mod.yml"/>
+        <Content Include=".gitignore"/>
+        <Content Include="environment.props"/>
+        <EmbeddedResource Include="Example.yml"/>
+        <Content Include="ILRepack.targets"/>
+        <EmbeddedResource Include="images\pullingicon.png"/>
         <Content Include="Libs\BackpacksAPI.dll">
-          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>
         <Content Include="Libs\ItemDataManager.dll">
-          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>
         <Content Include="Libs\JewelcraftingAPI.dll">
-          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </Content>
         <Content Include="Libs\ServerSync.dll">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </Content>
-        <Content Include="LICENSE.txt" />
-        <EmbeddedResource Include="translations\English.yml" />
-        <Content Include="README.md" />
-        <Content Include="Thunderstore\AzuCraftyBoxes_v1.0.0.zip" />
-        <Content Include="Thunderstore\AzuCraftyBoxes_v1.0.1.zip" />
-        <Content Include="Thunderstore\AzuCraftyBoxes_v1.0.2.zip" />
-        <Content Include="Thunderstore\AzuCraftyBoxes_v1.0.3.zip" />
-        <Content Include="Thunderstore\AzuCraftyBoxes_v1.0.4.zip" />
-        <Content Include="Thunderstore\AzuCraftyBoxes_v1.0.5.zip" />
-        <Content Include="Thunderstore\AzuCraftyBoxes_v1.0.6.zip" />
-        <Content Include="Thunderstore\AzuCraftyBoxes_v1.0.7.zip" />
-        <Content Include="Thunderstore\AzuCraftyBoxes_v1.1.10.zip" />
-        <Content Include="Thunderstore\AzuCraftyBoxes_v1.1.7.zip" />
-        <Content Include="Thunderstore\AzuCraftyBoxes_v1.1.8.zip" />
-        <Content Include="Thunderstore\AzuCraftyBoxes_v1.1.9.zip" />
-        <Content Include="Thunderstore\AzuCraftyBoxes_v1.2.0.zip" />
-        <Content Include="Thunderstore\AzuCraftyBoxes_v1.2.1.zip" />
-        <Content Include="Thunderstore\AzuCraftyBoxes_v1.2.2.zip" />
-        <Content Include="Thunderstore\AzuCraftyBoxes_v1.2.3.zip" />
-        <Content Include="Thunderstore\AzuCraftyBoxes_v1.2.4.zip" />
-        <Content Include="Thunderstore\AzuCraftyBoxes_v1.2.5.zip" />
-        <Content Include="Thunderstore\AzuCraftyBoxes_v1.2.6.zip" />
-        <Content Include="Thunderstore\CHANGELOG.md" />
-        <Content Include="Thunderstore\icon.png" />
-        <Content Include="Thunderstore\manifest.json" />
-        <Content Include="Thunderstore\README.md" />
-        <Content Include="UpdateManifest.ps1" />
+        <Content Include="LICENSE.txt"/>
+        <EmbeddedResource Include="translations\English.yml"/>
+        <Content Include="README.md"/>
+        <Content Include="Thunderstore\AzuCraftyBoxes_v1.0.0.zip"/>
+        <Content Include="Thunderstore\AzuCraftyBoxes_v1.0.1.zip"/>
+        <Content Include="Thunderstore\AzuCraftyBoxes_v1.0.2.zip"/>
+        <Content Include="Thunderstore\AzuCraftyBoxes_v1.0.3.zip"/>
+        <Content Include="Thunderstore\AzuCraftyBoxes_v1.0.4.zip"/>
+        <Content Include="Thunderstore\AzuCraftyBoxes_v1.0.5.zip"/>
+        <Content Include="Thunderstore\AzuCraftyBoxes_v1.0.6.zip"/>
+        <Content Include="Thunderstore\AzuCraftyBoxes_v1.0.7.zip"/>
+        <Content Include="Thunderstore\AzuCraftyBoxes_v1.1.10.zip"/>
+        <Content Include="Thunderstore\AzuCraftyBoxes_v1.1.7.zip"/>
+        <Content Include="Thunderstore\AzuCraftyBoxes_v1.1.8.zip"/>
+        <Content Include="Thunderstore\AzuCraftyBoxes_v1.1.9.zip"/>
+        <Content Include="Thunderstore\AzuCraftyBoxes_v1.2.0.zip"/>
+        <Content Include="Thunderstore\AzuCraftyBoxes_v1.2.1.zip"/>
+        <Content Include="Thunderstore\AzuCraftyBoxes_v1.2.2.zip"/>
+        <Content Include="Thunderstore\AzuCraftyBoxes_v1.2.3.zip"/>
+        <Content Include="Thunderstore\AzuCraftyBoxes_v1.2.4.zip"/>
+        <Content Include="Thunderstore\AzuCraftyBoxes_v1.2.5.zip"/>
+        <Content Include="Thunderstore\AzuCraftyBoxes_v1.2.6.zip"/>
+        <Content Include="Thunderstore\CHANGELOG.md"/>
+        <Content Include="Thunderstore\icon.png"/>
+        <Content Include="Thunderstore\manifest.json"/>
+        <Content Include="Thunderstore\README.md"/>
+        <Content Include="UpdateManifest.ps1"/>
     </ItemGroup>
+
     <ItemGroup>
-        <None Include="App.config" />
+        <None Include="App.config"/>
     </ItemGroup>
+
+    <!-- NuGet packages -->
     <ItemGroup>
-        <PackageReference Include="ILRepack.Lib.MSBuild.Task" Version="2.0.18.2" />
-        <PackageReference Include="YamlDotNet" Version="13.1.0" />
+        <PackageReference Include="ILRepack.Lib.MSBuild.Task" Version="2.0.43">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="YamlDotNet" Version="16.3.0"/>
     </ItemGroup>
-    <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets"/>
-    <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-         Other similar extension points exist, see Microsoft.Common.targets.
-    <Target Name="BeforeBuild">
-    </Target>
-    <Target Name="AfterBuild">
-    </Target>
-    -->
+    <Import Project="ILRepack.targets" Condition="Exists('ILRepack.targets')" />
+
     <UsingTask AssemblyFile="KeyManager.dll" TaskName="KeyManager.Seal" Condition="'$(AfterTargets)' == 'KeyManager'"/>
     <Target Name="KeyManager" AfterTargets="ILRepack" Condition="'$(AfterTargets)' == 'KeyManager'">
         <Seal DLL="$(TargetPath)"/>
     </Target>
-    <Target Name="GetAssemblyVersion" AfterTargets="$(AfterTargets)">
+
+    <Target Name="GetAssemVersion" AfterTargets="$(AfterTargets)">
         <GetAssemblyIdentity AssemblyFiles="$(TargetPath)">
             <Output TaskParameter="Assemblies" ItemName="Targets"/>
         </GetAssemblyIdentity>
@@ -250,19 +226,24 @@
             <PackageDir>$(ProjectDir)\Thunderstore\$(PackageName)</PackageDir>
         </PropertyGroup>
     </Target>
-    <Target Name="CopyOutputDLL" AfterTargets="GetAssemblyVersion">
+
+    <Target Name="CopyOutputDLL" AfterTargets="GetAssemVersion">
         <Error Text="DLL not found in target directory." Condition="!Exists('$(TargetDir)$(AssemblyName).dll')"/>
         <Copy SourceFiles="$(TargetDir)$(AssemblyName).dll" DestinationFolder="$(CopyOutputDLLPath)" OverwriteReadOnlyFiles="true"/>
         <Copy SourceFiles="$(TargetDir)$(AssemblyName).dll" DestinationFolder="$(CopyOutputDLLPath2)" OverwriteReadOnlyFiles="true" Condition="Exists('$(CopyOutputDLLPath2)')"/>
         <Copy SourceFiles="$(TargetDir)$(AssemblyName).dll" DestinationFolder="$(CopyOutputDLLPath3)" OverwriteReadOnlyFiles="true" Condition="Exists('$(CopyOutputDLLPath3)')"/>
+        <Message Importance="High" Text="CopyOutputDLL: $(TargetDir)$(AssemblyName).dll -> $(CopyOutputDLLPath); $(CopyOutputDLLPath2); $(CopyOutputDLLPath3)" />
     </Target>
+
     <Target Name="CopyReadMeToTSFolder" AfterTargets="CopyOutputDLL" Condition=" ('$(Configuration)|$(Platform)' == 'Release|AnyCPU') And ('$(OS)' == 'Windows_NT') ">
         <Warning Text="README.md not found in project directory. A default README.md file will be created for the Thunderstore package" Condition="!Exists('README.md')"/>
         <WriteLinesToFile File="README.md" Lines="Default Readme file from one of Azumatt's Templates. Replace this with actual content." Overwrite="false" Condition="!Exists('README.md')"/>
         <Copy SourceFiles="README.md" DestinationFolder="$(PackageDir)" OverwriteReadOnlyFiles="true"/>
         <Copy SourceFiles="README.md" DestinationFolder="$(ProjectDir)\Thunderstore" OverwriteReadOnlyFiles="true"/>
     </Target>
-    <UsingTask TaskName="WriteManifestFile" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll">
+
+    <!-- IMPORTANT: Use Tasks.Core for CodeTaskFactory under SDK-style -->
+    <UsingTask TaskName="WriteManifestFile" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
         <ParameterGroup>
             <ManifestFile ParameterType="System.String" Required="true"/>
             <AssemblyName ParameterType="System.String" Required="true"/>
@@ -279,15 +260,15 @@ string content = @"{
   ""description"": ""Your mod description goes here. Do not forget to replace the icon.png file with your own. Must be 256x256. Your Readme.md file will be copied from the one in your project folder."",
   ""dependencies"": [
     ""denikson-BepInExPack_Valheim-5.4.2105""
-]
+  ]
 }";
 System.IO.File.WriteAllText(ManifestFile, content);
 }
 ]]>
-
             </Code>
         </Task>
     </UsingTask>
+
     <Target Name="UpdateManifestVersion" AfterTargets="CopyReadmeToTSFolder" Condition=" ('$(Configuration)|$(Platform)' == 'Release|AnyCPU') And ('$(OS)' == 'Windows_NT') ">
         <WriteManifestFile ManifestFile="$(ProjectDir)Thunderstore\manifest.json" AssemblyName="$(AssemblyName)"/>
         <ItemGroup>
@@ -297,6 +278,7 @@ System.IO.File.WriteAllText(ManifestFile, content);
         <Message Text="Updating version number in Thunderstore\manifest.json" Condition="Exists(@(ManifestFile))"/>
         <Exec Command="powershell.exe -ExecutionPolicy Bypass -Command &quot;&amp; { &amp; '$(ProjectDir)UpdateManifest.ps1' -manifestFile '@(ManifestFile)' -versionString '$(PackageVersion)' }&quot;"/>
     </Target>
+
     <Target Name="MakeThunderstorePackage" AfterTargets="UpdateManifestVersion" Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
         <Error Text="manifest.json not found in Thunderstore directory." Condition="!Exists('$(ProjectDir)\Thunderstore\manifest.json')"/>
         <Error Text="icon.png not found in Thunderstore directory. Please note that Thunderstore requires this image to be 256x256 in dimension" Condition="!Exists('$(ProjectDir)\Thunderstore\icon.png')"/>
@@ -311,6 +293,7 @@ System.IO.File.WriteAllText(ManifestFile, content);
         <ZipDirectory SourceDirectory="$(PackageDir)" DestinationFile="Thunderstore\$(PackageName).zip" Overwrite="true"/>
         <RemoveDir Directories="$(PackageDir)"/>
     </Target>
+
     <Target Name="MakeNexusPackage" AfterTargets="MakeThunderstorePackage" Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
         <MakeDir Directories="$(ProjectDir)\Nexus"/>
         <ItemGroup>
