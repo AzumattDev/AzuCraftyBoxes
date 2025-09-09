@@ -9,9 +9,15 @@ static class InventoryGuiCollectRequirements
 {
     public static Dictionary<Piece.Requirement, int> actualAmounts = new();
 
-    private static void Prefix()
+    private static void Prefix(InventoryGui __instance)
     {
         actualAmounts.Clear();
+
+        if (!MiscFunctions.ShouldPrevent() && Player.m_localPlayer)
+        {
+            var near = Boxes.QueryFrame.Get(Player.m_localPlayer, AzuCraftyBoxesPlugin.mRange.Value);
+            UiItemBank.Begin(near);
+        }
     }
 }
 
@@ -20,109 +26,42 @@ static class InventoryGuiSetupRequirementPatch
 {
     static void Postfix(InventoryGui __instance, Transform elementRoot, Piece.Requirement req, Player player, bool craft, int quality, int craftMultiplier = 1)
     {
-        if (MiscFunctions.ShouldPrevent())
-        {
-            return;
-        }
+        if (MiscFunctions.ShouldPrevent() || req?.m_resItem?.m_itemData?.m_shared == null) return;
 
-        if (req == null)
-        {
-            return;
-        }
-
-        if (req.m_resItem == null)
-        {
-            return;
-        }
-
-        if (req.m_resItem.m_itemData == null)
-        {
-            return;
-        }
-
-        if (req.m_resItem.m_itemData.m_shared == null)
-        {
-            return;
-        }
-
-        req.m_resItem.m_itemData.m_dropPrefab = req.m_resItem.gameObject;
-        if (req.m_resItem.m_itemData.m_dropPrefab == null)
-        {
-            return;
-        }
-
-        int invAmount = player.GetInventory().CountItems(req.m_resItem.m_itemData.m_shared.m_name);
-        TextMeshProUGUI text = elementRoot.transform.Find("res_amount").GetComponent<TextMeshProUGUI>();
-        if (text == null) return;
+        var text = elementRoot.transform.Find("res_amount")?.GetComponent<TextMeshProUGUI>();
+        if (!text) return;
         text.enableAutoSizing = true;
         text.fontSizeMin = 10;
         text.fontSizeMax = 16f;
+
         if (!int.TryParse(text.text, out int amount))
-        {
             amount = req.GetAmount(quality) * craftMultiplier;
-        }
+        if (amount <= 0) return;
 
-        if (amount <= 0)
+        string sharedName = req.m_resItem.m_itemData.m_shared.m_name;
+
+        // Count once via bank
+        int have = UiItemBank.GetTotalAnyQuality(sharedName);
+
+        if (have >= amount)
         {
-            return;
+            text.color = (Mathf.Sin(Time.time * 10f) > 0f)
+                ? AzuCraftyBoxesPlugin.flashColor.Value
+                : AzuCraftyBoxesPlugin.unFlashColor.Value;
+
+            InventoryGuiCollectRequirements.actualAmounts[req] = amount;
         }
 
-        if (invAmount < amount)
-        {
-            List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(Player.m_localPlayer, AzuCraftyBoxesPlugin.mRange.Value);
-            GameObject itemPrefab = ObjectDB.instance.GetItemPrefab(req.m_resItem.GetPrefabName(req.m_resItem.gameObject.name));
-            if (itemPrefab == null)
-            {
-                return;
-            }
-
-            req.m_resItem.m_itemData.m_dropPrefab = itemPrefab;
-            foreach (IContainer? container in nearbyContainers)
-            {
-                try
-                {
-                    string containerPrefabName = container.GetPrefabName();
-                    if (req.m_resItem.m_itemData.m_dropPrefab == null)
-                        continue;
-                    string itemPrefabName = req.m_resItem.name;
-                    string sharedName = req.m_resItem.m_itemData.m_shared.m_name;
-
-                    if (Boxes.CanItemBePulled(containerPrefabName, itemPrefabName))
-                    {
-                        container.ContainsItem(sharedName, 1, out int result);
-                        result = Boxes.CheckAndDecrement(result);
-                        invAmount += result;
-                    }
-                }
-                catch (Exception e)
-                {
-                    // ignored
-                }
-            }
-
-            if (invAmount >= amount)
-            {
-                text.color = ((Mathf.Sin(Time.time * 10f) > 0f)
-                    ? AzuCraftyBoxesPlugin.flashColor.Value
-                    : AzuCraftyBoxesPlugin.unFlashColor.Value);
-                InventoryGuiCollectRequirements.actualAmounts[req] = amount;
-            }
-        }
-
-
-        var amountString = FormatThousands(invAmount);
+        string haveStr = FormatThousands(have);
         text.text = AzuCraftyBoxesPlugin.resourceString.Value.Trim().Length > 0
-            ? string.Format(AzuCraftyBoxesPlugin.resourceString.Value, amountString, amount)
+            ? string.Format(AzuCraftyBoxesPlugin.resourceString.Value, haveStr, amount)
             : amount.ToString();
     }
 
-    public static string FormatThousands(int number)
-    {
-        return number switch
-        {
-            < 1000 => number.ToString(),
-            < 1000000 => (number / 1000.0).ToString("0.#") + "K",
-            _ => (number / 1000000.0).ToString("0.#") + "M"
-        };
-    }
+    public static string FormatThousands(int number) => 
+        number < 1000 
+            ? number.ToString() 
+            : (number < 1_000_000 
+                ? (number / 1000.0).ToString("0.#") + "K" 
+                : (number / 1_000_000.0).ToString("0.#") + "M");
 }

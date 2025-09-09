@@ -41,7 +41,7 @@ static class FireplaceInteractPatch
 
         if (inventory.HaveItem(__instance.m_fuelItem.m_itemData.m_shared.m_name) || !(Mathf.CeilToInt(___m_nview.GetZDO().GetFloat(ZDOVars.s_fuel)) < __instance.m_maxFuel)) return __result;
         {
-            List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(__instance, AzuCraftyBoxesPlugin.mRange.Value);
+            List<IContainer> nearbyContainers = Boxes.QueryFrame.Get(__instance, AzuCraftyBoxesPlugin.mRange.Value);
 
             string fuelPrefabName = __instance.m_fuelItem.name;
             string sharedName = __instance.m_fuelItem.m_itemData.m_shared.m_name;
@@ -112,7 +112,7 @@ static class FireplaceGetHoverTextPatch
         }
 
         int inInv = Player.m_localPlayer?.m_inventory.CountItems(__instance.m_fuelItem.m_itemData.m_shared.m_name) ?? 0;
-        List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(__instance, AzuCraftyBoxesPlugin.mRange.Value);
+        List<IContainer> nearbyContainers = Boxes.QueryFrame.Get(__instance, AzuCraftyBoxesPlugin.mRange.Value);
         int inContainers = 0;
         __instance.m_fuelItem.m_itemData.m_dropPrefab = __instance.m_fuelItem.gameObject;
         foreach (IContainer c in nearbyContainers)

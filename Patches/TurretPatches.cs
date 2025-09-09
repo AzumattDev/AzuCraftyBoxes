@@ -56,7 +56,7 @@ static class Turret_UseItem_Patch
 
             if (inventory.HaveItem(sharedName) || !(Mathf.CeilToInt(__instance.GetAmmo()) < __instance.m_maxAmmo)) return;
             {
-                List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(__instance, AzuCraftyBoxesPlugin.mRange.Value);
+                List<IContainer> nearbyContainers = Boxes.QueryFrame.Get(__instance, AzuCraftyBoxesPlugin.mRange.Value);
 
                 foreach (IContainer c in nearbyContainers)
                 {
@@ -120,7 +120,7 @@ static class TurretGetHoverTextPatch
 
         string sharedName = prefab.GetComponent<ItemDrop>().m_itemData.m_shared.m_name;
         int inInv = Player.m_localPlayer?.m_inventory.CountItems(sharedName) ?? 0;
-        List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(__instance, AzuCraftyBoxesPlugin.mRange.Value);
+        List<IContainer> nearbyContainers = Boxes.QueryFrame.Get(__instance, AzuCraftyBoxesPlugin.mRange.Value);
         int inContainers = 0;
 
 

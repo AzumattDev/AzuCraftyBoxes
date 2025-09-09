@@ -3,39 +3,58 @@ using System.Diagnostics;
 using AzuCraftyBoxes.IContainers;
 using Backpacks;
 using ItemDataManager;
+using UnityEngine.Pool;
 using static AzuCraftyBoxes.Patches.CacheCurrentCraftingStationPrefabName;
 
 namespace AzuCraftyBoxes.Util.Functions;
 
 public class Boxes
 {
-    internal static readonly List<Container> Containers = new();
-    private static readonly List<Container> ContainersToAdd = new();
-    private static readonly List<Container> ContainersToRemove = new();
+    internal static readonly HashSet<Container> Containers = new();
+    private static readonly HashSet<Container> ContainersToAdd = new();
+    private static readonly HashSet<Container> ContainersToRemove = new();
+    private static int _lastRegistryFrame; // so we only flush once per frame
     private static ConcurrentDictionary<float, Stopwatch> stopwatches = new ConcurrentDictionary<float, Stopwatch>();
 
     internal static void AddContainer(Container container)
     {
+        if (!container) return;
         if (!Containers.Contains(container))
         {
             ContainersToAdd.Add(container);
             if (container)
                 AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"Added container {container.name} to list");
         }
-
-        UpdateContainers();
     }
 
     internal static void RemoveContainer(Container container)
     {
+        if (!container) return;
         if (Containers.Contains(container))
         {
             ContainersToRemove.Add(container);
             if (container)
                 AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"Removed container {container.name} from list");
         }
+    }
 
-        UpdateContainers();
+    private static void FlushRegistryIfNeeded()
+    {
+        int f = Time.frameCount;
+        if (_lastRegistryFrame == f) return;
+        _lastRegistryFrame = f;
+
+        if (ContainersToAdd.Count > 0)
+        {
+            foreach (var c in ContainersToAdd) Containers.Add(c);
+            ContainersToAdd.Clear();
+        }
+
+        if (ContainersToRemove.Count > 0)
+        {
+            foreach (var c in ContainersToRemove) Containers.Remove(c);
+            ContainersToRemove.Clear();
+        }
     }
 
     internal static void UpdateContainers()
@@ -54,72 +73,140 @@ public class Boxes
         ContainersToRemove.Clear();
     }
 
-    internal static List<IContainer> GetNearbyContainers<T>(T gameObject, float rangeToUse) where T : Component
+    private static readonly List<IContainer> _scratchNearby = new(256);
+    private static readonly List<IContainer> _scratchDrawers = new(128);
+    private static readonly List<IContainer> _scratchBackpacks = new(32);
+    private static readonly List<IContainer> _scratchGemBags = new(32);
+
+    private static Vector3 _lastQueryPos = Vector3.positiveInfinity;
+    private static float _lastQueryRange;
+    private static float _lastQueryTime;
+    private static readonly float _cacheWindow = 0.25f; // tweakable
+
+    // The fully built cached list:
+    private static readonly List<IContainer> _cachedAll = new(256);
+
+    internal static List<IContainer> GetNearbyContainers<T>(T src, float rangeMeters) where T : Component
     {
-        List<IContainer> nearbyContainers = [];
-        if (Player.m_localPlayer == null) return nearbyContainers;
-        var playerAllItems = Player.m_localPlayer.GetInventory().GetAllItems();
-        IEnumerable<IContainer> kgDrawers = APIs.ItemDrawers_API.AllDrawersInRange(gameObject.transform.position, rangeToUse).Select(kgDrawer.Create);
-        IEnumerable<IContainer> backpacksEnumerable = new List<IContainer>();
-        IEnumerable<IContainer> gemBagsEnumerable = new List<IContainer>();
-        List<IContainer> backpackList = [];
+        if (!Player.m_localPlayer || !src) return EmptyIContainers();
+
+        FlushRegistryIfNeeded();
+
+        Vector3 pos = src.transform.position;
+
+        // Reuse cache if player hasn't moved much & within time window
+        if ((Time.time - _lastQueryTime) <= _cacheWindow &&
+            (pos - _lastQueryPos).sqrMagnitude < 0.25f * 0.25f &&
+            Mathf.Approximately(rangeMeters, _lastQueryRange))
+        {
+            return _cachedAll; // already a combined (nearby + drawers + bags) list
+        }
+
+        _scratchNearby.Clear();
+        _scratchDrawers.Clear();
+        _scratchBackpacks.Clear();
+        _scratchGemBags.Clear();
+        _cachedAll.Clear();
+
+        // 1) Nearby vanilla containers (no LINQ, squared distance, in-use check)
+        float r2 = rangeMeters * rangeMeters;
+        foreach (var c in Containers)
+        {
+            if (!c) continue;
+            // Optional: skip closed wagons in-use
+            if (c.m_wagon != null && c.m_wagon.InUse()) continue;
+
+            Vector3 d = c.transform.position - pos;
+            if (d.sqrMagnitude > r2) continue;
+
+            if (!c.IsInUse() || c.IsInUse() && c.IsOwner())
+            {
+                _scratchNearby.Add(VanillaContainer.Create(c));
+            }
+        }
+
+
+        var drawers = APIs.ItemDrawers_API.AllDrawersInRange(pos, rangeMeters);
+        foreach (var d in drawers)
+            _scratchDrawers.Add(kgDrawer.Create(d));
+        
         if (AzuCraftyBoxesPlugin.BackpacksIsLoaded)
         {
-            // Get all backpacks in the player inventory
-            foreach (ItemDrop.ItemData? allItem in playerAllItems.Where(x => x?.Data("org.bepinex.plugins.backpacks")?.Get<ItemContainer>() != null))
+            var items = Player.m_localPlayer.GetInventory().GetAllItems();
+            // de-dupe by reference
+            var seen = HashSetPool<ItemContainer>.Get();
+            for (int i = 0; i < items.Count; ++i)
             {
-                BackpackContainer backpackContainer = BackpackContainer.Create(allItem?.Data("org.bepinex.plugins.backpacks")?.Get<ItemContainer>()!);
-                if (backpackList.Contains(backpackContainer)) continue;
-                backpackList.Add(backpackContainer);
+                var it = items[i];
+                if (it == null) continue;
+
+                var data = it.Data("org.bepinex.plugins.backpacks");
+                if (data == null) continue;
+
+                var cont = data.Get<ItemContainer>();
+                if (cont == null) continue;
+
+                if (seen.Add(cont))
+                    _scratchBackpacks.Add(BackpackContainer.Create(cont));
             }
 
-            backpacksEnumerable = backpackList;
-
-            /*if (Backpacks.API.GetEquippedBackpack()?.Data("org.bepinex.plugins.backpacks")?.Get<ItemContainer>() is {} backpack)
-            {
-                backpacksEnumerable = new List<IContainer> { BackpackContainer.Create(backpack) };
-            }*/
+            HashSetPool<ItemContainer>.Release(seen);
         }
-
-        List<IContainer> gemBagList = new List<IContainer>();
-        if (Jewelcrafting.API.IsLoaded()) // assuming you have a method to verify if Jewelcrafting features are loaded
+        
+        if (Jewelcrafting.API.IsLoaded())
         {
-            // Loop through player inventory items that are identified as gem bags.
-            foreach (ItemDrop.ItemData? gemBagItem in playerAllItems.Where(x => x != null && Jewelcrafting.API.GetItemContainerInventory(x) is not null && Jewelcrafting.API.IsFreelyAccessibleInventory(x)))
+            var items = Player.m_localPlayer.GetInventory().GetAllItems();
+            for (int i = 0; i < items.Count; ++i)
             {
-                GemBagContainer gemBagContainer = new GemBagContainer(gemBagItem!);
-                if (!gemBagList.Contains(gemBagContainer))
-                    gemBagList.Add(gemBagContainer);
-            }
+                var it = items[i];
+                if (it == null) continue;
 
-            gemBagsEnumerable = gemBagList;
-        }
-
-
-        if (Vector3.Distance(gameObject.transform.position, AzuCraftyBoxesPlugin.lastPosition) < 0.5f)
-            return AzuCraftyBoxesPlugin.cachedContainerList.Concat(kgDrawers).Concat(backpacksEnumerable).Concat(gemBagsEnumerable).ToList();
-
-        foreach (Container container in Containers)
-        {
-            if (gameObject == null || container == null) continue;
-            float distance = Vector3.Distance(container.transform.position, gameObject.transform.position);
-            if (distance <= rangeToUse)
-            {
-                // log the distance and the range to use
-#if DEBUG
-                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"Distance to container {container.name} is {distance}m, within the range of {rangeToUse}m set to store items for this chest");
-#endif
-                if (!container.IsInUse())
+                if (Jewelcrafting.API.IsFreelyAccessibleInventory(it))
                 {
-                    nearbyContainers.Add(VanillaContainer.Create(container));
+                    // fast path: we assume GetItemContainerInventory(it) != null when accessible
+                    if (Jewelcrafting.API.GetItemContainerInventory(it) != null)
+                        _scratchGemBags.Add(new GemBagContainer(it));
                 }
             }
         }
 
-        AzuCraftyBoxesPlugin.lastPosition = gameObject.transform.position;
-        AzuCraftyBoxesPlugin.cachedContainerList = nearbyContainers;
-        return nearbyContainers.Concat(kgDrawers).Concat(backpacksEnumerable).Concat(gemBagsEnumerable).ToList();
+
+        _cachedAll.AddRange(_scratchNearby);
+        _cachedAll.AddRange(_scratchDrawers);
+        _cachedAll.AddRange(_scratchBackpacks);
+        _cachedAll.AddRange(_scratchGemBags);
+
+        _lastQueryPos = pos;
+        _lastQueryRange = rangeMeters;
+        _lastQueryTime = Time.time;
+        
+        AzuCraftyBoxesPlugin.lastPosition = pos;
+        AzuCraftyBoxesPlugin.cachedContainerList = _scratchNearby;
+
+        return _cachedAll;
     }
+
+    private static readonly List<IContainer> _empty = new(0);
+    private static List<IContainer> EmptyIContainers() => _empty;
+
+    internal static class QueryFrame
+    {
+        public static int FrameId;
+        public static List<IContainer> Nearby;
+
+        public static List<IContainer> Get<T>(T src, float range) where T : Component
+        {
+            int f = Time.frameCount;
+            if (FrameId != f)
+            {
+                FrameId = f;
+                Nearby = Boxes.GetNearbyContainers(src, range);
+            }
+
+            return Nearby;
+        }
+    }
+
 
     public static void AddContainerIfNotExists(string containerName)
     {

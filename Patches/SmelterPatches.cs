@@ -111,7 +111,7 @@ public static class OverrideHoverText
     private static int GetItemCountInInventoryAndContainers(string prefabName, string itemName, Smelter smelterInstance)
     {
         int inInv = Player.m_localPlayer?.m_inventory.CountItems(itemName) ?? 0;
-        List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(smelterInstance, AzuCraftyBoxesPlugin.mRange.Value);
+        List<IContainer> nearbyContainers = Boxes.QueryFrame.Get(smelterInstance, AzuCraftyBoxesPlugin.mRange.Value);
 
         foreach (IContainer c in nearbyContainers)
         {
@@ -155,7 +155,7 @@ static class SmelterOnAddOrePatch
 
         Dictionary<string, int> added = new();
 
-        List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(user, AzuCraftyBoxesPlugin.mRange.Value);
+        List<IContainer> nearbyContainers = Boxes.QueryFrame.Get(user, AzuCraftyBoxesPlugin.mRange.Value);
         foreach (Smelter.ItemConversion itemConversion in __instance.m_conversion)
         {
             if (__instance.GetQueueSize() >= __instance.m_maxOre || (added.Any() && !pullAll))
@@ -328,7 +328,7 @@ static class SmelterOnAddFuelPatch
             }
         }
 
-        List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(__instance, AzuCraftyBoxesPlugin.mRange.Value);
+        List<IContainer> nearbyContainers = Boxes.QueryFrame.Get(__instance, AzuCraftyBoxesPlugin.mRange.Value);
         string fuelPrefabName = __instance.m_fuelItem.name;
         string sharedName = __instance.m_fuelItem.m_itemData.m_shared.m_name;
         if (Boxes.CanItemBePulled(Utils.GetPrefabName(__instance.gameObject), fuelPrefabName))

@@ -51,7 +51,7 @@ namespace AzuCraftyBoxes.Patches
                 int inInv = Player.m_localPlayer?.m_inventory.CountItems(sharedName) ?? 0;
                 int inContainers = 0;
 
-                List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(__instance, AzuCraftyBoxesPlugin.mRange.Value);
+                List<IContainer> nearbyContainers = Boxes.QueryFrame.Get(__instance, AzuCraftyBoxesPlugin.mRange.Value);
                 foreach (IContainer c in nearbyContainers)
                 {
                     if (Boxes.CanItemBePulled(Utils.GetPrefabName(__instance.gameObject), fuelItem.name))
@@ -129,7 +129,7 @@ namespace AzuCraftyBoxes.Patches
                     }
                 }
 
-                List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(__instance, AzuCraftyBoxesPlugin.mRange.Value);
+                List<IContainer> nearbyContainers = Boxes.QueryFrame.Get(__instance, AzuCraftyBoxesPlugin.mRange.Value);
                 if (Boxes.CanItemBePulled(Utils.GetPrefabName(__instance.gameObject), fuelItem.name))
                 {
                     foreach (IContainer c in nearbyContainers)

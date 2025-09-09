@@ -41,7 +41,7 @@ static class PlayerHaveRequirementsPatch
             if (MiscFunctions.ShouldPrevent() || __result || discover)
                 return;
 
-            List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(__instance, AzuCraftyBoxesPlugin.mRange.Value);
+            List<IContainer> nearbyContainers = Boxes.QueryFrame.Get(__instance, AzuCraftyBoxesPlugin.mRange.Value);
             if (nearbyContainers.Count == 0)
                 return;
 
@@ -59,26 +59,43 @@ static class PlayerHaveRequirementsPatch
                 if (itemPrefab == null)
                     continue;
 
-                // Tally up the items by quality level
+                int bestAcrossQualities = 0;
+
                 for (int quality = 1; quality <= requirement.m_resItem.m_itemData.m_shared.m_maxQuality; ++quality)
                 {
-                    int invAmount = __instance.GetInventory().CountItems(requirement.m_resItem.m_itemData.m_shared.m_name, quality);
-                    if (invAmount > availableAmount) availableAmount = invAmount;
+                    // Player inventory amount at this quality
+                    int invAmountAtQ = __instance.GetInventory().CountItems(requirement.m_resItem.m_itemData.m_shared.m_name, quality);
+
+                    // Sum takeable amounts from nearby containers at this quality (reserve one in each container)
+                    int containersTakeableAtQ = 0;
 
                     string itemPrefabName = Utils.GetPrefabName(requirement.m_resItem.name);
                     string sharedName = requirement.m_resItem.m_itemData.m_shared.m_name;
+
                     foreach (IContainer container in nearbyContainers)
                     {
                         if (requirement.m_resItem?.m_itemData?.m_dropPrefab == null)
                             continue;
+
                         var containerPrefabName = container.GetPrefabName();
                         if (Boxes.CanItemBePulled(containerPrefabName, itemPrefabName))
                         {
                             container.ContainsItem(sharedName, quality, out int containerAmount);
-                            availableAmount = Boxes.CheckAndDecrement(Math.Max(availableAmount, containerAmount));
+                            // leave-one rule per container
+                            int takeable = System.Math.Max(0, Boxes.CheckAndDecrement(containerAmount));
+                            if (takeable > 0)
+                                containersTakeableAtQ += takeable;
                         }
                     }
+
+                    // Candidate availability at this quality = inventory + containers (non-mutating)
+                    int candidateAtQ = invAmountAtQ + containersTakeableAtQ;
+                    if (candidateAtQ > bestAcrossQualities)
+                        bestAcrossQualities = candidateAtQ;
                 }
+
+                // Final available for this requirement is the best quality candidate
+                availableAmount = bestAcrossQualities;
 
                 if (piece.m_requireOnlyOneIngredient)
                 {
@@ -105,7 +122,7 @@ static class PlayerHaveRequirementsPatch
         }
         catch
         {
-            // Handle exceptions as necessary
+            // Not proud of this, TODO: improve
         }
     }
 }
@@ -156,7 +173,7 @@ static class PlayerHaveRequirementsPatchRBoolInt
                 }
                 else
                 {
-                    List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(p, AzuCraftyBoxesPlugin.mRange.Value);
+                    List<IContainer> nearbyContainers = Boxes.QueryFrame.Get(p, AzuCraftyBoxesPlugin.mRange.Value);
                     int amount = resource.GetAmount(qualityLevel) * amountVanilla;
                     int num = p.m_inventory.CountItems(resource.m_resItem.m_itemData.m_shared.m_name);
 
@@ -242,7 +259,7 @@ static class HaveRequirementsPatch2
                 return;
             }
 
-            List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(__instance, AzuCraftyBoxesPlugin.mRange.Value);
+            List<IContainer> nearbyContainers = Boxes.QueryFrame.Get(__instance, AzuCraftyBoxesPlugin.mRange.Value);
 
             foreach (Piece.Requirement requirement in piece.m_resources)
             {
@@ -345,7 +362,7 @@ static class ConsumeResourcesPatch
             }
 
             Inventory pInventory = __instance.GetInventory();
-            List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(__instance, AzuCraftyBoxesPlugin.mRange.Value);
+            List<IContainer> nearbyContainers = Boxes.QueryFrame.Get(__instance, AzuCraftyBoxesPlugin.mRange.Value);
             MiscFunctions.ProcessRequirements(requirements, qualityLevel, pInventory, nearbyContainers, itemQuality, multiplier);
         }
         catch (Exception ex)
@@ -373,7 +390,7 @@ static class CheckNearbyForOneIngredientItems
         }
 
 
-        List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(__instance, AzuCraftyBoxesPlugin.mRange.Value);
+        List<IContainer> nearbyContainers = Boxes.QueryFrame.Get(__instance, AzuCraftyBoxesPlugin.mRange.Value);
         if (nearbyContainers == null || nearbyContainers.Count == 0)
         {
             return;

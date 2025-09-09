@@ -24,7 +24,7 @@ static class CookingStationOnAddFuelSwitchPatch
             return true;
         }
 
-        List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(__instance, AzuCraftyBoxesPlugin.mRange.Value);
+        List<IContainer> nearbyContainers = Boxes.QueryFrame.Get(__instance, AzuCraftyBoxesPlugin.mRange.Value);
 
         string sharedName = __instance.m_fuelItem.m_itemData.m_shared.m_name;
         foreach (IContainer c in nearbyContainers)
@@ -65,7 +65,7 @@ static class CookingStationFindCookableItemPatch
 
         AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(CookingStationFindCookableItemPatch) Missing cookable in player inventory");
 
-        List<IContainer> nearbyContainers = Boxes.GetNearbyContainers(__instance, AzuCraftyBoxesPlugin.mRange.Value);
+        List<IContainer> nearbyContainers = Boxes.QueryFrame.Get(__instance, AzuCraftyBoxesPlugin.mRange.Value);
 
         foreach (CookingStation.ItemConversion itemConversion in __instance.m_conversion)
         {

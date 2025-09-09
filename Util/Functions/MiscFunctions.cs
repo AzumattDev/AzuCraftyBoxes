@@ -50,24 +50,39 @@ public class MiscFunctions
     /* Consume Resources */
     internal static void ProcessRequirements(Piece.Requirement[] requirements, int qualityLevel, Inventory pInventory, List<IContainer> nearbyContainers, int itemQuality, int multiplier)
     {
-        foreach (Piece.Requirement requirement in requirements)
+        UiItemBank.Begin(nearbyContainers);
+
+        foreach (var requirement in requirements)
         {
             if (!IsValidRequirement(requirement)) continue;
-            int totalRequirement = requirement.GetAmount(qualityLevel) * multiplier;
-            if (totalRequirement <= 0) continue;
 
-            string reqName = requirement.m_resItem.m_itemData.m_shared.m_name;
-            int totalAmount = pInventory.CountItems(reqName);
-            LogResourceInfo(totalAmount, totalRequirement, reqName);
-            pInventory.RemoveItem(reqName, Math.Min(totalAmount, totalRequirement), itemQuality);
+            int needed = requirement.GetAmount(qualityLevel) * multiplier;
+            if (needed <= 0) continue;
 
-            if (totalAmount < totalRequirement)
+            string name = requirement.m_resItem.m_itemData.m_shared.m_name;
+
+            // Remove from player first
+            int fromPlayer = Mathf.Min(needed, pInventory.CountItems(name));
+            if (fromPlayer > 0)
             {
-                int newTotalAmount = ConsumeResourcesFromContainers(reqName, totalAmount, totalRequirement, nearbyContainers);
-                if (newTotalAmount >= totalRequirement)
-                {
-                    AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(ConsumeResourcesPatch) Consumed enough {reqName}");
-                }
+                pInventory.RemoveItem(name, fromPlayer, itemQuality);
+                needed -= fromPlayer;
+                if (needed <= 0) continue;
+            }
+
+            
+            for (int i = 0; i < nearbyContainers.Count && needed > 0; ++i)
+            {
+                var c = nearbyContainers[i];
+                int have = c.ItemCount(name);
+                int allowed = Boxes.CheckAndDecrement(have);
+                if (allowed <= 0) continue;
+
+                int take = Mathf.Min(needed, allowed);
+                if (take <= 0) continue;
+
+                int newTotal = c.ProcessContainerInventory(name, 0, take); // or directly RemoveItem(name, take)
+                needed -= newTotal;
             }
         }
     }
@@ -196,6 +211,9 @@ public class MiscFunctions
                         break;
                     case ItemDrop.ItemData.ItemType.Torch:
                         groupName = "Equipment";
+                        break;
+                    case ItemDrop.ItemData.ItemType.Trinket:
+                        groupName = "Trinkets";
                         break;
                     case ItemDrop.ItemData.ItemType.Trophy:
                         string[] bossTrophies =
