@@ -127,6 +127,25 @@ public static class OverrideHoverText
     }
 }
 
+[HarmonyPatch(typeof(Smelter), nameof(Smelter.QueueOre))]
+static class PreventOverfillJIC_SmelterQueueOrePatch
+{
+    static bool Prefix(Smelter __instance, string name)
+    {
+        return __instance.GetQueueSize() < __instance.m_maxOre;
+    }
+}
+
+[HarmonyPatch(typeof(Smelter), nameof(Smelter.RPC_AddFuel))]
+static class CapFuel_SmelterRPC_AddFuelPatch
+{
+    static bool Prefix(Smelter __instance)
+    {
+        if (!__instance.m_nview.IsOwner()) return true;
+        return !(__instance.GetFuel() >= __instance.m_maxFuel);
+    }
+}
+
 [HarmonyPatch(typeof(Smelter), nameof(Smelter.OnAddOre))]
 static class SmelterOnAddOrePatch
 {
@@ -178,7 +197,7 @@ static class SmelterOnAddOrePatch
                     // AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogError(e);
                 }
 
-                if (newItem.m_dropPrefab == null) continue;
+                if (!newItem.m_dropPrefab) continue;
                 string itemPrefabName = Utils.GetPrefabName(newItem.m_dropPrefab);
                 if (!Boxes.CanItemBePulled(Utils.GetPrefabName(__instance.gameObject), itemPrefabName))
                 {
@@ -189,8 +208,7 @@ static class SmelterOnAddOrePatch
                 int amount = pullAll
                     ? Mathf.Min(__instance.m_maxOre - __instance.GetQueueSize(), inventory.CountItems(name))
                     : 1;
-                if (!added.ContainsKey(name))
-                    added[name] = 0;
+                added.TryAdd(name, 0);
                 added[name] += amount;
 
                 inventory.RemoveItem(itemConversion.m_from.m_itemData.m_shared.m_name, amount);
@@ -210,7 +228,7 @@ static class SmelterOnAddOrePatch
                 {
                     if (!c.ContainsItem(name, 1, out int result)) continue;
                     result = Boxes.CheckAndDecrement(result);
-                    if(result <= 0) continue;
+                    if (result <= 0) continue;
                     if (!Boxes.CanItemBePulled(c.GetPrefabName(), prefabName))
                     {
                         AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(SmelterOnAddOrePatch) Container at {c.GetPosition()} has {result} {prefabName} but it's forbidden by config");
@@ -219,8 +237,7 @@ static class SmelterOnAddOrePatch
 
                     int amount = pullAll ? Mathf.Min(__instance.m_maxOre - __instance.GetQueueSize(), result) : 1;
 
-                    if (!added.ContainsKey(name))
-                        added[name] = 0;
+                    added.TryAdd(name, 0);
                     added[name] += amount;
                     AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"Pull ALL is {pullAll}");
                     AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(SmelterOnAddOrePatch) Container at {c.GetPosition()} has {result} {prefabName}, taking {amount}");
@@ -252,35 +269,7 @@ static class SmelterOnAddOrePatch
 
         return false;
     }
-
-    public static void Postfix(Smelter __instance, Switch sw, Humanoid user, KeyValuePair<ItemDrop.ItemData?, int> __state, bool __result)
-    {
-        if (AzuCraftyBoxesPlugin.fillAllModKey.Value.IsKeyHeld() && __result && __state.Key is null)
-        {
-            if (!__instance.m_nview.IsOwner())
-            {
-                if (__instance.m_nview.GetZDO() != null)
-                {
-                    int ore = __instance.GetQueueSize();
-                    if (ore == __state.Value)
-                    {
-                        __instance.m_nview.GetZDO().Set(ZDOVars.s_queued, ore + 1);
-                    }
-                }
-            }
-
-            MessageHud originalMessageHud = MessageHud.m_instance;
-            MessageHud.m_instance = null;
-            try
-            {
-                __instance.OnAddOre(sw, user, null);
-            }
-            finally
-            {
-                MessageHud.m_instance = originalMessageHud;
-            }
-        }
-    }
+    
 }
 
 [HarmonyPatch(typeof(Smelter), nameof(Smelter.OnAddFuel))]
@@ -337,7 +326,7 @@ static class SmelterOnAddFuelPatch
             {
                 if (!c.ContainsItem(sharedName, 1, out int result)) continue;
                 result = Boxes.CheckAndDecrement(result);
-                if(result <= 0) continue;
+                if (result <= 0) continue;
                 if (!Boxes.CanItemBePulled(c.GetPrefabName(), fuelPrefabName))
                 {
                     AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(SmelterOnAddFuelPatch) Container at {c.GetPosition()} has {result} {sharedName} but it's forbidden by config");
