@@ -149,6 +149,7 @@ static class CapFuel_SmelterRPC_AddFuelPatch
 [HarmonyPatch(typeof(Smelter), nameof(Smelter.OnAddOre))]
 static class SmelterOnAddOrePatch
 {
+    [HarmonyPriority(Priority.High)]
     static bool Prefix(Smelter __instance, Humanoid user, ItemDrop.ItemData item, ZNetView ___m_nview, out KeyValuePair<ItemDrop.ItemData?, int> __state)
     {
         int ore = __instance.GetQueueSize();
@@ -269,7 +270,39 @@ static class SmelterOnAddOrePatch
 
         return false;
     }
-    
+
+    public static void Postfix(Smelter __instance, Switch sw, Humanoid user, KeyValuePair<ItemDrop.ItemData?, int> __state, bool __result)
+    {
+        if (AzuCraftyBoxesPlugin.fillAllModKey.Value.IsKeyHeld() && __result && __state.Key is null)
+        {
+            if (!__instance.m_nview.IsOwner())
+            {
+                ZDOID zdoid = __instance.m_nview.GetZDO().m_uid;
+                if (!ZDOExtraData.s_ints.TryGetValue(zdoid, out BinarySearchDictionary<int, int> ints))
+                {
+                    ZDOExtraData.s_ints[zdoid] = ints = new BinarySearchDictionary<int, int>();
+                }
+
+                ints.TryGetValue(ZDOVars.s_queued, out int ore);
+                // ReSharper disable once CompareOfFloatsByEqualityOperator
+                if (ore == __state.Value)
+                {
+                    ints[ZDOVars.s_queued] = ore + 1;
+                }
+            }
+
+            MessageHud originalMessageHud = MessageHud.m_instance;
+            MessageHud.m_instance = null;
+            try
+            {
+                __instance.OnAddOre(sw, user, null);
+            }
+            finally
+            {
+                MessageHud.m_instance = originalMessageHud;
+            }
+        }
+    }
 }
 
 [HarmonyPatch(typeof(Smelter), nameof(Smelter.OnAddFuel))]
