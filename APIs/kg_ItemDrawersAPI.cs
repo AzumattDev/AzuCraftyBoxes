@@ -29,7 +29,7 @@ public static class ItemDrawers_API
 
     static ItemDrawers_API()
     {
-        if (Type.GetType("API.ClientSide, kg_ItemDrawers") is not { } drawersAPI)
+        if (Type.GetType("API.ClientSideV2, kg_ItemDrawers") is not { } drawersAPI)
         {
             _IsInstalled = false;
             return;
