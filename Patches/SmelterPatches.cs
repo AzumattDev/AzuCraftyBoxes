@@ -150,14 +150,11 @@ static class CapFuel_SmelterRPC_AddFuelPatch
 static class SmelterOnAddOrePatch
 {
     [HarmonyPriority(Priority.High)]
-    static bool Prefix(Smelter __instance, Humanoid user, ItemDrop.ItemData item, ZNetView ___m_nview, out KeyValuePair<ItemDrop.ItemData?, int> __state)
+    static bool Prefix(Smelter __instance, Humanoid user, ItemDrop.ItemData item, ZNetView ___m_nview)
     {
         int ore = __instance.GetQueueSize();
-        __state = new KeyValuePair<ItemDrop.ItemData?, int>(item, ore);
-        /*bool pullAll = Input.GetKey(AzuCraftyBoxesPlugin.fillAllModKey.Value.MainKey);*/
-        // Used to be fillAllModKey.Value.isPressed(); something is wrong with KeyboardShortcuts always returning false
         bool pullAll = AzuCraftyBoxesPlugin.fillAllModKey.Value.IsKeyHeld();
-        if (MiscFunctions.ShouldPrevent() || item != null || __instance.GetQueueSize() >= __instance.m_maxOre)
+        if (MiscFunctions.ShouldPrevent() || item != null || ore >= __instance.m_maxOre)
             return true;
 
         Inventory inventory = user.GetInventory();
@@ -178,7 +175,7 @@ static class SmelterOnAddOrePatch
         List<IContainer> nearbyContainers = Boxes.QueryFrame.Get(user, AzuCraftyBoxesPlugin.mRange.Value);
         foreach (Smelter.ItemConversion itemConversion in __instance.m_conversion)
         {
-            if (__instance.GetQueueSize() >= __instance.m_maxOre || (added.Any() && !pullAll))
+            if (ore >= __instance.m_maxOre || (added.Any() && !pullAll))
                 break;
 
             string name = itemConversion.m_from.m_itemData.m_shared.m_name;
@@ -252,8 +249,7 @@ static class SmelterOnAddOrePatch
                     user.Message(MessageHud.MessageType.TopLeft, $"$msg_added {amount} {name}");
 
 
-                    if (__instance.GetQueueSize() >= __instance.m_maxOre ||
-                        !pullAll)
+                    if (__instance.GetQueueSize() >= __instance.m_maxOre || !pullAll)
                         break;
                 }
             }
@@ -270,39 +266,6 @@ static class SmelterOnAddOrePatch
 
         return false;
     }
-
-    public static void Postfix(Smelter __instance, Switch sw, Humanoid user, KeyValuePair<ItemDrop.ItemData?, int> __state, bool __result)
-    {
-        if (AzuCraftyBoxesPlugin.fillAllModKey.Value.IsKeyHeld() && __result && __state.Key is null)
-        {
-            if (!__instance.m_nview.IsOwner())
-            {
-                ZDOID zdoid = __instance.m_nview.GetZDO().m_uid;
-                if (!ZDOExtraData.s_ints.TryGetValue(zdoid, out BinarySearchDictionary<int, int> ints))
-                {
-                    ZDOExtraData.s_ints[zdoid] = ints = new BinarySearchDictionary<int, int>();
-                }
-
-                ints.TryGetValue(ZDOVars.s_queued, out int ore);
-                // ReSharper disable once CompareOfFloatsByEqualityOperator
-                if (ore == __state.Value)
-                {
-                    ints[ZDOVars.s_queued] = ore + 1;
-                }
-            }
-
-            MessageHud originalMessageHud = MessageHud.m_instance;
-            MessageHud.m_instance = null;
-            try
-            {
-                __instance.OnAddOre(sw, user, null);
-            }
-            finally
-            {
-                MessageHud.m_instance = originalMessageHud;
-            }
-        }
-    }
 }
 
 [HarmonyPatch(typeof(Smelter), nameof(Smelter.OnAddFuel))]
@@ -311,10 +274,6 @@ static class SmelterOnAddFuelPatch
 {
     static bool Prefix(Smelter __instance, ref bool __result, ZNetView ___m_nview, Humanoid user, ItemDrop.ItemData item)
     {
-        /*bool pullAll =
-            Input.GetKey(AzuCraftyBoxesPlugin.fillAllModKey.Value
-                .MainKey);*/
-        // Used to be fillAllModKey.Value.IsPressed(); something is wrong with KeyboardShortcuts always returning false
         bool pullAll = AzuCraftyBoxesPlugin.fillAllModKey.Value.IsKeyHeld();
         Inventory inventory = user.GetInventory();
         if (MiscFunctions.ShouldPrevent() || item != null || inventory == null ||

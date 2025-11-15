@@ -57,7 +57,6 @@ namespace AzuCraftyBoxes.Util.Functions
                 var c = _containers[i];
                 if (c == null) continue;
 
-                // Fast path: ItemCount(sharedName) (your IContainer already has this)
                 int count = c.ItemCount(sharedName);
                 if (count <= 0) continue;
 
@@ -88,7 +87,6 @@ namespace AzuCraftyBoxes.Util.Functions
                 var c = _containers[i];
                 if (c == null) continue;
 
-                // You already expose ContainsItem(name, quality, out int amount)
                 if (!c.ContainsItem(sharedName, quality, out int amount) || amount <= 0)
                     continue;
 
