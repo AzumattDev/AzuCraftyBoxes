@@ -34,37 +34,41 @@ static class SearchContainersAsWell
         }
 
         // If the inventory is equal to the player's inventory but the result is null, then search the containers
-        if (inventory != Player.m_localPlayer.GetInventory() || __result != null) return;
-        List<IContainer> nearbyContainers = Boxes.QueryFrame.Get(__instance, AzuCraftyBoxesPlugin.mRange.Value);
-
-        foreach (IContainer c in nearbyContainers)
+        if (inventory == Player.m_localPlayer.GetInventory() && __result == null)
         {
-            if (c.GetInventory() == null) continue;
-            Inventory? containerInventory = c.GetInventory();
-            if (containerInventory == inventory)
-            {
-                continue;
-            }
+            List<IContainer> nearbyContainers = Boxes.QueryFrame.Get(__instance, AzuCraftyBoxesPlugin.mRange.Value);
 
-            foreach (Fermenter.ItemConversion itemConversion in __instance.m_conversion)
+            foreach (IContainer c in nearbyContainers)
             {
-                if (!c.ContainsItem(itemConversion.m_from.m_itemData.m_shared.m_name, 1, out int result)) continue;
-                result = Boxes.CheckAndDecrement(result);
-                if (result <= 0) continue;
-                if (!Boxes.CanItemBePulled(c.GetPrefabName(), itemConversion.m_from.name))
+                if (c.GetInventory() == null) continue;
+                var containerInventory = c.GetInventory();
+                if (containerInventory == inventory)
                 {
                     continue;
                 }
 
-                ItemDrop.ItemData cookableItem = containerInventory.GetItem(itemConversion.m_from.m_itemData.m_shared.m_name);
-                if (cookableItem == null) continue;
-                __result = cookableItem;
-                if (__instance.GetStatus() != Fermenter.Status.Empty || !__instance.IsItemAllowed(cookableItem) || !containerInventory.RemoveOneItem(cookableItem))
+                foreach (Fermenter.ItemConversion itemConversion in __instance.m_conversion)
                 {
-                    return;
-                }
+                    if (!c.ContainsItem(itemConversion.m_from.m_itemData.m_shared.m_name, 1, out int result)) continue;
+                    result = Boxes.CheckAndDecrement(result);
+                    if(result <= 0) continue;
+                    if (!Boxes.CanItemBePulled(c.GetPrefabName(), itemConversion.m_from.name))
+                    {
+                        continue;
+                    }
 
-                __instance.m_nview.InvokeRPC("RPC_AddItem", cookableItem.m_dropPrefab.name);
+                    ItemDrop.ItemData cookableItem = containerInventory.GetItem(itemConversion.m_from.m_itemData.m_shared.m_name);
+                    if (cookableItem != null)
+                    {
+                        __result = cookableItem;
+                        if (__instance.GetStatus() != Fermenter.Status.Empty || !__instance.IsItemAllowed(cookableItem) || !containerInventory.RemoveOneItem(cookableItem))
+                        {
+                            return;
+                        }
+
+                        __instance.m_nview.InvokeRPC("RPC_AddItem", cookableItem.m_dropPrefab.name);
+                    }
+                }
             }
         }
     }
@@ -90,62 +94,57 @@ public static class OverrideHoverTextFermenter
         }
 
         // Check if the player is looking at an object
-        return !Player.m_localPlayer.m_hovering || Player.m_localPlayer.m_hovering.GetComponentInParent<Fermenter>() != __instance;
-    }
+        if (!Player.m_localPlayer.m_hovering || Player.m_localPlayer.m_hovering.GetComponentInParent<Fermenter>() != __instance)
+        {
+            return true;
+        }
 
-    private static readonly Dictionary<int, (float time, List<string> items)> _cache = new();
+        return false;
+    }
 
     internal static void UpdateAddSwitchHoverText(Fermenter __instance, ref string result)
     {
         bool free = __instance.GetStatus() == Fermenter.Status.Empty;
+        List<string> items = [];
 
-
-        if (!free) return;
-
-        int id = __instance.GetInstanceID();
-        float now = Time.unscaledTime;
-
-        if (!_cache.TryGetValue(id, out (float time, List<string> items) entry) || now - entry.time > 0.25f)
+        foreach (Fermenter.ItemConversion conversion in __instance.m_conversion)
         {
-            List<string> items = [];
-            foreach (Fermenter.ItemConversion conversion in __instance.m_conversion)
+            if (!free)
             {
-                string sharedName = conversion.m_from.m_itemData.m_shared.m_name;
-                string prefabName = conversion.m_from.name;
-                if (!HasItemInInventoryOrContainers(prefabName, sharedName, __instance)) continue;
-                if (!MiscFunctions.CheckItemDropIntegrity(conversion.m_from)) continue;
-                if (!MiscFunctions.GetItemPrefabFromGameObject(conversion.m_from, conversion.m_from.gameObject)) continue;
-                if (!Boxes.CanItemBePulled(Utils.GetPrefabName(__instance.gameObject), Utils.GetPrefabName(conversion.m_from.m_itemData.m_dropPrefab))) continue;
-                items.Add($"{sharedName}");
+                break;
             }
 
-            entry = (now, items);
-            _cache[id] = entry;
+            int inInv = GetItemCountInInventoryAndContainers(conversion.m_from.name, conversion.m_from.m_itemData.m_shared.m_name, __instance);
+            if (!MiscFunctions.CheckItemDropIntegrity(conversion.m_from)) continue;
+            if (MiscFunctions.GetItemPrefabFromGameObject(conversion.m_from, conversion.m_from.gameObject) == null) continue;
+            if (!free || inInv <= 0) continue;
+            if (Boxes.CanItemBePulled(Utils.GetPrefabName(__instance.gameObject), Utils.GetPrefabName(conversion.m_from.m_itemData.m_dropPrefab)))
+            {
+                items.Add($"{conversion.m_from.m_itemData.m_shared.m_name}");
+            }
         }
 
-        if (entry.items.Count > 0)
+        if (items.Count > 0)
         {
-            result += Localization.instance.Localize($"\n[<b><color=yellow>{AzuCraftyBoxesPlugin.fillAllModKey.Value}</color> + <color=yellow>$KEY_Use</color></b>] {__instance.m_addSwitch.m_onHover} {string.Join(", ", entry.items)} from Inventory & Nearby Containers");
+            result += Localization.instance.Localize($"\n[<b><color=yellow>{AzuCraftyBoxesPlugin.fillAllModKey.Value}</color> + <color=yellow>$KEY_Use</color></b>] {__instance.m_addSwitch.m_onHover} {string.Join(", ", items)} from Inventory & Nearby Containers");
         }
     }
 
-    private static bool HasItemInInventoryOrContainers(string prefabName, string itemName, Fermenter fermenter)
+    private static int GetItemCountInInventoryAndContainers(string prefabName, string itemName, Fermenter FermenterInstance)
     {
-        Inventory? inv = Player.m_localPlayer?.m_inventory;
-        if (inv != null && inv.CountItems(itemName) > 0)
-            return true;
-
-        List<IContainer> nearbyContainers = Boxes.QueryFrame.Get(fermenter, AzuCraftyBoxesPlugin.mRange.Value);
+        int inInv = Player.m_localPlayer?.m_inventory.CountItems(itemName) ?? 0;
+        List<IContainer> nearbyContainers = Boxes.QueryFrame.Get(FermenterInstance, AzuCraftyBoxesPlugin.mRange.Value);
 
         foreach (IContainer c in nearbyContainers)
         {
-            if (!Boxes.CanItemBePulled(prefabName, c.GetPrefabName()))
-                continue;
-
-            if (c.ContainsItem(itemName, 1, out _))
-                return true; // found one, don't care about counts
+            if (Boxes.CanItemBePulled(prefabName, c.GetPrefabName()))
+            {
+                c.ContainsItem(itemName, 1, out int result);
+                result = Boxes.CheckAndDecrement(result);
+                inInv += result;
+            }
         }
 
-        return false;
+        return inInv;
     }
 }

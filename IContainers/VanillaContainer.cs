@@ -2,41 +2,56 @@ using AzuCraftyBoxes.Util.Functions;
 
 namespace AzuCraftyBoxes.IContainers;
 
-public class VanillaContainer(Container _container, ContainerCache cache) : IContainer
+public class VanillaContainer(Container _container) : IContainer
 {
     public int ProcessContainerInventory(string reqName, int totalAmount, int totalRequirement)
     {
-        Inventory? cInventory = _container.GetInventory();
+        Inventory cInventory = _container.GetInventory();
         if (cInventory == null) return totalAmount;
-
         int thisAmount = Mathf.Min(cInventory.CountItems(reqName), totalRequirement - totalAmount);
+
+        AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(ConsumeResourcesPatch) Container at {_container.transform.position} has {cInventory.CountItems(reqName)}");
+
         if (thisAmount == 0) return totalAmount;
 
-        AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(ConsumeResourcesPatch) Container at {_container.transform.position} has {cInventory.CountItems(reqName)} {reqName}");
-
-        List<ItemDrop.ItemData>? items = cInventory.GetAllItems();
-        for (int i = 0; i < items.Count; ++i)
+        for (int i = 0; i < cInventory.GetAllItems().Count; ++i)
         {
-            ItemDrop.ItemData? item = items[i];
+            ItemDrop.ItemData item = cInventory.GetItem(i);
             if (item?.m_shared?.m_name != reqName) continue;
+            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"Container Total Items Count is {cInventory.GetAllItems().Count}");
+            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(ConsumeResourcesPatch) Got stack of {item.m_stack} {reqName}");
 
             int stackAmount = Mathf.Min(item.m_stack, totalRequirement - totalAmount);
             if (stackAmount == item.m_stack)
             {
+                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(ConsumeResourcesPatch) Removing item {reqName} from container");
+                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"Container inventory before removal: {cInventory.GetAllItems().Count}, Item at index {i}: {cInventory.GetItem(i)?.m_shared?.m_name}");
+
                 bool removed = cInventory.RemoveItem(i);
+                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable("Removed was " + removed);
+                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"Container inventory after attempted removal: {cInventory.GetAllItems().Count}");
+
                 --i;
             }
             else
             {
+                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(ConsumeResourcesPatch) Removing {stackAmount} {reqName} from container");
                 item.m_stack -= stackAmount;
             }
 
             totalAmount += stackAmount;
+
+            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(ConsumeResourcesPatch) Total amount is now {totalAmount}/{totalRequirement} {reqName}");
+
             if (totalAmount >= totalRequirement)
+            {
                 break;
+            }
         }
 
-        cInventory.Changed(); // triggers Container.OnContainerChanged -> Save -> then my RebuildCache
+        _container.Save();
+        cInventory.Changed();
+        AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable("Saved container");
 
         if (totalAmount >= totalRequirement)
         {
@@ -46,17 +61,13 @@ public class VanillaContainer(Container _container, ContainerCache cache) : ICon
         return totalAmount;
     }
 
-    public int ItemCount(string name) => cache.ItemCounts.GetValueOrDefault(name, 0);
+    public int ItemCount(string name) => _container.GetInventory()?.CountItems(name) ?? 0;
 
-    public void RemoveItem(string name, int amount)
-    {
-        _container.GetInventory()?.RemoveItem(name, amount);
-        _container.Save();
-        _container.GetInventory()?.Changed(); // keep cache fresh
-    }
-
+    public void RemoveItem(string name, int amount) => _container.GetInventory()?.RemoveItem(name, amount);
+    
     public void Save()
     {
+        _container.Save();
         _container.m_inventory?.Changed();
     }
 
@@ -64,25 +75,6 @@ public class VanillaContainer(Container _container, ContainerCache cache) : ICon
     public string GetPrefabName() => Utils.GetPrefabName(_container.gameObject);
     public Inventory GetInventory() => _container.GetInventory();
 
-    public static VanillaContainer Create(Container container, ContainerCache cache) => new(container, cache);
 
-    public static VanillaContainer Create(Container container)
-    {
-        if (!container) throw new ArgumentNullException(nameof(container));
-
-        Boxes.AddContainer(container);
-
-        var cache = Boxes.GetCache(container);
-        if (cache != null) return new VanillaContainer(container, cache);
-        cache = new ContainerCache
-        {
-            Container = container,
-            LastPos = container.transform.position
-        };
-
-        Boxes.RebuildCache(container);
-        cache = Boxes.GetCache(container)!;
-
-        return new VanillaContainer(container, cache);
-    }
+    public static VanillaContainer Create(Container container) => new(container);
 }

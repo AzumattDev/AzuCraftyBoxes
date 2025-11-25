@@ -5,8 +5,6 @@ namespace AzuCraftyBoxes.Util.Functions;
 
 public class MiscFunctions
 {
-    private static Type? _mkzDrawerType;
-
     internal static bool AllowPullingLogic()
     {
         Player? player = Player.m_localPlayer;
@@ -29,13 +27,7 @@ public class MiscFunctions
 
     internal static bool ShouldSkipContainer(Container container)
     {
-        return ShouldPrevent() || container.GetInventory() == null || !container.m_nview.IsValid() || container.m_nview.GetZDO().GetLong("creator".GetStableHashCode()) == 0L || IsMkzDrawer(container);
-    }
-
-    private static bool IsMkzDrawer(Container c)
-    {
-        _mkzDrawerType ??= Type.GetType("DrawerContainer, itemdrawers");
-        return _mkzDrawerType != null && _mkzDrawerType.IsInstanceOfType(c);
+        return ShouldPrevent() || container.GetInventory() == null || !container.m_nview.IsValid() || container.m_nview.GetZDO().GetLong("creator".GetStableHashCode()) == 0L;
     }
 
     internal static bool HasAccessToContainer(Container container)
@@ -78,7 +70,7 @@ public class MiscFunctions
                 if (needed <= 0) continue;
             }
 
-
+            
             for (int i = 0; i < nearbyContainers.Count && needed > 0; ++i)
             {
                 var c = nearbyContainers[i];

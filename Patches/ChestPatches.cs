@@ -13,8 +13,8 @@ internal static class ContainerAwakePatch
 
         try
         {
-            Player? parentPlayer = __instance.GetComponentInParent<Player>();
-            if (parentPlayer && parentPlayer != Player.m_localPlayer)
+            var parentPlayer = __instance.GetComponentInParent<Player>();
+            if (parentPlayer != null && parentPlayer != Player.m_localPlayer)
             {
                 return;
             }
@@ -26,46 +26,32 @@ internal static class ContainerAwakePatch
         }
         catch
         {
-            // ignored, TODO: better handling later
+            //ignored TODO: Fix this for real later.
         }
     }
 }
 
-[HarmonyPatch(typeof(Container), nameof(Container.OnContainerChanged))]
-internal static class ContainerOnContainerChangedPatch
-{
-    private static void Postfix(Container __instance)
-    {
-        if (!__instance.IsOwner()) return;
-        if (ShouldSkipContainer(__instance)) return;
-
-        Boxes.AddContainer(__instance);
-        Boxes.RebuildCache(__instance);
-    }
-}
-
 [HarmonyPatch(typeof(Container), nameof(Container.Load))]
-internal static class ContainerLoadPatch
+static class ContainerLoadPatch
 {
-    private static void Postfix(Container __instance, bool __result)
+    static void Postfix(Container __instance)
     {
-        if (!__result) return;
         if (ShouldSkipContainer(__instance)) return;
 
-        Player? player = Player.m_localPlayer;
-        if (!player) return;
-
-        Player? parentPlayer = __instance.GetComponentInParent<Player>();
-        if (parentPlayer && parentPlayer != player)
+        Player player = Player.m_localPlayer;
+        if (player == null) return;
+        var parentPlayer = __instance.GetComponentInParent<Player>();
+        if (parentPlayer != null && parentPlayer != player)
         {
             return;
         }
 
         if (player.m_isLoading || player.m_teleporting) return;
 
-        if (!HasAccessToContainer(__instance)) return;
-        Boxes.AddContainer(__instance);
-        Boxes.RebuildCache(__instance); // reflect remote/server changes
+        if (HasAccessToContainer(__instance))
+        {
+            Boxes.AddContainer(__instance);
+        }
     }
 }
 
@@ -87,22 +73,22 @@ static class WearNTearOnDestroyPatch
     {
         if (ShouldPrevent()) return;
 
-        Container[]? children = __instance.GetComponentsInChildren<Container>();
-        Container[]? parents = __instance.GetComponentsInParent<Container>();
-
-        if (children.Length > 0)
+        Container[]? container = __instance.GetComponentsInChildren<Container>();
+        Container[]? parentContainer = __instance.GetComponentsInParent<Container>();
+        if (container.Length > 0)
         {
-            foreach (Container c in children)
+            foreach (Container c in container)
             {
                 Boxes.RemoveContainer(c);
             }
         }
 
-        if (parents.Length <= 0) return;
-
-        foreach (Container c in parents)
+        if (parentContainer.Length <= 0) return;
         {
-            Boxes.RemoveContainer(c);
+            foreach (Container c in parentContainer)
+            {
+                Boxes.RemoveContainer(c);
+            }
         }
     }
 }
@@ -114,16 +100,13 @@ public static class PlayerUpdateTeleportPatchCleanupContainers
     {
         if (ShouldPrevent()) return;
 
-        if (!Player.m_localPlayer || !Player.m_localPlayer.m_teleporting)
+        if (!(Player.m_localPlayer != null) || !Player.m_localPlayer.m_teleporting)
             return;
-
-        // Clean out broken container refs
-        foreach (Container? container in Boxes.Containers.ToList())
+        foreach (Container container in Boxes.Containers.ToList().Where(container => (!(container != null) || !(container.transform != null)
+                     ? 0
+                     : (container.GetInventory() != null ? 1 : 0)) == 0).Where(container => container != null))
         {
-            if (!container || !container.transform || container.GetInventory() == null)
-            {
-                Boxes.RemoveContainer(container!);
-            }
+            Boxes.RemoveContainer(container);
         }
     }
 }
