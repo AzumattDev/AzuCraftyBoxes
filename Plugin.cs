@@ -17,7 +17,7 @@ namespace AzuCraftyBoxes
     public class AzuCraftyBoxesPlugin : BaseUnityPlugin
     {
         internal const string ModName = "AzuCraftyBoxes";
-        internal const string ModVersion = "1.8.10";
+        internal const string ModVersion = "1.8.11";
         internal const string Author = "Azumatt";
         private const string ModGUID = $"{Author}.{ModName}";
         private static string ConfigFileName = $"{ModGUID}.cfg";
@@ -128,6 +128,10 @@ namespace AzuCraftyBoxes
         {
             AutoDoc();
 
+            if (Chainloader.PluginInfos.ContainsKey("org.bepinex.plugins.backpacks"))
+            {
+                BackpacksIsLoaded = true;
+            }
             if (Chainloader.PluginInfos.ContainsKey("org.bepinex.plugins.backpacks"))
             {
                 BackpacksIsLoaded = true;

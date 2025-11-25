@@ -5,7 +5,7 @@ namespace AzuCraftyBoxes.APIs;
 public static class MkzItemDrawers_API
 {
     private static readonly bool _isInstalled;
-    private static readonly Type? _drawerType; // DrawerContainer
+    internal static Type? _drawerType; // DrawerContainer
     private static readonly FieldInfo? _fiItem; // private ItemDrop.ItemData _item
     private static readonly FieldInfo? _fiQuantity; // private int _quantity
 

@@ -175,9 +175,8 @@ public class Boxes
         }
 
 
-        _cachedAll.AddRange(_scratchNearby);
+        _cachedAll.AddRange(_scratchNearby); // Makail ItemDrawers should still be captured by this.
         _cachedAll.AddRange(_scratchkgDrawers);
-        _cachedAll.AddRange(_scratchmkzDrawers);
         _cachedAll.AddRange(_scratchBackpacks);
         _cachedAll.AddRange(_scratchGemBags);
 
