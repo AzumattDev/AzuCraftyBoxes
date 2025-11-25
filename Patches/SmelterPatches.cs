@@ -127,17 +127,34 @@ public static class OverrideHoverText
     }
 }
 
+[HarmonyPatch(typeof(Smelter), nameof(Smelter.QueueOre))]
+static class PreventOverfillJIC_SmelterQueueOrePatch
+{
+    static bool Prefix(Smelter __instance, string name)
+    {
+        return __instance.GetQueueSize() < __instance.m_maxOre;
+    }
+}
+
+[HarmonyPatch(typeof(Smelter), nameof(Smelter.RPC_AddFuel))]
+static class CapFuel_SmelterRPC_AddFuelPatch
+{
+    static bool Prefix(Smelter __instance)
+    {
+        if (!__instance.m_nview.IsOwner()) return true;
+        return !(__instance.GetFuel() >= __instance.m_maxFuel);
+    }
+}
+
 [HarmonyPatch(typeof(Smelter), nameof(Smelter.OnAddOre))]
 static class SmelterOnAddOrePatch
 {
-    static bool Prefix(Smelter __instance, Humanoid user, ItemDrop.ItemData item, ZNetView ___m_nview, out KeyValuePair<ItemDrop.ItemData?, int> __state)
+    [HarmonyPriority(Priority.High)]
+    static bool Prefix(Smelter __instance, Humanoid user, ItemDrop.ItemData item, ZNetView ___m_nview)
     {
         int ore = __instance.GetQueueSize();
-        __state = new KeyValuePair<ItemDrop.ItemData?, int>(item, ore);
-        /*bool pullAll = Input.GetKey(AzuCraftyBoxesPlugin.fillAllModKey.Value.MainKey);*/
-        // Used to be fillAllModKey.Value.isPressed(); something is wrong with KeyboardShortcuts always returning false
         bool pullAll = AzuCraftyBoxesPlugin.fillAllModKey.Value.IsKeyHeld();
-        if (MiscFunctions.ShouldPrevent() || item != null || __instance.GetQueueSize() >= __instance.m_maxOre)
+        if (MiscFunctions.ShouldPrevent() || item != null || ore >= __instance.m_maxOre)
             return true;
 
         Inventory inventory = user.GetInventory();
@@ -158,7 +175,7 @@ static class SmelterOnAddOrePatch
         List<IContainer> nearbyContainers = Boxes.QueryFrame.Get(user, AzuCraftyBoxesPlugin.mRange.Value);
         foreach (Smelter.ItemConversion itemConversion in __instance.m_conversion)
         {
-            if (__instance.GetQueueSize() >= __instance.m_maxOre || (added.Any() && !pullAll))
+            if (ore >= __instance.m_maxOre || (added.Any() && !pullAll))
                 break;
 
             string name = itemConversion.m_from.m_itemData.m_shared.m_name;
@@ -178,7 +195,7 @@ static class SmelterOnAddOrePatch
                     // AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogError(e);
                 }
 
-                if (newItem.m_dropPrefab == null) continue;
+                if (!newItem.m_dropPrefab) continue;
                 string itemPrefabName = Utils.GetPrefabName(newItem.m_dropPrefab);
                 if (!Boxes.CanItemBePulled(Utils.GetPrefabName(__instance.gameObject), itemPrefabName))
                 {
@@ -189,8 +206,7 @@ static class SmelterOnAddOrePatch
                 int amount = pullAll
                     ? Mathf.Min(__instance.m_maxOre - __instance.GetQueueSize(), inventory.CountItems(name))
                     : 1;
-                if (!added.ContainsKey(name))
-                    added[name] = 0;
+                added.TryAdd(name, 0);
                 added[name] += amount;
 
                 inventory.RemoveItem(itemConversion.m_from.m_itemData.m_shared.m_name, amount);
@@ -210,7 +226,7 @@ static class SmelterOnAddOrePatch
                 {
                     if (!c.ContainsItem(name, 1, out int result)) continue;
                     result = Boxes.CheckAndDecrement(result);
-                    if(result <= 0) continue;
+                    if (result <= 0) continue;
                     if (!Boxes.CanItemBePulled(c.GetPrefabName(), prefabName))
                     {
                         AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(SmelterOnAddOrePatch) Container at {c.GetPosition()} has {result} {prefabName} but it's forbidden by config");
@@ -219,8 +235,7 @@ static class SmelterOnAddOrePatch
 
                     int amount = pullAll ? Mathf.Min(__instance.m_maxOre - __instance.GetQueueSize(), result) : 1;
 
-                    if (!added.ContainsKey(name))
-                        added[name] = 0;
+                    added.TryAdd(name, 0);
                     added[name] += amount;
                     AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"Pull ALL is {pullAll}");
                     AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(SmelterOnAddOrePatch) Container at {c.GetPosition()} has {result} {prefabName}, taking {amount}");
@@ -234,8 +249,7 @@ static class SmelterOnAddOrePatch
                     user.Message(MessageHud.MessageType.TopLeft, $"$msg_added {amount} {name}");
 
 
-                    if (__instance.GetQueueSize() >= __instance.m_maxOre ||
-                        !pullAll)
+                    if (__instance.GetQueueSize() >= __instance.m_maxOre || !pullAll)
                         break;
                 }
             }
@@ -252,35 +266,6 @@ static class SmelterOnAddOrePatch
 
         return false;
     }
-
-    public static void Postfix(Smelter __instance, Switch sw, Humanoid user, KeyValuePair<ItemDrop.ItemData?, int> __state, bool __result)
-    {
-        if (AzuCraftyBoxesPlugin.fillAllModKey.Value.IsKeyHeld() && __result && __state.Key is null)
-        {
-            if (!__instance.m_nview.IsOwner())
-            {
-                if (__instance.m_nview.GetZDO() != null)
-                {
-                    int ore = __instance.GetQueueSize();
-                    if (ore == __state.Value)
-                    {
-                        __instance.m_nview.GetZDO().Set(ZDOVars.s_queued, ore + 1);
-                    }
-                }
-            }
-
-            MessageHud originalMessageHud = MessageHud.m_instance;
-            MessageHud.m_instance = null;
-            try
-            {
-                __instance.OnAddOre(sw, user, null);
-            }
-            finally
-            {
-                MessageHud.m_instance = originalMessageHud;
-            }
-        }
-    }
 }
 
 [HarmonyPatch(typeof(Smelter), nameof(Smelter.OnAddFuel))]
@@ -289,10 +274,6 @@ static class SmelterOnAddFuelPatch
 {
     static bool Prefix(Smelter __instance, ref bool __result, ZNetView ___m_nview, Humanoid user, ItemDrop.ItemData item)
     {
-        /*bool pullAll =
-            Input.GetKey(AzuCraftyBoxesPlugin.fillAllModKey.Value
-                .MainKey);*/
-        // Used to be fillAllModKey.Value.IsPressed(); something is wrong with KeyboardShortcuts always returning false
         bool pullAll = AzuCraftyBoxesPlugin.fillAllModKey.Value.IsKeyHeld();
         Inventory inventory = user.GetInventory();
         if (MiscFunctions.ShouldPrevent() || item != null || inventory == null ||
@@ -337,7 +318,7 @@ static class SmelterOnAddFuelPatch
             {
                 if (!c.ContainsItem(sharedName, 1, out int result)) continue;
                 result = Boxes.CheckAndDecrement(result);
-                if(result <= 0) continue;
+                if (result <= 0) continue;
                 if (!Boxes.CanItemBePulled(c.GetPrefabName(), fuelPrefabName))
                 {
                     AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(SmelterOnAddFuelPatch) Container at {c.GetPosition()} has {result} {sharedName} but it's forbidden by config");

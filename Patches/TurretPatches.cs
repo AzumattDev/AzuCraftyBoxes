@@ -93,6 +93,8 @@ static class TurretGetHoverTextPatch
 {
     static void Postfix(Turret __instance, ref string __result)
     {
+        if (!__instance.m_nview.IsValid())
+            return;
         if (MiscFunctions.ShouldPrevent())
         {
             return;
