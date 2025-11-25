@@ -74,7 +74,8 @@ public class Boxes
     }
 
     private static readonly List<IContainer> _scratchNearby = new(256);
-    private static readonly List<IContainer> _scratchDrawers = new(128);
+    private static readonly List<IContainer> _scratchkgDrawers = new(128);
+    private static readonly List<IContainer> _scratchmkzDrawers = new(128);
     private static readonly List<IContainer> _scratchBackpacks = new(32);
     private static readonly List<IContainer> _scratchGemBags = new(32);
 
@@ -103,7 +104,8 @@ public class Boxes
         }
 
         _scratchNearby.Clear();
-        _scratchDrawers.Clear();
+        _scratchkgDrawers.Clear();
+        _scratchmkzDrawers.Clear();
         _scratchBackpacks.Clear();
         _scratchGemBags.Clear();
         _cachedAll.Clear();
@@ -113,7 +115,6 @@ public class Boxes
         foreach (var c in Containers)
         {
             if (!c) continue;
-            // Optional: skip closed wagons in-use
             if (c.m_wagon != null && c.m_wagon.InUse()) continue;
 
             Vector3 d = c.transform.position - pos;
@@ -128,7 +129,10 @@ public class Boxes
 
         var drawers = APIs.ItemDrawers_API.AllDrawersInRange(pos, rangeMeters);
         foreach (var d in drawers)
-            _scratchDrawers.Add(kgDrawer.Create(d));
+            _scratchkgDrawers.Add(kgDrawer.Create(d));
+        var mkzdrawers = APIs.MkzItemDrawers_API.AllDrawersInRange(pos, rangeMeters);
+        foreach (var d in mkzdrawers)
+            _scratchmkzDrawers.Add(mkzDrawer.Create(d));
         
         if (AzuCraftyBoxesPlugin.BackpacksIsLoaded)
         {
@@ -172,7 +176,8 @@ public class Boxes
 
 
         _cachedAll.AddRange(_scratchNearby);
-        _cachedAll.AddRange(_scratchDrawers);
+        _cachedAll.AddRange(_scratchkgDrawers);
+        _cachedAll.AddRange(_scratchmkzDrawers);
         _cachedAll.AddRange(_scratchBackpacks);
         _cachedAll.AddRange(_scratchGemBags);
 
