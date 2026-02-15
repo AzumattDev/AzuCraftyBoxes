@@ -25,21 +25,24 @@ static class FireplaceInteractPatch
             return true;
         }
 
+        int fuel = Mathf.CeilToInt(___m_nview.GetZDO().GetFloat(ZDOVars.s_fuel));
+
         if (pullAll && inventory.HaveItem(__instance.m_fuelItem.m_itemData.m_shared.m_name))
         {
-            int amount = (int)Mathf.Min(__instance.m_maxFuel - Mathf.CeilToInt(___m_nview.GetZDO().GetFloat(ZDOVars.s_fuel)), inventory.CountItems(__instance.m_fuelItem.m_itemData.m_shared.m_name));
+            int amount = (int)Mathf.Min(__instance.m_maxFuel - fuel, inventory.CountItems(__instance.m_fuelItem.m_itemData.m_shared.m_name));
             inventory.RemoveItem(__instance.m_fuelItem.m_itemData.m_shared.m_name, amount);
             inventory.Changed();
             for (int i = 0; i < amount; ++i)
                 ___m_nview.InvokeRPC("RPC_AddFuel");
 
-            user.Message(MessageHud.MessageType.Center,
-                Localization.instance.Localize("$msg_fireadding", __instance.m_fuelItem.m_itemData.m_shared.m_name));
+            fuel += amount;
+
+            user.Message(MessageHud.MessageType.Center, Localization.instance.Localize("$msg_fireadding", __instance.m_fuelItem.m_itemData.m_shared.m_name));
 
             __result = false;
         }
 
-        if (inventory.HaveItem(__instance.m_fuelItem.m_itemData.m_shared.m_name) || !(Mathf.CeilToInt(___m_nview.GetZDO().GetFloat(ZDOVars.s_fuel)) < __instance.m_maxFuel)) return __result;
+        if (inventory.HaveItem(__instance.m_fuelItem.m_itemData.m_shared.m_name) || !(fuel < __instance.m_maxFuel)) return __result;
         {
             List<IContainer> nearbyContainers = Boxes.QueryFrame.Get(__instance, AzuCraftyBoxesPlugin.mRange.Value);
 
@@ -47,16 +50,17 @@ static class FireplaceInteractPatch
             string sharedName = __instance.m_fuelItem.m_itemData.m_shared.m_name;
             foreach (IContainer c in nearbyContainers)
             {
-                if (!c.ContainsItem(sharedName, 1, out int result) || !(Mathf.CeilToInt(___m_nview.GetZDO().GetFloat(ZDOVars.s_fuel)) < __instance.m_maxFuel)) continue;
+                if (!c.ContainsItem(sharedName, 1, out int result) || !(fuel < __instance.m_maxFuel)) continue;
                 result = Boxes.CheckAndDecrement(result);
-                if(result <= 0) continue;
+                if (result <= 0) continue;
                 if (!Boxes.CanItemBePulled(c.GetPrefabName(), fuelPrefabName))
                 {
                     AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(FireplaceInteractPatch) Container at {c.GetPosition()} has {result} {fuelPrefabName} but it's forbidden by config");
                     continue;
                 }
 
-                int amount = pullAll ? (int)Mathf.Min(__instance.m_maxFuel - Mathf.CeilToInt(___m_nview.GetZDO().GetFloat(ZDOVars.s_fuel)), result) : 1;
+                int amount = pullAll ? (int)Mathf.Min(__instance.m_maxFuel - fuel, result) : 1;
+                if (amount <= 0) break;
                 AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"Pull ALL is {pullAll}");
                 AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(FireplaceInteractPatch) Container at {c.GetPosition()} has {result} {fuelPrefabName}, taking {amount}");
 
@@ -69,14 +73,25 @@ static class FireplaceInteractPatch
                 for (int i = 0; i < amount; ++i)
                     ___m_nview.InvokeRPC("RPC_AddFuel");
 
+                fuel += amount;
                 __result = false;
 
-                if (!pullAll || Mathf.CeilToInt(___m_nview.GetZDO().GetFloat(ZDOVars.s_fuel)) >= __instance.m_maxFuel)
+                if (!pullAll || fuel >= __instance.m_maxFuel)
                     return false;
             }
         }
 
         return __result;
+    }
+}
+
+[HarmonyPatch(typeof(Fireplace), nameof(Fireplace.RPC_AddFuel))]
+static class CapFuel_FireplaceRPC_AddFuelPatch
+{
+    static bool Prefix(Fireplace __instance, ZNetView ___m_nview)
+    {
+        if (!___m_nview.IsOwner()) return true;
+        return ___m_nview.GetZDO().GetFloat(ZDOVars.s_fuel) < __instance.m_maxFuel;
     }
 }
 
