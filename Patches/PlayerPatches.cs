@@ -52,62 +52,72 @@ static class PlayerHaveRequirementsPatch
                 bool proceed = MiscFunctions.CheckItemDropIntegrity(requirement.m_resItem);
                 if (!proceed) continue;
 
+                string sharedName = requirement.m_resItem.m_itemData.m_shared.m_name;
+
+                if (piece.m_requireOnlyOneIngredient && !___m_knownMaterial.Contains(sharedName))
+                    continue;
+
                 int requiredAmount = requirement.GetAmount(qualityLevel) * amount;
-                int availableAmount = 0;
                 GameObject itemPrefab = MiscFunctions.GetItemPrefabFromGameObject(requirement.m_resItem, requirement.m_resItem.gameObject)!;
                 requirement.m_resItem.m_itemData.m_dropPrefab = requirement.m_resItem.gameObject;
                 if (itemPrefab == null)
                     continue;
 
+                string itemPrefabName = Utils.GetPrefabName(requirement.m_resItem.name);
+                bool dropPrefabValid = requirement.m_resItem.m_itemData?.m_dropPrefab != null;
                 int bestAcrossQualities = 0;
+
+                if (requirement.m_resItem.m_itemData == null) continue;
 
                 for (int quality = 1; quality <= requirement.m_resItem.m_itemData.m_shared.m_maxQuality; ++quality)
                 {
-                    // Player inventory amount at this quality
-                    int invAmountAtQ = __instance.GetInventory().CountItems(requirement.m_resItem.m_itemData.m_shared.m_name, quality);
+                    int invAmountAtQ = __instance.GetInventory().CountItems(sharedName, quality);
 
-                    // Sum takeable amounts from nearby containers at this quality (reserve one in each container)
+                    if (invAmountAtQ >= requiredAmount)
+                    {
+                        bestAcrossQualities = invAmountAtQ;
+                        break;
+                    }
+
                     int containersTakeableAtQ = 0;
 
-                    string itemPrefabName = Utils.GetPrefabName(requirement.m_resItem.name);
-                    string sharedName = requirement.m_resItem.m_itemData.m_shared.m_name;
-
-                    foreach (IContainer container in nearbyContainers)
+                    if (dropPrefabValid)
                     {
-                        if (requirement.m_resItem?.m_itemData?.m_dropPrefab == null)
-                            continue;
-
-                        var containerPrefabName = container.GetPrefabName();
-                        if (Boxes.CanItemBePulled(containerPrefabName, itemPrefabName))
+                        foreach (IContainer container in nearbyContainers)
                         {
-                            container.ContainsItem(sharedName, quality, out int containerAmount);
-                            // leave-one rule per container
-                            int takeable = System.Math.Max(0, Boxes.CheckAndDecrement(containerAmount));
-                            if (takeable > 0)
-                                containersTakeableAtQ += takeable;
+                            var containerPrefabName = container.GetPrefabName();
+                            if (Boxes.CanItemBePulled(containerPrefabName, itemPrefabName))
+                            {
+                                container.ContainsItem(sharedName, quality, out int containerAmount);
+                                int takeable = System.Math.Max(0, Boxes.CheckAndDecrement(containerAmount));
+                                if (takeable > 0)
+                                    containersTakeableAtQ += takeable;
+                            }
+
+                            // Stop iterating containers once we have enough at this quality
+                            if (invAmountAtQ + containersTakeableAtQ >= requiredAmount)
+                                break;
                         }
                     }
 
-                    // Candidate availability at this quality = inventory + containers (non-mutating)
                     int candidateAtQ = invAmountAtQ + containersTakeableAtQ;
                     if (candidateAtQ > bestAcrossQualities)
                         bestAcrossQualities = candidateAtQ;
-                }
 
-                // Final available for this requirement is the best quality candidate
-                availableAmount = bestAcrossQualities;
+                    // Stop checking further qualities once we have enough
+                    if (bestAcrossQualities >= requiredAmount)
+                        break;
+                }
 
                 if (piece.m_requireOnlyOneIngredient)
                 {
-                    if (availableAmount >= requiredAmount)
+                    if (bestAcrossQualities >= requiredAmount)
                     {
-                        if (__instance.m_knownMaterial.Contains(requirement.m_resItem.m_itemData.m_shared.m_name))
-                        {
-                            cando = true;
-                        }
+                        cando = true;
+                        break; // Found one valid ingredient, no need to check the rest
                     }
                 }
-                else if (availableAmount < requiredAmount)
+                else if (bestAcrossQualities < requiredAmount)
                 {
                     return;
                 }
@@ -154,6 +164,9 @@ static class PlayerHaveRequirementsPatchRBoolInt
     {
         if (p == null)
             return false;
+
+        List<IContainer>? nearbyContainers = null;
+
         foreach (Piece.Requirement resource in piece.m_resources)
         {
             if (resource.m_resItem)
@@ -173,39 +186,38 @@ static class PlayerHaveRequirementsPatchRBoolInt
                 }
                 else
                 {
-                    List<IContainer> nearbyContainers = Boxes.QueryFrame.Get(p, AzuCraftyBoxesPlugin.mRange.Value);
+                    string sharedName = resource.m_resItem.m_itemData.m_shared.m_name;
                     int amount = resource.GetAmount(qualityLevel) * amountVanilla;
-                    int num = p.m_inventory.CountItems(resource.m_resItem.m_itemData.m_shared.m_name);
+                    int num = p.m_inventory.CountItems(sharedName);
 
-                    foreach (IContainer c in nearbyContainers)
+                    // Only check containers if inventory doesn't have enough
+                    if (num < amount)
                     {
-                        resource.m_resItem.m_itemData.m_dropPrefab = resource.m_resItem.gameObject;
-                        if (resource.m_resItem.m_itemData.m_dropPrefab == null)
-                            continue;
-                        string itemPrefabName = resource.m_resItem.name;
-                        string sharedName = resource.m_resItem.m_itemData.m_shared.m_name;
-                        bool canItemBePulled = false;
-                        if (c == null) continue;
-                        if (!string.IsNullOrWhiteSpace(c.GetPrefabName()))
-                        {
-                            canItemBePulled = Boxes.CanItemBePulled(c.GetPrefabName(), itemPrefabName);
-                        }
+                        nearbyContainers ??= Boxes.QueryFrame.Get(p, AzuCraftyBoxesPlugin.mRange.Value);
 
-                        if (canItemBePulled)
+                        resource.m_resItem.m_itemData.m_dropPrefab = resource.m_resItem.gameObject;
+                        if (resource.m_resItem.m_itemData.m_dropPrefab != null)
                         {
-                            try
+                            string itemPrefabName = resource.m_resItem.name;
+
+                            foreach (IContainer c in nearbyContainers)
                             {
-                                c.ContainsItem(sharedName, 1, out int result);
-                                result = Boxes.CheckAndDecrement(result);
-                                num += result;
-                                if (num >= amount)
+                                if (c == null) continue;
+                                if (string.IsNullOrWhiteSpace(c.GetPrefabName())) continue;
+                                if (!Boxes.CanItemBePulled(c.GetPrefabName(), itemPrefabName)) continue;
+
+                                try
                                 {
-                                    break;
+                                    c.ContainsItem(sharedName, 1, out int result);
+                                    result = Boxes.CheckAndDecrement(result);
+                                    num += result;
+                                    if (num >= amount)
+                                        break;
                                 }
-                            }
-                            catch
-                            {
-// ignored
+                                catch
+                                {
+                                    // ignored
+                                }
                             }
                         }
                     }
