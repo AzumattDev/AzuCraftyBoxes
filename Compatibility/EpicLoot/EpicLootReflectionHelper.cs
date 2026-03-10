@@ -287,6 +287,7 @@ public static class EpicLoot
                 AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Starting to remove {amount} of '{item.m_shared.m_name}' from containers.");
                 foreach (Container container in Boxes.Containers)
                 {
+                    if (amount <= 0) break;
                     Inventory containerInventory = container.GetInventory();
 
                     if (containerInventory == null) continue;
@@ -313,6 +314,37 @@ public static class EpicLoot
 
                         if (amount <= 0)
                             break;
+                    }
+                }
+                
+                if (amount > 0)
+                {
+                    List<IContainer> nearbyContainers = Boxes.QueryFrame.Get(Player.m_localPlayer, AzuCraftyBoxesPlugin.mRange.Value);
+                    foreach (IContainer iContainer in nearbyContainers)
+                    {
+                        if (amount <= 0) break;
+                        Inventory? containerInventory = iContainer.GetInventory();
+                        if (containerInventory == null) continue;
+
+                        List<ItemDrop.ItemData> items = containerInventory.GetAllItems();
+                        List<ItemDrop.ItemData> matchingItems = items.FindAll(i => i == item);
+
+                        foreach (ItemDrop.ItemData containerItem in matchingItems)
+                        {
+                            if (amount <= 0) break;
+                            int removeAmount = Math.Min(containerItem.m_stack, amount);
+                            bool success = containerInventory.RemoveItem(containerItem, removeAmount);
+                            if (success)
+                            {
+                                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Removed {removeAmount} of '{item.m_shared.m_name}' from IContainer '{iContainer.GetPrefabName()}'. Remaining to remove: {amount - removeAmount}");
+                                amount -= removeAmount;
+                                iContainer.Save();
+                            }
+                            else
+                            {
+                                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogWarning($"Failed to remove {removeAmount} of '{item.m_shared.m_name}' from IContainer '{iContainer.GetPrefabName()}'.");
+                            }
+                        }
                     }
                 }
 
