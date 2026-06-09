@@ -474,7 +474,7 @@ static class ConsumeLaterConsumptionItemsInventoryGuiDoCraftingPatch
                 continue;
             }
 
-            Inventory containerInventory = consumption.SourceContainer.GetInventory();
+            Inventory? containerInventory = consumption.SourceContainer.GetInventory();
             if (containerInventory == null)
             {
                 continue;
