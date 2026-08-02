@@ -156,9 +156,11 @@ public static class EpicLoot
                     if (item?.m_dropPrefab == null)
                         continue;
                     if (!Boxes.CanItemBePulled(container.GetPrefabName(), item.m_dropPrefab.name, TablePrefabName)) continue;
-                    Inventory? containerInventory = container.GetInventory();
 
-                    if (containerInventory == null || (Boxes.CheckAndDecrement(containerInventory.CountItems(item.m_shared.m_name)) + CountPlayerItems(item.m_shared.m_name)) < item.m_stack) continue;
+                    int containerCount = container.ItemCount(item.m_shared.m_name);
+                    if (containerCount <= 0) continue;
+
+                    if ((Boxes.CheckAndDecrement(containerCount) + CountPlayerItems(item.m_shared.m_name)) < item.m_stack) continue;
                     result = true;
                     return;
                 }
@@ -229,11 +231,10 @@ public static class EpicLoot
                 List<IContainer> nearbyContainers = Boxes.QueryFrame.Get(Player.m_localPlayer, AzuCraftyBoxesPlugin.mRange.Value);
                 foreach (IContainer container in nearbyContainers)
                 {
-                    Inventory? containerInventory = container.GetInventory();
-
-                    if (containerInventory != null)
+                    int result = container.ItemCount(itemName);
+                    if (result > 0)
                     {
-                        count += Boxes.CheckAndDecrement(containerInventory.CountItems(itemName));
+                        count += Boxes.CheckAndDecrement(result);
                     }
                 }
             }
@@ -254,33 +255,18 @@ public static class EpicLoot
                 AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Starting to remove {amount} of '{itemName}' from containers.");
                 foreach (IContainer container in nearbyContainers)
                 {
-                    Inventory? containerInventory = container.GetInventory();
+                    if (amount <= 0)
+                        break;
 
-                    if (containerInventory == null) continue;
-                    List<ItemDrop.ItemData> items = containerInventory.GetAllItems();
+                    int availableInContainer = container.ItemCount(itemName);
+                    if (availableInContainer <= 0) continue;
 
-                    List<ItemDrop.ItemData> matchingItems = items.FindAll(item => item.m_shared.m_name.Equals(itemName, StringComparison.OrdinalIgnoreCase));
+                    int removeAmount = Math.Min(availableInContainer, amount);
+                    container.RemoveItem(itemName, removeAmount);
+                    container.Save();
 
-                    foreach (ItemDrop.ItemData? item in matchingItems)
-                    {
-                        if (amount <= 0)
-                            break;
-
-                        int removeAmount = Math.Min(item.m_stack, amount);
-                        bool success = containerInventory.RemoveItem(item, removeAmount);
-                        if (success)
-                        {
-                            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Removed {removeAmount} of '{itemName}' from container '{container.GetPrefabName()}'. Remaining to remove: {amount - removeAmount}");
-                            amount -= removeAmount;
-                        }
-                        else
-                        {
-                            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogWarning($"Failed to remove {removeAmount} of '{itemName}' from container '{container.GetPrefabName()}'.");
-                        }
-
-                        if (amount <= 0)
-                            break;
-                    }
+                    AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Removed {removeAmount} of '{itemName}' from container '{container.GetPrefabName()}'. Remaining to remove: {amount - removeAmount}");
+                    amount -= removeAmount;
                 }
 
                 if (amount > 0)
@@ -301,6 +287,7 @@ public static class EpicLoot
                 AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Starting to remove {amount} of '{item.m_shared.m_name}' from containers.");
                 foreach (Container container in Boxes.Containers)
                 {
+                    if (amount <= 0) break;
                     Inventory containerInventory = container.GetInventory();
 
                     if (containerInventory == null) continue;
@@ -327,6 +314,37 @@ public static class EpicLoot
 
                         if (amount <= 0)
                             break;
+                    }
+                }
+                
+                if (amount > 0)
+                {
+                    List<IContainer> nearbyContainers = Boxes.QueryFrame.Get(Player.m_localPlayer, AzuCraftyBoxesPlugin.mRange.Value);
+                    foreach (IContainer iContainer in nearbyContainers)
+                    {
+                        if (amount <= 0) break;
+                        Inventory? containerInventory = iContainer.GetInventory();
+                        if (containerInventory == null) continue;
+
+                        List<ItemDrop.ItemData> items = containerInventory.GetAllItems();
+                        List<ItemDrop.ItemData> matchingItems = items.FindAll(i => i == item);
+
+                        foreach (ItemDrop.ItemData containerItem in matchingItems)
+                        {
+                            if (amount <= 0) break;
+                            int removeAmount = Math.Min(containerItem.m_stack, amount);
+                            bool success = containerInventory.RemoveItem(containerItem, removeAmount);
+                            if (success)
+                            {
+                                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogDebug($"Removed {removeAmount} of '{item.m_shared.m_name}' from IContainer '{iContainer.GetPrefabName()}'. Remaining to remove: {amount - removeAmount}");
+                                amount -= removeAmount;
+                                iContainer.Save();
+                            }
+                            else
+                            {
+                                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogWarning($"Failed to remove {removeAmount} of '{item.m_shared.m_name}' from IContainer '{iContainer.GetPrefabName()}'.");
+                            }
+                        }
                     }
                 }
 
@@ -356,12 +374,17 @@ public static class EpicLoot
                 {
                     Inventory? containerInventory = container.GetInventory();
 
-                    if (containerInventory == null) continue;
-                    // Add each item in container to the combined list
-                    foreach (ItemDrop.ItemData item in containerInventory.GetAllItems())
+                    if (containerInventory != null)
                     {
-                        combinedItems.Add(item);
+                        // Handle containers with inventories (vanilla containers)
+                        // Add each item in container to the combined list
+                        foreach (ItemDrop.ItemData item in containerInventory.GetAllItems())
+                        {
+                            combinedItems.Add(item);
+                        }
                     }
+                    // Note: For drawers without inventories, we can't easily create ItemData objects here
+                    // since EpicLoot needs the actual item instances. Drawers will still work for counting/removal.
                 }
 
                 playerInventory.m_inventory = combinedItems;

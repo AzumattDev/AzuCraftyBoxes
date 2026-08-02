@@ -6,85 +6,122 @@ namespace AzuCraftyBoxes.Patches;
 [HarmonyPatch(typeof(Turret), nameof(Turret.UseItem))]
 static class Turret_UseItem_Patch
 {
-    static void Prefix(Turret __instance, Humanoid user, ref ItemDrop.ItemData item, ZNetView ___m_nview)
+    static bool Prefix(Turret __instance, Humanoid user, ref ItemDrop.ItemData item, ref bool __result, ZNetView ___m_nview)
     {
         bool pullAll = Input.GetKey(AzuCraftyBoxesPlugin.fillAllModKey.Value.MainKey);
         Inventory inventory = user.GetInventory();
         if (MiscFunctions.ShouldPrevent() || item != null || user is not Player)
-        {
-            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"Not allowed {!MiscFunctions.AllowPullingLogic()} {item is null} {user is Player}");
-            return;
-        }
+            return true;
 
         if (!___m_nview.HasOwner())
         {
             ___m_nview.ClaimOwnership();
         }
 
+        item = __instance.FindAmmoItem(inventory, true);
 
-        item = __instance.FindAmmoItem(user.GetInventory(), true);
-        if (item is null)
+        if (!pullAll && item != null)
+            return true;
+
+        string ammoType = __instance.GetAmmoType();
+        GameObject prefab = ZNetScene.instance.GetPrefab(ammoType);
+        if (!prefab)
         {
-            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"No item found in inventory, checking containers for {__instance.GetAmmoType()}");
-            string? ammoType = __instance.GetAmmoType();
-            GameObject prefab = ZNetScene.instance.GetPrefab(ammoType);
-            if (!prefab)
-            {
-                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"No prefab found for {__instance.GetAmmoType()}");
-                ZLog.LogWarning("Turret '" + __instance.name + "' is trying to fire but has no ammo or default ammo!");
-                return;
-            }
+            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"No prefab found for {__instance.GetAmmoType()}");
+            ZLog.LogWarning("Turret '" + __instance.name + "' is trying to fire but has no ammo or default ammo!");
+            return true;
+        }
 
-            string? sharedName = prefab.GetComponent<ItemDrop>().m_itemData.m_shared.m_name;
-            string? ammoPrefabName = ammoType;
-            if (!Boxes.CanItemBePulled(Utils.GetPrefabName(__instance.gameObject), ammoType))
-            {
-                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"ammoType: {ammoType} could not be pulled due to config");
-                return;
-            }
+        string sharedName = prefab.GetComponent<ItemDrop>().m_itemData.m_shared.m_name;
 
-            if (pullAll && inventory.HaveItem(sharedName))
+        if (!Boxes.CanItemBePulled(Utils.GetPrefabName(__instance.gameObject), ammoType))
+        {
+            AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"ammoType: {ammoType} could not be pulled due to config");
+            return true;
+        }
+
+        int ammo = Mathf.CeilToInt(__instance.GetAmmo());
+
+        if (ammo >= __instance.m_maxAmmo)
+        {
+            user.Message(MessageHud.MessageType.Center, "$msg_itsfull");
+            __result = true;
+            return false;
+        }
+
+        __result = true;
+        int added = 0;
+
+        if (pullAll && inventory.HaveItem(sharedName))
+        {
+            int amount = (int)Mathf.Min(__instance.m_maxAmmo - ammo, inventory.CountItems(sharedName));
+            if (amount > 0)
             {
-                int amount = (int)Mathf.Min(__instance.m_maxAmmo - Mathf.CeilToInt(__instance.GetAmmo()), inventory.CountItems(sharedName));
                 inventory.RemoveItem(sharedName, amount);
                 inventory.Changed();
                 for (int i = 0; i < amount; ++i)
-                    ___m_nview.InvokeRPC("RPC_AddAmmo", ammoPrefabName);
+                    ___m_nview.InvokeRPC("RPC_AddAmmo", ammoType);
 
-                user.Message(MessageHud.MessageType.Center, $"$msg_added {sharedName}");
-            }
-
-            if (inventory.HaveItem(sharedName) || !(Mathf.CeilToInt(__instance.GetAmmo()) < __instance.m_maxAmmo)) return;
-            {
-                List<IContainer> nearbyContainers = Boxes.QueryFrame.Get(__instance, AzuCraftyBoxesPlugin.mRange.Value);
-
-                foreach (IContainer c in nearbyContainers)
-                {
-                    if (!c.ContainsItem(sharedName, 1, out int result) || !(Mathf.CeilToInt(__instance.GetAmmo()) < __instance.m_maxAmmo)) continue;
-                    if (!Boxes.CanItemBePulled(c.GetPrefabName(), ammoPrefabName))
-                    {
-                        AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(TurretUseItemPatch) Container at {c.GetPosition()} has {result} {ammoPrefabName} but it's forbidden by config");
-                        continue;
-                    }
-
-                    int amount = pullAll ? (int)Mathf.Min(__instance.m_maxAmmo - Mathf.CeilToInt(__instance.GetAmmo()), result) : 1;
-                    AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"Pull ALL is {pullAll}");
-                    AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(TurretUseItemPatch) Container at {c.GetPosition()} has {result} {ammoPrefabName}, taking {amount}");
-
-                    c.RemoveItem(sharedName, amount);
-                    c.Save();
-
-                    user.Message(MessageHud.MessageType.Center, $"$msg_added {sharedName}");
-
-                    for (int i = 0; i < amount; ++i)
-                        ___m_nview.InvokeRPC("RPC_AddAmmo", ammoPrefabName);
-
-
-                    if (!pullAll || Mathf.CeilToInt(__instance.GetAmmo()) >= __instance.m_maxAmmo)
-                        return;
-                }
+                ammo += amount;
+                added += amount;
+                user.Message(MessageHud.MessageType.TopLeft, Localization.instance.Localize("$msg_fireadding", sharedName));
             }
         }
+
+        if (ammo < __instance.m_maxAmmo)
+        {
+            List<IContainer> nearbyContainers = Boxes.QueryFrame.Get(__instance, AzuCraftyBoxesPlugin.mRange.Value);
+
+            foreach (IContainer c in nearbyContainers)
+            {
+                if (!c.ContainsItem(sharedName, 1, out int result)) continue;
+                result = Boxes.CheckAndDecrement(result);
+                if (result <= 0) continue;
+                if (!Boxes.CanItemBePulled(c.GetPrefabName(), ammoType))
+                {
+                    AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(TurretUseItemPatch) Container at {c.GetPosition()} has {result} {ammoType} but it's forbidden by config");
+                    continue;
+                }
+
+                int amount = pullAll ? (int)Mathf.Min(__instance.m_maxAmmo - ammo, result) : 1;
+                if (amount <= 0) break;
+                AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(TurretUseItemPatch) Container at {c.GetPosition()} has {result} {ammoType}, taking {amount}");
+
+                c.RemoveItem(sharedName, amount);
+                c.Save();
+
+                for (int i = 0; i < amount; ++i)
+                    ___m_nview.InvokeRPC("RPC_AddAmmo", ammoType);
+
+                ammo += amount;
+                added += amount;
+
+                user.Message(MessageHud.MessageType.TopLeft, "$msg_added " + sharedName);
+
+                if (!pullAll || ammo >= __instance.m_maxAmmo)
+                    break;
+            }
+        }
+
+        if (added > 0)
+        {
+            user.Message(MessageHud.MessageType.Center, $"$msg_added {added} items");
+            __result = true;
+            return false;
+        }
+
+        item = null;
+        return true;
+    }
+}
+
+[HarmonyPatch(typeof(Turret), nameof(Turret.RPC_AddAmmo))]
+static class PreventOverfillJIC_TurretRPC_AddAmmoPatch
+{
+    static bool Prefix(Turret __instance)
+    {
+        if (!__instance.m_nview.IsOwner()) return true;
+        return __instance.GetAmmo() < __instance.m_maxAmmo;
     }
 }
 
@@ -129,6 +166,8 @@ static class TurretGetHoverTextPatch
         foreach (IContainer c in nearbyContainers)
         {
             if (!c.ContainsItem(sharedName, 1, out int result)) continue;
+            result = Boxes.CheckAndDecrement(result);
+            if (result <= 0) continue;
             if (Boxes.CanItemBePulled(Utils.GetPrefabName(__instance.gameObject), ammoPrefabName))
             {
                 inContainers += result;

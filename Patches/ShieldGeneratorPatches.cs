@@ -85,6 +85,16 @@ namespace AzuCraftyBoxes.Patches
         }
     }
 
+    [HarmonyPatch(typeof(ShieldGenerator), nameof(ShieldGenerator.RPC_AddFuel))]
+    static class CapFuel_ShieldGeneratorRPC_AddFuelPatch
+    {
+        static bool Prefix(ShieldGenerator __instance)
+        {
+            if (!__instance.m_nview.IsOwner()) return true;
+            return __instance.GetFuel() < __instance.m_maxFuel;
+        }
+    }
+
     [HarmonyPatch(typeof(ShieldGenerator), nameof(ShieldGenerator.OnAddFuel))]
     [HarmonyBefore("org.bepinex.plugins.conversionsizespeed")]
     static class ShieldGeneratorOnAddFuelPatch
@@ -98,11 +108,21 @@ namespace AzuCraftyBoxes.Patches
                 || inventory == null)
                 return true;
 
+            if (!pullAll)
+            {
+                foreach (ItemDrop fuelItem in __instance.m_fuelItems)
+                {
+                    if (inventory.HaveItem(fuelItem.m_itemData.m_shared.m_name))
+                        return true;
+                }
+            }
+
             __result = true;
 
             int added = 0;
 
-            if (__instance.GetFuel() > __instance.m_maxFuel - 1)
+            float fuel = __instance.GetFuel();
+            if (fuel > __instance.m_maxFuel - 1)
             {
                 user.Message(MessageHud.MessageType.Center, "$msg_itsfull");
                 __result = false;
@@ -116,12 +136,13 @@ namespace AzuCraftyBoxes.Patches
                 {
                     if (Boxes.CanItemBePulled(Utils.GetPrefabName(__instance.gameObject), fuelItem.name))
                     {
-                        int amount = (int)Mathf.Min(__instance.m_maxFuel - __instance.GetFuel(), inventory.CountItems(sharedName));
+                        int amount = (int)Mathf.Min(__instance.m_maxFuel - fuel, inventory.CountItems(sharedName));
                         inventory.RemoveItem(sharedName, amount);
                         for (int i = 0; i < amount; ++i)
                             ___m_nview.InvokeRPC("RPC_AddFuel");
 
                         added += amount;
+                        fuel += amount;
 
                         user.Message(MessageHud.MessageType.TopLeft, Localization.instance.Localize("$msg_fireadding", sharedName));
 
@@ -136,7 +157,7 @@ namespace AzuCraftyBoxes.Patches
                     {
                         if (!c.ContainsItem(sharedName, 1, out int result)) continue;
                         result = Boxes.CheckAndDecrement(result);
-                        if(result <= 0) continue;
+                        if (result <= 0) continue;
                         if (!Boxes.CanItemBePulled(c.GetPrefabName(), fuelItem.name))
                         {
                             AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(ShieldGeneratorOnAddFuelPatch) Container at {c.GetPosition()} has {result} {sharedName} but it's forbidden by config");
@@ -145,8 +166,9 @@ namespace AzuCraftyBoxes.Patches
 
                         AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"Pull ALL is {pullAll}");
                         int amount = pullAll
-                            ? (int)Mathf.Min(__instance.m_maxFuel - __instance.GetFuel(), result)
+                            ? (int)Mathf.Min(__instance.m_maxFuel - fuel, result)
                             : 1;
+                        if (amount <= 0) break;
 
                         AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(ShieldGeneratorOnAddFuelPatch) Container at {c.GetPosition()} has {result} {sharedName}, taking {amount}");
 
@@ -157,12 +179,13 @@ namespace AzuCraftyBoxes.Patches
                             ___m_nview.InvokeRPC("RPC_AddFuel");
 
                         added += amount;
+                        fuel += amount;
 
                         user.Message(MessageHud.MessageType.TopLeft, "$msg_added " + sharedName);
 
                         __result = false;
 
-                        if (!pullAll || Mathf.CeilToInt(___m_nview.GetZDO().GetFloat(ZDOVars.s_fuel)) >= __instance.m_maxFuel)
+                        if (!pullAll || Mathf.CeilToInt(fuel) >= __instance.m_maxFuel)
                             return false;
                     }
                 }

@@ -80,7 +80,14 @@ public static class OverrideHoverText
         int free = __instance.m_maxOre - __instance.GetQueueSize();
         List<string> items = new();
 
-        foreach (Smelter.ItemConversion conversion in __instance.m_conversion)
+        // Prioritize conversions where the player has items in inventory, matching fill behavior
+        Inventory playerInv = Player.m_localPlayer?.m_inventory;
+        IEnumerable<Smelter.ItemConversion> orderedConversions = playerInv != null
+            ? __instance.m_conversion
+                .OrderByDescending(ic => playerInv.HaveItem(ic.m_from.m_itemData.m_shared.m_name) ? 1 : 0)
+            : __instance.m_conversion;
+
+        foreach (Smelter.ItemConversion conversion in orderedConversions)
         {
             if (free <= 0)
             {
@@ -173,7 +180,16 @@ static class SmelterOnAddOrePatch
         Dictionary<string, int> added = new();
 
         List<IContainer> nearbyContainers = Boxes.QueryFrame.Get(user, AzuCraftyBoxesPlugin.mRange.Value);
-        foreach (Smelter.ItemConversion itemConversion in __instance.m_conversion)
+
+        // When filling all (Shift+E), prioritize conversions where the player has the material
+        // in their inventory. This prevents container items from taking priority over inventory
+        // items just because their conversion appears earlier in the list.
+        IEnumerable<Smelter.ItemConversion> orderedConversions = pullAll
+            ? __instance.m_conversion
+                .OrderByDescending(ic => inventory.HaveItem(ic.m_from.m_itemData.m_shared.m_name) ? 1 : 0)
+            : __instance.m_conversion;
+
+        foreach (Smelter.ItemConversion itemConversion in orderedConversions)
         {
             if (ore >= __instance.m_maxOre || (added.Any() && !pullAll))
                 break;
@@ -203,20 +219,19 @@ static class SmelterOnAddOrePatch
                     continue;
                 }
 
-                int amount = pullAll
-                    ? Mathf.Min(__instance.m_maxOre - __instance.GetQueueSize(), inventory.CountItems(name))
-                    : 1;
+                int amount = pullAll ? Mathf.Min(__instance.m_maxOre - ore, inventory.CountItems(name)) : 1;
+                if (amount <= 0) continue;
                 added.TryAdd(name, 0);
                 added[name] += amount;
+                ore += amount;
 
                 inventory.RemoveItem(itemConversion.m_from.m_itemData.m_shared.m_name, amount);
-                //typeof(Inventory).GetMethod("Changed", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(inventory, new object[] { });
 
                 for (int i = 0; i < amount; ++i)
                     ___m_nview.InvokeRPC("RPC_AddOre", newItem.m_dropPrefab.name);
 
                 user.Message(MessageHud.MessageType.TopLeft, $"$msg_added {amount} {name}");
-                if (__instance.GetQueueSize() >= __instance.m_maxOre)
+                if (ore >= __instance.m_maxOre)
                     break;
             }
 
@@ -233,10 +248,12 @@ static class SmelterOnAddOrePatch
                         continue;
                     }
 
-                    int amount = pullAll ? Mathf.Min(__instance.m_maxOre - __instance.GetQueueSize(), result) : 1;
+                    int amount = pullAll ? Mathf.Min(__instance.m_maxOre - ore, result) : 1;
+                    if (amount <= 0) break;
 
                     added.TryAdd(name, 0);
                     added[name] += amount;
+                    ore += amount;
                     AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"Pull ALL is {pullAll}");
                     AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(SmelterOnAddOrePatch) Container at {c.GetPosition()} has {result} {prefabName}, taking {amount}");
 
@@ -248,8 +265,7 @@ static class SmelterOnAddOrePatch
 
                     user.Message(MessageHud.MessageType.TopLeft, $"$msg_added {amount} {name}");
 
-
-                    if (__instance.GetQueueSize() >= __instance.m_maxOre || !pullAll)
+                    if (ore >= __instance.m_maxOre || !pullAll)
                         break;
                 }
             }
@@ -284,7 +300,8 @@ static class SmelterOnAddFuelPatch
 
         int added = 0;
 
-        if (__instance.GetFuel() > __instance.m_maxFuel - 1)
+        float fuel = __instance.GetFuel();
+        if (fuel > __instance.m_maxFuel - 1)
         {
             user.Message(MessageHud.MessageType.Center, "$msg_itsfull");
             __result = false;
@@ -295,13 +312,13 @@ static class SmelterOnAddFuelPatch
         {
             if (Boxes.CanItemBePulled(Utils.GetPrefabName(__instance.gameObject), __instance.m_fuelItem.name))
             {
-                int amount = (int)Mathf.Min(__instance.m_maxFuel - __instance.GetFuel(), inventory.CountItems(__instance.m_fuelItem.m_itemData.m_shared.m_name));
+                int amount = (int)Mathf.Min(__instance.m_maxFuel - fuel, inventory.CountItems(__instance.m_fuelItem.m_itemData.m_shared.m_name));
                 inventory.RemoveItem(__instance.m_fuelItem.m_itemData.m_shared.m_name, amount);
-                //typeof(Inventory).GetMethod("Changed", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(inventory, new object[] { });
                 for (int i = 0; i < amount; ++i)
                     ___m_nview.InvokeRPC("RPC_AddFuel");
 
                 added += amount;
+                fuel += amount;
 
                 user.Message(MessageHud.MessageType.TopLeft, Localization.instance.Localize("$msg_fireadding", __instance.m_fuelItem.m_itemData.m_shared.m_name));
 
@@ -326,9 +343,8 @@ static class SmelterOnAddFuelPatch
                 }
 
                 AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"Pull ALL is {pullAll}");
-                int amount = pullAll
-                    ? (int)Mathf.Min(__instance.m_maxFuel - __instance.GetFuel(), result)
-                    : 1;
+                int amount = pullAll ? (int)Mathf.Min(__instance.m_maxFuel - fuel, result) : 1;
+                if (amount <= 0) break;
 
                 AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(SmelterOnAddFuelPatch) Container at {c.GetPosition()} has {result} {sharedName}, taking {amount}");
 
@@ -339,19 +355,18 @@ static class SmelterOnAddFuelPatch
                     ___m_nview.InvokeRPC("RPC_AddFuel");
 
                 added += amount;
+                fuel += amount;
 
                 user.Message(MessageHud.MessageType.TopLeft, "$msg_added " + __instance.m_fuelItem.m_itemData.m_shared.m_name);
 
                 __result = false;
 
-                if (!pullAll || Mathf.CeilToInt(___m_nview.GetZDO().GetFloat(ZDOVars.s_fuel)) >= __instance.m_maxFuel)
+                if (!pullAll || Mathf.CeilToInt(fuel) >= __instance.m_maxFuel)
                     return false;
             }
         }
 
-        user.Message(MessageHud.MessageType.Center, added == 0
-            ? "$msg_noprocessableitems"
-            : $"$msg_added {added} {__instance.m_fuelItem.m_itemData.m_shared.m_name}");
+        user.Message(MessageHud.MessageType.Center, added == 0 ? "$msg_noprocessableitems" : $"$msg_added {added} {__instance.m_fuelItem.m_itemData.m_shared.m_name}");
 
         return __result;
     }

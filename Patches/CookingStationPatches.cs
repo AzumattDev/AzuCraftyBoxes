@@ -3,6 +3,16 @@ using AzuCraftyBoxes.Util.Functions;
 
 namespace AzuCraftyBoxes.Patches;
 
+[HarmonyPatch(typeof(CookingStation), nameof(CookingStation.RPC_AddFuel))]
+static class CapFuel_CookingStationRPC_AddFuelPatch
+{
+    static bool Prefix(CookingStation __instance)
+    {
+        if (!__instance.m_nview.IsOwner()) return true;
+        return __instance.GetFuel() < __instance.m_maxFuel;
+    }
+}
+
 [HarmonyPatch(typeof(CookingStation), nameof(CookingStation.OnAddFuelSwitch))]
 static class CookingStationOnAddFuelSwitchPatch
 {
@@ -16,7 +26,7 @@ static class CookingStationOnAddFuelSwitchPatch
             return true;
 
         AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(CookingStationOnAddFuelSwitchPatch) Missing fuel in player inventory");
-        
+
         string fuelPrefabName = __instance.m_fuelItem.name;
         if (!Boxes.CanItemBePulled(Utils.GetPrefabName(__instance.gameObject), fuelPrefabName))
         {
@@ -31,7 +41,7 @@ static class CookingStationOnAddFuelSwitchPatch
         {
             if (!c.ContainsItem(sharedName, 1, out int result)) continue;
             result = Boxes.CheckAndDecrement(result);
-            if(result <= 0) return true;
+            if (result <= 0) return true;
             if (!Boxes.CanItemBePulled(c.GetPrefabName(), fuelPrefabName))
             {
                 AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(CookingStationOnAddFuelSwitchPatch) Container at {c.GetPosition()} has {result} {fuelPrefabName} but it's forbidden by config");
@@ -82,7 +92,7 @@ static class CookingStationFindCookableItemPatch
             {
                 if (!c.ContainsItem(sharedName, 1, out int result)) continue;
                 result = Boxes.CheckAndDecrement(result);
-                if(result <= 0) continue;
+                if (result <= 0) continue;
                 if (!Boxes.CanItemBePulled(c.GetPrefabName(), fromPrefabName))
                 {
                     AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(CookingStationFindCookableItemPatch) Container at {c.GetPosition()} has {result} {fromPrefabName} but it's forbidden by config");
