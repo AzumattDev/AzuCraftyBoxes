@@ -9,6 +9,9 @@ static class FireplaceInteractPatch
     static bool Prefix(Fireplace __instance, Humanoid user, bool hold, ref bool __result, ZNetView ___m_nview)
     {
         __result = true;
+        if (___m_nview == null || !___m_nview.IsValid() || __instance.m_infiniteFuel || __instance.m_fuelItem?.m_itemData?.m_shared == null)
+            return true;
+
         bool pullAll = Input.GetKey(AzuCraftyBoxesPlugin.fillAllModKey.Value.MainKey); // Used to be fillAllModKey.Value.IsPressed(); something is wrong with KeyboardShortcuts always returning false
         Inventory inventory = user.GetInventory();
 
@@ -110,7 +113,18 @@ static class FireplaceGetHoverTextPatch
             return;
         }
 
-        double free = __instance.m_maxFuel - (double)Mathf.CeilToInt(__instance.m_nview.GetZDO().GetFloat(ZDOVars.s_fuel));
+        if (__instance.m_infiniteFuel || __instance.m_fuelItem?.m_itemData?.m_shared == null)
+        {
+            return;
+        }
+
+        ZDO? zdo = __instance.m_nview != null && __instance.m_nview.IsValid() ? __instance.m_nview.GetZDO() : null;
+        if (zdo == null)
+        {
+            return;
+        }
+
+        double free = __instance.m_maxFuel - (double)Mathf.CeilToInt(zdo.GetFloat(ZDOVars.s_fuel));
         List<string> items = new();
 
         if (free <= 0)
@@ -126,18 +140,15 @@ static class FireplaceGetHoverTextPatch
             return;
         }
 
-        int inInv = Player.m_localPlayer?.m_inventory.CountItems(__instance.m_fuelItem.m_itemData.m_shared.m_name) ?? 0;
+        int inInv = Player.m_localPlayer?.m_inventory?.CountItems(sharedName) ?? 0;
         List<IContainer> nearbyContainers = Boxes.QueryFrame.Get(__instance, AzuCraftyBoxesPlugin.mRange.Value);
         int inContainers = 0;
         __instance.m_fuelItem.m_itemData.m_dropPrefab = __instance.m_fuelItem.gameObject;
         foreach (IContainer c in nearbyContainers)
         {
-            if (!c.ContainsItem(sharedName, 1, out int result)) continue;
-            /*AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable("Found " + newItem + " of " +
-                                                               __instance.m_fuelItem.m_itemData.m_shared.m_name +
-                                                               " in " + c.name + "");*/
+            if (c == null || !c.ContainsItem(sharedName, 1, out int result)) continue;
             result = Boxes.CheckAndDecrement(result);
-            if (Boxes.CanItemBePulled(c.GetPrefabName(), fuelPrefabName)) ;
+            if (Boxes.CanItemBePulled(c.GetPrefabName(), fuelPrefabName))
             {
                 inContainers += result;
             }
