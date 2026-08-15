@@ -100,6 +100,9 @@
         <Reference Include="BepInEx">
             <HintPath>$(BepInExPath)\core\BepInEx.dll</HintPath>
         </Reference>
+        <Reference Include="EpicLootAPI">
+            <HintPath>Libs\EpicLootAPI.dll</HintPath>
+        </Reference>
         <Reference Include="ItemDataManager">
             <HintPath>Libs\ItemDataManager.dll</HintPath>
         </Reference>
@@ -149,6 +152,9 @@
         <Content Include="ILRepack.targets"/>
         <EmbeddedResource Include="images\pullingicon.png"/>
         <Content Include="Libs\BackpacksAPI.dll">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="Libs\EpicLootAPI.dll">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>
         <Content Include="Libs\ItemDataManager.dll">

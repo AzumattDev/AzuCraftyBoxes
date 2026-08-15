@@ -1,6 +1,6 @@
 ﻿using System.IO;
 using System.Text.RegularExpressions;
-using AzuCraftyBoxes.Compatibility.EpicLoot;
+using AzuCraftyBoxes.Compatibility;
 using AzuCraftyBoxes.IContainers;
 using AzuCraftyBoxes.Patches;
 using AzuCraftyBoxes.Util;
@@ -12,6 +12,7 @@ namespace AzuCraftyBoxes
     [BepInDependency("kg.ItemDrawers", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency("org.bepinex.plugins.backpacks", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency("org.bepinex.plugins.jewelcrafting", BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency("randyknapp.mods.epicloot", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInIncompatibility("aedenthorn.CraftFromContainers")]
     [BepInIncompatibility("CFCMod")]
     public class AzuCraftyBoxesPlugin : BaseUnityPlugin
@@ -137,8 +138,7 @@ namespace AzuCraftyBoxes
                 BackpacksIsLoaded = true;
             }
 
-            if (!Chainloader.PluginInfos.TryGetValue(EpicLoot.ElGuid, out PluginInfo? epicLootInfo)) return;
-            EpicLoot.Init(epicLootInfo);
+            EpicLootCompat.Init(ModGUID);
         }
 
         private void Update()
