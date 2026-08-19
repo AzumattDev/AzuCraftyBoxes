@@ -1,7 +1,7 @@
-﻿using AzuCraftyBoxes.APIs;
 using AzuCraftyBoxes.IContainers;
+#if !API
+using AzuCraftyBoxes.APIs;
 using AzuCraftyBoxes.Util.Functions;
-#if ! API
 #endif
 
 namespace AzuCraftyBoxes;
@@ -12,18 +12,18 @@ public class API
     public static bool IsLoaded()
     {
 #if API
-		return false;
+        return false;
 #else
         return true;
 #endif
     }
-
 
     public static Type GetIContainerType()
     {
         return typeof(IContainer);
     }
 
+#if !API
     public static Type GetVanillaContainerType()
     {
         return typeof(VanillaContainer);
@@ -46,8 +46,6 @@ public class API
 
     public static IContainer CreateContainer(string type, params object[] args)
     {
-        // Factory method to create container instances
-        // 'type' could be "Vanilla", "kgDrawer", etc.
         switch (type)
         {
             case "Vanilla":
@@ -68,22 +66,35 @@ public class API
     {
         Boxes.RemoveContainer(container);
     }
+#endif
 
     public static List<IContainer> GetNearbyContainers<T>(T gameObject, float rangeToUse) where T : Component
     {
+#if API
+        return new List<IContainer>();
+#else
         return Boxes.QueryFrame.Get(gameObject, rangeToUse);
+#endif
     }
 
     public static Dictionary<string, List<string>> GetExcludedPrefabsForAllContainers()
     {
+#if API
+        return new Dictionary<string, List<string>>();
+#else
         return Boxes.GetExcludedPrefabsForAllContainers();
+#endif
     }
 
     public static bool CanItemBePulled(string container, string prefab)
     {
+#if API
+        return false;
+#else
         return Boxes.CanItemBePulled(container, prefab);
+#endif
     }
-    
+
     public static int CountItemInContainer(IContainer container, string itemName)
     {
         if (container.ContainsItem(itemName, 1, out int count))
@@ -92,7 +103,7 @@ public class API
         }
         return 0;
     }
-    
+
     public static bool ContainsItem(IContainer container, string itemName, int amount)
     {
         return container.ContainsItem(itemName, amount, out _);
