@@ -18,7 +18,7 @@ namespace AzuCraftyBoxes
     public class AzuCraftyBoxesPlugin : BaseUnityPlugin
     {
         internal const string ModName = "AzuCraftyBoxes";
-        internal const string ModVersion = "1.8.15";
+        internal const string ModVersion = "1.8.16";
         internal const string Author = "Azumatt";
         private const string ModGUID = $"{Author}.{ModName}";
         private static string ConfigFileName = $"{ModGUID}.cfg";
@@ -406,7 +406,7 @@ namespace AzuCraftyBoxes
             [UsedImplicitly] public Action<ConfigEntryBase>? CustomDrawer = null!;
         }
 
-        class AcceptableShortcuts : AcceptableValueBase // Used for KeyboardShortcut Configs 
+        class AcceptableShortcuts : AcceptableValueBase // Used for KeyboardShortcut Configs
         {
             public AcceptableShortcuts() : base(typeof(KeyboardShortcut))
             {
