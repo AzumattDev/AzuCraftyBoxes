@@ -55,6 +55,35 @@
         <DefineConstants>EpicLootTesting;TRACE</DefineConstants>
         <WarningLevel>4</WarningLevel>
     </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'API|AnyCPU' ">
+        <PlatformTarget>AnyCPU</PlatformTarget>
+        <DebugType>pdbonly</DebugType>
+        <Optimize>true</Optimize>
+        <OutputPath>bin\API\</OutputPath>
+        <DefineConstants>API;TRACE</DefineConstants>
+        <WarningLevel>4</WarningLevel>
+        <NoWarn>CS0067</NoWarn>
+    </PropertyGroup>
+
+    <!-- In API mode, exclude all implementation files; only API.cs, IContainer.cs, and GlobalUsings.cs compile -->
+    <ItemGroup Condition="'$(Configuration)|$(Platform)' == 'API|AnyCPU'">
+        <Compile Remove="Compatibility\**\*.cs"/>
+        <Compile Remove="Patches\**\*.cs"/>
+        <Compile Remove="Util\Functions\*.cs"/>
+        <Compile Remove="Util\PlayerExtensions.cs"/>
+        <Compile Remove="IContainers\kgDrawers.cs"/>
+        <Compile Remove="IContainers\BackpackContainer.cs"/>
+        <Compile Remove="IContainers\GemBagContainer.cs"/>
+        <Compile Remove="IContainers\mkzDrawer.cs"/>
+        <Compile Remove="IContainers\VanillaContainer.cs"/>
+        <Compile Remove="APIs\kg_ItemDrawersAPI.cs"/>
+        <Compile Remove="APIs\MkzItemDrawers_API.cs"/>
+        <Compile Remove="Plugin.cs"/>
+        <Compile Remove="Properties\AssemblyInfo.cs"/>
+        <Compile Remove="VersionHandshake.cs"/>
+    </ItemGroup>
+
     <Choose>
         <When Condition="($(OS) == 'Unix' OR $(OS) == 'OSX') AND $(GamePath) == ''">
             <PropertyGroup>
@@ -303,6 +332,11 @@ System.IO.File.WriteAllText(ManifestFile, content);
         <Copy SourceFiles="@(NexusPackageFiles)" DestinationFolder="$(PackageDir)"/>
         <ZipDirectory SourceDirectory="$(PackageDir)" DestinationFile="Nexus\$(PackageName).zip" Overwrite="true"/>
         <RemoveDir Directories="$(PackageDir)"/>
+    </Target>
+
+    <!-- Rename the API stub DLL so consumers can reference AzuCraftyBoxesAPI.dll -->
+    <Target Name="MoveAPIBuild" AfterTargets="Build" Condition="'$(Configuration)|$(Platform)' == 'API|AnyCPU'">
+        <Exec Command="move &quot;$(TargetDir)$(AssemblyName).dll&quot; &quot;$(TargetDir)$(AssemblyName)API.dll&quot;"/>
     </Target>
 
 </Project>
