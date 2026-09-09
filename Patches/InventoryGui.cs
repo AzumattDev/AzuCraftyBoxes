@@ -24,8 +24,9 @@ static class InventoryGuiCollectRequirements
 [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.SetupRequirement))]
 static class InventoryGuiSetupRequirementPatch
 {
-    static void Postfix(InventoryGui __instance, Transform elementRoot, Piece.Requirement req, Player player, bool craft, int quality, int craftMultiplier = 1)
+    static void Postfix(bool __result, Transform elementRoot, Piece.Requirement req, Player player, bool craft, int quality, int craftMultiplier = 1)
     {
+        if (!__result) return;
         if (MiscFunctions.ShouldPrevent() || req?.m_resItem?.m_itemData?.m_shared == null) return;
 
         var text = elementRoot.transform.Find("res_amount")?.GetComponent<TextMeshProUGUI>();
@@ -58,10 +59,10 @@ static class InventoryGuiSetupRequirementPatch
             : amount.ToString();
     }
 
-    public static string FormatThousands(int number) => 
-        number < 1000 
-            ? number.ToString() 
-            : (number < 1_000_000 
-                ? (number / 1000.0).ToString("0.#") + "K" 
+    public static string FormatThousands(int number) =>
+        number < 1000
+            ? number.ToString()
+            : (number < 1_000_000
+                ? (number / 1000.0).ToString("0.#") + "K"
                 : (number / 1_000_000.0).ToString("0.#") + "M");
 }

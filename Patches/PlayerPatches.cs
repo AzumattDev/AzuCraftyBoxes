@@ -45,10 +45,12 @@ static class PlayerHaveRequirementsPatch
             if (nearbyContainers.Count == 0)
                 return;
 
+            CraftingStation? currentStation = __instance.GetCurrentCraftingStation();
             bool cando = false;
             foreach (Piece.Requirement requirement in piece.m_resources)
             {
                 if (!requirement.m_resItem) continue;
+                if (!MiscFunctions.MatchesStationUpgrader(requirement, currentStation)) continue;
                 bool proceed = MiscFunctions.CheckItemDropIntegrity(requirement.m_resItem);
                 if (!proceed) continue;
 
@@ -166,10 +168,11 @@ static class PlayerHaveRequirementsPatchRBoolInt
             return false;
 
         List<IContainer>? nearbyContainers = null;
+        CraftingStation? currentStation = p.GetCurrentCraftingStation();
 
         foreach (Piece.Requirement resource in piece.m_resources)
         {
-            if (resource.m_resItem)
+            if (resource.m_resItem && MiscFunctions.MatchesStationUpgrader(resource, currentStation))
             {
                 if (discover)
                 {
@@ -228,7 +231,10 @@ static class PlayerHaveRequirementsPatchRBoolInt
                             return true;
                     }
                     else if (num < amount)
+                    {
+                        AzuCraftyBoxesPlugin.AzuCraftyBoxesLogger.LogIfReleaseAndDebugEnable($"(HaveRequirements) Short on {sharedName}: {num}/{amount} with {nearbyContainers?.Count ?? 0} containers in range");
                         return false;
+                    }
                 }
             }
         }
@@ -375,7 +381,7 @@ static class ConsumeResourcesPatch
 
             Inventory pInventory = __instance.GetInventory();
             List<IContainer> nearbyContainers = Boxes.QueryFrame.Get(__instance, AzuCraftyBoxesPlugin.mRange.Value);
-            MiscFunctions.ProcessRequirements(requirements, qualityLevel, pInventory, nearbyContainers, itemQuality, multiplier);
+            MiscFunctions.ProcessRequirements(requirements, qualityLevel, pInventory, nearbyContainers, itemQuality, multiplier, __instance.GetCurrentCraftingStation());
         }
         catch (Exception ex)
         {
@@ -408,9 +414,13 @@ static class CheckNearbyForOneIngredientItems
             return;
         }
 
+        CraftingStation? currentStation = __instance.GetCurrentCraftingStation();
+
         foreach (Piece.Requirement resource in recipe.m_resources)
         {
             if (!resource.m_resItem)
+                continue;
+            if (!MiscFunctions.MatchesStationUpgrader(resource, currentStation))
                 continue;
 
             string reqName = resource.m_resItem.m_itemData.m_shared.m_name;

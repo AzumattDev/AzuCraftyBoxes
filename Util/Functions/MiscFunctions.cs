@@ -50,14 +50,20 @@ public class MiscFunctions
         return hasAccess;
     }
 
+    internal static bool MatchesStationUpgrader(Piece.Requirement requirement, CraftingStation? station)
+    {
+        return requirement.m_upgraderResource == (station != null && station.m_upgrader);
+    }
+
     /* Consume Resources */
-    internal static void ProcessRequirements(Piece.Requirement[] requirements, int qualityLevel, Inventory pInventory, List<IContainer> nearbyContainers, int itemQuality, int multiplier)
+    internal static void ProcessRequirements(Piece.Requirement[] requirements, int qualityLevel, Inventory pInventory, List<IContainer> nearbyContainers, int itemQuality, int multiplier, CraftingStation? station)
     {
         UiItemBank.Begin(nearbyContainers);
 
         foreach (var requirement in requirements)
         {
             if (!IsValidRequirement(requirement)) continue;
+            if (!MatchesStationUpgrader(requirement, station)) continue;
 
             int needed = requirement.GetAmount(qualityLevel) * multiplier;
             if (needed <= 0) continue;
