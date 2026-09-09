@@ -138,9 +138,6 @@
         <Reference Include="Jewelcrafting">
             <HintPath>Libs\JewelcraftingAPI.dll</HintPath>
         </Reference>
-        <Reference Include="ServerSync">
-            <HintPath>Libs\ServerSync.dll</HintPath>
-        </Reference>
 
         <Reference Include="UnityEngine">
             <HintPath>$(CorlibPath)\UnityEngine.dll</HintPath>
@@ -226,6 +223,7 @@
 
     <ItemGroup>
         <None Include="App.config"/>
+        <None Remove="Libs\ServerSync.dll" />
     </ItemGroup>
 
     <!-- NuGet packages -->

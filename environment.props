@@ -4,7 +4,7 @@
         <BepInExPath>$(ValheimGamePath)\BepInEx</BepInExPath>
         <CorlibPath>$(ValheimGamePath)\valheim_Data\Managed</CorlibPath>
         <PublicizedAssembliesPath>$(ValheimGamePath)\valheim_Data\Managed\publicized_assemblies</PublicizedAssembliesPath>
-        <CopyOutputDLLPath>C:\Users\crypt\AppData\Roaming\com.kesomannen.gale\valheim\profiles\TESTING BYPASS OF AC\BepInEx\plugins\Azumatt-AzuCraftyBoxes</CopyOutputDLLPath>
+        <CopyOutputDLLPath>C:\Users\crypt\AppData\Roaming\com.kesomannen.gale\valheim\profiles\OnePointOhTesting\BepInEx\plugins\Azumatt-AzuCraftyBoxes</CopyOutputDLLPath>
         <CopyOutputDLLPath2>C:\Users\crypt\AppData\Roaming\com.kesomannen.gale\valheim\profiles\ConfigurationManagerLiveTesting\BepInEx\plugins\Azumatt-AzuCraftyBoxes</CopyOutputDLLPath2>
         <CopyOutputDLLPath3>C:\Users\crypt\AppData\Roaming\com.kesomannen.gale\valheim\profiles\ShroudValheimList\BepInEx\plugins\Azumatt-AzuCraftyBoxes</CopyOutputDLLPath3>
         <AfterTargets>ILRepack</AfterTargets>
