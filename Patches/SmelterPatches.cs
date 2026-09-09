@@ -228,7 +228,7 @@ static class SmelterOnAddOrePatch
                 inventory.RemoveItem(itemConversion.m_from.m_itemData.m_shared.m_name, amount);
 
                 for (int i = 0; i < amount; ++i)
-                    ___m_nview.InvokeRPC("RPC_AddOre", newItem.m_dropPrefab.name);
+                    ___m_nview.InvokeRPC("RPC_AddOre", newItem.m_dropPrefab.name, newItem.m_cheated);
 
                 user.Message(MessageHud.MessageType.TopLeft, $"$msg_added {amount} {name}");
                 if (ore >= __instance.m_maxOre)
@@ -261,7 +261,7 @@ static class SmelterOnAddOrePatch
                     c.Save();
 
                     for (int i = 0; i < amount; ++i)
-                        ___m_nview.InvokeRPC("RPC_AddOre", prefabName);
+                        ___m_nview.InvokeRPC("RPC_AddOre", prefabName, false);
 
                     user.Message(MessageHud.MessageType.TopLeft, $"$msg_added {amount} {name}");
 
@@ -315,7 +315,7 @@ static class SmelterOnAddFuelPatch
                 int amount = (int)Mathf.Min(__instance.m_maxFuel - fuel, inventory.CountItems(__instance.m_fuelItem.m_itemData.m_shared.m_name));
                 inventory.RemoveItem(__instance.m_fuelItem.m_itemData.m_shared.m_name, amount);
                 for (int i = 0; i < amount; ++i)
-                    ___m_nview.InvokeRPC("RPC_AddFuel");
+                    ___m_nview.InvokeRPC("RPC_AddFuel", false);
 
                 added += amount;
                 fuel += amount;
@@ -352,7 +352,7 @@ static class SmelterOnAddFuelPatch
                 c.Save();
 
                 for (int i = 0; i < amount; ++i)
-                    ___m_nview.InvokeRPC("RPC_AddFuel");
+                    ___m_nview.InvokeRPC("RPC_AddFuel", false);
 
                 added += amount;
                 fuel += amount;
