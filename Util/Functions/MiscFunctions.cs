@@ -30,7 +30,7 @@ public class MiscFunctions
 
     internal static bool ShouldSkipContainer(Container container)
     {
-        return ShouldPrevent() || container.GetInventory() == null || !container.m_nview.IsValid() || container.m_nview.GetZDO().GetLong("creator".GetStableHashCode()) == 0L;
+        return ShouldPrevent() || container.GetInventory() == null || !container.m_nview.IsValid() || container.m_nview.GetZDO().GetLong(ZDOVars.s_creator) == 0L;
     }
 
     internal static bool HasAccessToContainer(Container container)

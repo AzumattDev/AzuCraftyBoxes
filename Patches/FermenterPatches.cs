@@ -64,7 +64,8 @@ static class SearchContainersAsWell
                     return;
                 }
 
-                __instance.m_nview.InvokeRPC("RPC_AddItem", cookableItem.m_dropPrefab.name, cookableItem.m_cheated);
+                __instance.m_nview.InvokeRPC("RPC_AddItem", cookableItem.m_dropPrefab.name.GetStableHashCode(), cookableItem.m_cheated);
+                return;
             }
         }
     }
