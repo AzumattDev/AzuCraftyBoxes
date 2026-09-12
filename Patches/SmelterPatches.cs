@@ -315,7 +315,7 @@ static class SmelterOnAddFuelPatch
                 int amount = (int)Mathf.Min(__instance.m_maxFuel - fuel, inventory.CountItems(__instance.m_fuelItem.m_itemData.m_shared.m_name));
                 inventory.RemoveItem(__instance.m_fuelItem.m_itemData.m_shared.m_name, amount);
                 for (int i = 0; i < amount; ++i)
-                    ___m_nview.InvokeRPC("RPC_AddFuel", false);
+                    ___m_nview.InvokeRPC("RPC_AddFuel");
 
                 added += amount;
                 fuel += amount;
@@ -352,7 +352,7 @@ static class SmelterOnAddFuelPatch
                 c.Save();
 
                 for (int i = 0; i < amount; ++i)
-                    ___m_nview.InvokeRPC("RPC_AddFuel", false);
+                    ___m_nview.InvokeRPC("RPC_AddFuel");
 
                 added += amount;
                 fuel += amount;
