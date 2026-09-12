@@ -53,7 +53,7 @@ static class CookingStationOnAddFuelSwitchPatch
             c.RemoveItem(sharedName, 1);
             c.Save();
             user.Message(MessageHud.MessageType.Center, "$msg_added " + sharedName);
-            ___m_nview.InvokeRPC("RPC_AddFuel", Array.Empty<object>(), false);
+            ___m_nview.InvokeRPC("RPC_AddFuel");
             __result = true;
             return false;
         }
